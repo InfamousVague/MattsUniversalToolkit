@@ -332,7 +332,9 @@
                                         </div>
                                     {/if}
                                 {:else if $userCache[user] && $userCache[user].key !== get(Store.state.user).key && $remoteStreams[user]}
-                                    <div class="video-container {isFullScreen ? 'fullscreen' : ''}" style={!$remoteStreams[user].user.videoEnabled ? "display: none" : ""}>
+                                    <div
+                                        class="video-container {$userCache[get(Store.state.user).key].media.is_playing_audio ? 'talking' : ''} {isFullScreen ? 'fullscreen' : ''}"
+                                        style={!$remoteStreams[user].user.videoEnabled ? "display: none" : ""}>
                                         <video data-cy="remote-user-video" id="remote-user-video-{user}" class={$remoteStreams[user].user.videoEnabled ? "" : "disabled"} autoplay muted={false} use:attachStream={user}>
                                             <track kind="captions" src="" />
                                         </video>
@@ -609,6 +611,9 @@
             border-radius: 12px;
             overflow: hidden;
             border: 2px solid var(--color-muted);
+            &.talking {
+                border: 2px solid var(--success-color);
+            }
             width: 100%;
             height: 100%;
             aspect-ratio: 4/3;
