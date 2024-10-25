@@ -122,11 +122,12 @@ export class Participant {
         const mediaStreamSource = audioContext.createMediaStreamSource(stream)
         const analyser = audioContext.createAnalyser()
         analyser.fftSize = AUDIO_WINDOW_SIZE
+        analyser.smoothingTimeConstant = 0.1
         mediaStreamSource.connect(analyser)
         const dataArray = new Uint8Array(analyser.frequencyBinCount)
         function volume() {
             analyser.getByteFrequencyData(dataArray)
-            return dataArray.reduce((sum, value) => sum + value, 0) / dataArray.length
+            return dataArray.reduce((prev, value) => (prev && prev > value ? prev : value))
         }
 
         function updateMeta(did: string) {
@@ -134,7 +135,7 @@ export class Participant {
             let speaking = false
             let user = Store.getUser(did)
             let current = get(user)
-            if (!muted && volume() < VOLUME_THRESHOLD) {
+            if (!muted && volume() > VOLUME_THRESHOLD) {
                 speaking = true
             }
             if (current.media.is_muted !== muted || current.media.is_playing_audio !== speaking) {
@@ -150,7 +151,7 @@ export class Participant {
                 })
             }
         }
-        const checker = setInterval(() => updateMeta(this.did), 3000)
+        const checker = setInterval(() => updateMeta(this.did), 300)
         this.streamHandler = [checker, analyser]
     }
 
@@ -275,7 +276,7 @@ export class CallRoom {
     }
 }
 
-const AUDIO_WINDOW_SIZE = 256
+const AUDIO_WINDOW_SIZE = 512
 const VOLUME_THRESHOLD = 20
 
 export const callTimeout = writable(false)
