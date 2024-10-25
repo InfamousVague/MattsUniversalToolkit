@@ -83,8 +83,8 @@
             <div class="content" style={cancelledCall ? "border: var(--border-width) solid var(--warning-color);" : "border: var(--border-width) solid var(--success-color);"}>
                 {#if cancelledCall}
                     <ProfilePicture id={$user.key} hook="friend-profile-picture" size={Size.Large} image={$user.profile.photo.image} status={$user.profile.status} />
-                    <Text hook="text-cancelled-call-username">{$user.name}</Text>
-                    <Text hook="text-has-cancelled" muted size={Size.Large}>{$_("settings.calling.hasCancelled")}</Text>
+                    <Text hook="text-canceled-call-username">{$user.name}</Text>
+                    <Text hook="text-has-canceled" muted size={Size.Large}>{$_("settings.calling.hasCancelled")}</Text>
                     <Text hook="text-disconnecting" muted size={Size.Large}>{$_("settings.calling.disconnecting")}</Text>
                     <Spacer less={true} />
                 {:else}
