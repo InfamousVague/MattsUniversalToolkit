@@ -333,15 +333,7 @@
                                     {/if}
                                 {:else if $userCache[user] && $userCache[user].key !== get(Store.state.user).key && $remoteStreams[user]}
                                     <div class="video-container {isFullScreen ? 'fullscreen' : ''}" style={!$remoteStreams[user].user.videoEnabled ? "display: none" : ""}>
-                                        <video
-                                            data-cy="remote-user-video"
-                                            id="remote-user-video-{user}"
-                                            class={$remoteStreams[user].user.videoEnabled ? "" : "disabled"}
-                                            width={$remoteStreams[user].user.videoEnabled ? (isFullScreen ? "calc(50% - var(--gap) * 2)" : 400) : 0}
-                                            height={$remoteStreams[user].user.videoEnabled ? (isFullScreen ? "50%" : 400) : 0}
-                                            autoplay
-                                            muted={false}
-                                            use:attachStream={user}>
+                                        <video data-cy="remote-user-video" id="remote-user-video-{user}" class={$remoteStreams[user].user.videoEnabled ? "" : "disabled"} autoplay muted={false} use:attachStream={user}>
                                             <track kind="captions" src="" />
                                         </video>
                                         <div class="user-name">{$userCache[user].name}</div>
@@ -536,6 +528,7 @@
                 flex-direction: row;
                 gap: var(--gap);
                 justify-content: center;
+                width: 100%;
             }
 
             :global(.participant) {
