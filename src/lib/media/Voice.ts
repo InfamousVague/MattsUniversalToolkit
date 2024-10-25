@@ -1,3 +1,4 @@
+import { playSound, Sounds } from "$lib/components/utils/SoundHandler"
 import { CallDirection } from "$lib/enums"
 import { Store } from "$lib/state/Store"
 import { create_cancellable_handler, type Cancellable } from "$lib/utils/CancellablePromise"
@@ -195,6 +196,7 @@ export class CallRoom {
             let stream = await VoiceRTCInstance.getLocalStream()
             log.debug(`Sending local stream ${stream} to ${peer}`)
             room.addStream(stream, peer)
+            playSound(Sounds.Joined)
             if (!this.start) {
                 this.start = new Date()
             }
@@ -206,6 +208,7 @@ export class CallRoom {
                 VoiceRTCInstance.remoteVideoCreator.delete(participant[0])
                 delete this.participants[participant[0]]
             }
+            playSound(Sounds.Disconnect)
             if (this.empty) {
                 VoiceRTCInstance.leaveCall(true)
             }
