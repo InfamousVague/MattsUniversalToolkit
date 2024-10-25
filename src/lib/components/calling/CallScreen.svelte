@@ -7,7 +7,7 @@
     import Participant from "./Participant.svelte"
     import Text from "$lib/elements/Text.svelte"
     import CallSettings from "./CallSettings.svelte"
-    import { get } from "svelte/store"
+    import { get, writable } from "svelte/store"
     import { Store } from "$lib/state/Store"
     import { _ } from "svelte-i18n"
     import type { Chat } from "$lib/types"
@@ -49,6 +49,24 @@
             VoiceRTCInstance.leaveCall()
             dispatch("endCall")
         }, TIME_TO_SHOW_END_CALL_FEEDBACK)
+    }
+
+    let pushToTalk = writable(false)
+
+    function handleKeyDown(event: KeyboardEvent) {
+        if (event.key === ">" && event.shiftKey && get(Store.state.devices.muted) && $pushToTalk === false) {
+            event.preventDefault()
+            pushToTalk.set(true)
+            Store.updateMuted(false)
+        }
+    }
+
+    function handleKeyUp(event: KeyboardEvent) {
+        if (event.key === ">" && event.shiftKey && $pushToTalk === true && !get(Store.state.devices.muted)) {
+            event.preventDefault()
+            pushToTalk.set(false)
+            Store.updateMuted(true)
+        }
     }
 
     let dispatch = createEventDispatcher()
@@ -148,6 +166,8 @@
     }
 
     onMount(async () => {
+        window.addEventListener("keydown", handleKeyDown)
+        window.addEventListener("keyup", handleKeyUp)
         await MultipassStoreInstance.listUsersForACall(chat.users)
         userCache = Store.getUsersLookup(chat.users)
         usersDeniedTheCall.set([])
@@ -193,6 +213,8 @@
     })
 
     onDestroy(() => {
+        window.removeEventListener("keydown", handleKeyDown)
+        window.removeEventListener("keyup", handleKeyUp)
         callTimeout.set(false)
         document.removeEventListener("mousedown", handleClickOutside)
         subscribeOne()
