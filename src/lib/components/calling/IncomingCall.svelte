@@ -78,26 +78,26 @@
 </script>
 
 {#if pending && (VoiceRTCInstance.incomingCallFrom === null || (VoiceRTCInstance.incomingCallFrom && $callInProgress !== VoiceRTCInstance.incomingCallFrom[1]?.metadata.channel))}
-    <div id="incoming-call">
+    <div id="incoming-call" data-cy="incoming-call-modal">
         <div class="body">
             <div class="content" style={cancelledCall ? "border: var(--border-width) solid var(--warning-color);" : "border: var(--border-width) solid var(--success-color);"}>
                 {#if cancelledCall}
                     <ProfilePicture id={$user.key} hook="friend-profile-picture" size={Size.Large} image={$user.profile.photo.image} status={$user.profile.status} />
-                    <Text>{$user.name}</Text>
-                    <Text muted size={Size.Large}>{$_("settings.calling.hasCancelled")}</Text>
-                    <Text muted size={Size.Large}>{$_("settings.calling.disconnecting")}</Text>
+                    <Text hook="text-canceled-call-username">{$user.name}</Text>
+                    <Text hook="text-has-canceled" muted size={Size.Large}>{$_("settings.calling.hasCancelled")}</Text>
+                    <Text hook="text-disconnecting" muted size={Size.Large}>{$_("settings.calling.disconnecting")}</Text>
                     <Spacer less={true} />
                 {:else}
                     {#if $callChat.kind === ChatType.DirectMessage}
                         <ProfilePicture id={$user.key} hook="friend-profile-picture" size={Size.Large} image={$user.profile.photo.image} status={$user.profile.status} />
-                        <Text>{$user.name}</Text>
+                        <Text hook="incoming-call-username">{$user.name}</Text>
                         {#if $user.profile.status_message !== ""}
-                            <Text muted>{$user.profile.status_message}</Text>
+                            <Text hook="incoming-call-status-message" muted>{$user.profile.status_message}</Text>
                         {/if}
                     {:else}
                         <ProfilePicture id={$user.key} hook="friend-profile-picture" size={Size.Medium} image={$user.profile.photo.image} status={$user.profile.status} />
                         <div class="text-container">
-                            <Text>
+                            <Text hook="text-inviting-to-a-call">
                                 {@html $_("settings.calling.userInviteToAGroupCall", {
                                     values: {
                                         user: `<span class="bold-text" style="font-weight: bold">${$user.name}</span>`,
@@ -110,14 +110,14 @@
                     {/if}
                     <Spacer less={true} />
                     <Controls>
-                        <Button appearance={Appearance.Success} text={$_("settings.calling.voice")} on:click={_ => answerCall(true)}>
+                        <Button hook="button-accept-voice" appearance={Appearance.Success} text={$_("settings.calling.voice")} on:click={_ => answerCall(true)}>
                             <Icon icon={Shape.PhoneCall} />
                         </Button>
-                        <Button appearance={Appearance.Success} text={$_("settings.calling.video")} on:click={_ => answerCall(false)}>
+                        <Button hook="button-accept-video" appearance={Appearance.Success} text={$_("settings.calling.video")} on:click={_ => answerCall(false)}>
                             <Icon icon={Shape.VideoCamera} />
                         </Button>
                     </Controls>
-                    <Button appearance={Appearance.Error} text={$_("settings.calling.decline")} on:click={endCall}>
+                    <Button hook="button-decline" appearance={Appearance.Error} text={$_("settings.calling.decline")} on:click={endCall}>
                         <Icon icon={Shape.PhoneXMark} />
                     </Button>
                 {/if}
