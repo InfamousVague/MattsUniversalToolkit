@@ -208,7 +208,10 @@ class MultipassStore {
                     outgoingFriendRequestsUsers
                 )
             } catch (error) {
-                log.error("Error listing incoming friend requests: " + error)
+                let messageError: string = `${error}`
+                if (messageError !== "Error: MultiPass extension is unavailable") {
+                    log.error("Error listing outgoing friend requests: " + error)
+                }
             }
         }
     }
@@ -336,7 +339,10 @@ class MultipassStore {
                     get(Store.state.activeRequests).filter(r => r.direction === MessageDirection.Outbound)
                 )
             } catch (error) {
-                log.error("Error listing incoming friend requests: " + error)
+                let messageError: string = `${error}`
+                if (messageError !== "Error: MultiPass extension is unavailable") {
+                    log.error("Error listing incoming friend requests: " + error)
+                }
             }
         }
     }
@@ -361,7 +367,10 @@ class MultipassStore {
                 }
                 Store.setBlockedUsers(blockedUsers)
             } catch (error) {
-                log.error("Error listing blocked friends: " + error)
+                let messageError: string = `${error}`
+                if (messageError !== "Error: MultiPass extension is unavailable") {
+                    log.error("Error listing blocked friends: " + error)
+                }
             }
         }
     }
@@ -386,7 +395,10 @@ class MultipassStore {
                 }
                 Store.setFriends(friendsUsers)
             } catch (error) {
-                log.error("Error listing friends: " + error)
+                let messageError: string = `${error}`
+                if (messageError !== "Error: MultiPass extension is unavailable") {
+                    log.error("Error listing friends: " + error)
+                }
             }
         }
     }
@@ -653,7 +665,8 @@ class MultipassStore {
                 }
             }
         }
-        if (lastErr) {
+        let lastErrStr = `${lastErr}`
+        if (lastErr && lastErrStr !== "Error: Identity does not exist") {
             log.error(`Couldn't fetch identity ${id}: ${lastErr}`)
         }
         return undefined
