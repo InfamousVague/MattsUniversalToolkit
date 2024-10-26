@@ -27,10 +27,10 @@
 
     $: users = Store.getUsers(chat.users)
     $: lookupUsers = Store.getUsersLookup(chat.users)
-    $: chatName = chat.kind === ChatType.Group ? chat.name : $users[1]?.name ?? $users[0].name
+    $: chatName = chat.kind === ChatType.Group ? chat.name : ($users[1]?.name ?? $users[0].name)
     $: loading = chatName === "Unknown User" || ($users.length <= 2 && ($users[1]?.loading == true || $users[0].loading == true))
     $: directChatPhoto = $users[1]?.profile.photo.image ?? $users[0].profile.photo.image
-    $: chatStatus = $users.length > 2 ? Status.Offline : $users[1]?.profile.status ?? $users[0].profile.status
+    $: chatStatus = $users.length > 2 ? Status.Offline : ($users[1]?.profile.status ?? $users[0].profile.status)
     $: simpleUnreads = derived(SettingsStore.state, s => s.messaging.simpleUnreads)
     $: user = chat.typing_indicator.users().map(u => {
         return $lookupUsers[u]
@@ -149,7 +149,7 @@
                             {chat.notifications}
                         </span>
                     {:else if chat.notifications > 0 && $simpleUnreads}
-                        <span class="unreads simple"></span>
+                        <span class="unreads simple" data-cy="unreads-notification"></span>
                     {/if}
                 {/if}
             </div>
