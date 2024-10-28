@@ -760,7 +760,7 @@
                                                             {#if !$rejectedPayments.find(id => id === message.id)}
                                                                 <Button hook="text-chat-message" class="send_coin" text={getValidPaymentRequest(line)?.toDisplayString()} on:click={async () => getValidPaymentRequest(line)?.execute()}
                                                                 ></Button>
-                                                                <Button hook="text-chat-message" text={"Decline"} appearance={Appearance.Error} on:click={async () => rejectPaymentRequest(message.id)}>
+                                                                <Button hook="text-chat-message" text={$_("payments.decline")} appearance={Appearance.Error} on:click={async () => rejectPaymentRequest(message.id)}>
                                                                     <Icon icon={Shape.XMark}></Icon>
                                                                 </Button>
                                                             {:else}
