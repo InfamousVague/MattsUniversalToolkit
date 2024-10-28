@@ -58,7 +58,7 @@ jobs:
               with:
                   name: playwright-report-${{ matrix.project }}
                   path: automated-tests/blob-report/
-                  retention-days: 1
+                  retention-days: 5
 
             - name: Upload Allure results as artifact
               if: always()
@@ -66,7 +66,7 @@ jobs:
               with:
                   name: allure-results-${{ matrix.project }}
                   path: automated-tests/allure-results
-                  retention-days: 1
+                  retention-days: 5
 
             - name: Add label if any of build jobs failed
               if: failure()
