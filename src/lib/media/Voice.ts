@@ -136,7 +136,9 @@ export class Participant {
             let speaking = false
             let user = Store.getUser(did)
             let current = get(user)
-            if (!muted && volume() > VOLUME_THRESHOLD) {
+            let vol = volume()
+            console.log("incoming volume ", vol)
+            if (!muted && vol > VOLUME_THRESHOLD) {
                 speaking = true
             }
             if (current.media.is_muted !== muted || current.media.is_playing_audio !== speaking) {
@@ -280,7 +282,7 @@ export class CallRoom {
 }
 
 const AUDIO_WINDOW_SIZE = 512
-const VOLUME_THRESHOLD = 20
+const VOLUME_THRESHOLD = 10
 
 export const callTimeout = writable(false)
 
