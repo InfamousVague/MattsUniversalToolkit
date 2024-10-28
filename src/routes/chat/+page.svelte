@@ -758,16 +758,13 @@
                                                     {#each message.text as line}
                                                         {#if getValidPaymentRequest(line) != undefined}
                                                             {#if !$rejectedPayments.find(id => id === message.id)}
-                                                                <div class="payment_buttons">
-                                                                    <Button text={getValidPaymentRequest(line)?.toDisplayString()} on:click={async () => getValidPaymentRequest(line)?.execute()}></Button>
-                                                                    <Button text={"Decline"} appearance={Appearance.Error} on:click={async () => rejectPaymentRequest(message.id)}>
-                                                                        <Icon icon={Shape.XMark}></Icon>
-                                                                    </Button>
-                                                                </div>
+                                                                <Button hook="text-chat-message" class="send_coin" text={getValidPaymentRequest(line)?.toDisplayString()} on:click={async () => getValidPaymentRequest(line)?.execute()}
+                                                                ></Button>
+                                                                <Button hook="text-chat-message" text={"Decline"} appearance={Appearance.Error} on:click={async () => rejectPaymentRequest(message.id)}>
+                                                                    <Icon icon={Shape.XMark}></Icon>
+                                                                </Button>
                                                             {:else}
-                                                                <div class="payment_buttons">
-                                                                    <Button hook="text-chat-message" disabled text={$_("payments.payment_declined")} appearance={Appearance.Error} />
-                                                                </div>
+                                                                <Button hook="text-chat-message" disabled text={$_("payments.payment_declined")} appearance={Appearance.Error} />
                                                             {/if}
                                                         {:else if !line.includes(tempCDN)}
                                                             <Text hook="text-chat-message" markdown={line} appearance={group.details.remote ? Appearance.Default : Appearance.Alt} />
@@ -994,10 +991,6 @@
                 border: var(--border-width) solid var(--primary-color);
                 margin-top: var(--gap);
             }
-            .payment_buttons {
-                display: inline-flex;
-                gap: var(--gap-more);
-            }
         }
 
         .aside {
@@ -1089,6 +1082,11 @@
             .better-with-friends {
                 max-width: 100%;
             }
+        }
+        .payment_buttons .button .error {
+            // display: inline-flex;
+            // max-width: fit-content;
+            padding-top: var(--gap-more);
         }
     }
 
