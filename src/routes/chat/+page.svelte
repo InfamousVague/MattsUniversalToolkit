@@ -57,6 +57,7 @@
     import BrowseFiles from "../files/BrowseFiles.svelte"
     import AttachmentRenderer from "$lib/components/messaging/AttachmentRenderer.svelte"
     import ShareFile from "$lib/components/files/ShareFile.svelte"
+    import { StateEffect } from "@codemirror/state"
 
     let loading = false
     let contentAsideOpen = false
@@ -296,11 +297,17 @@
         })
     }
 
-    let rejectedPayments = [""]
+    $: rejectedPayments = Store.state.paymentTracker
 
     function rejectPaymentRequest(messageId: string) {
-        rejectedPayments.push(messageId)
-        console.log(rejectedPayments)
+        Store.state.paymentTracker.update(payments => {
+            if (!payments.includes(messageId)) {
+                return [...payments, messageId]
+            } else {
+                console.log(`MessageId ${messageId} is already in the rejected payments list`)
+                return payments
+            }
+        })
     }
 
     let activeCallInProgress = false
@@ -750,15 +757,21 @@
                                                 {:else}
                                                     {#each message.text as line}
                                                         {#if getValidPaymentRequest(line) != undefined}
-                                                            <div class="payment_buttons">
-                                                                <Button text={getValidPaymentRequest(line)?.toDisplayString()} on:click={async () => getValidPaymentRequest(line)?.execute()}></Button>
-                                                                <Button text={"Decline"} appearance={Appearance.Error} on:click={async () => rejectPaymentRequest(message.id)}>
-                                                                    <Icon icon={Shape.XMark}></Icon>
-                                                                </Button>
-                                                            </div>
+                                                            {#if !$rejectedPayments.find(id => id === message.id)}
+                                                                <div class="payment_buttons">
+                                                                    <Button text={getValidPaymentRequest(line)?.toDisplayString()} on:click={async () => getValidPaymentRequest(line)?.execute()}></Button>
+                                                                    <Button text={"Decline"} appearance={Appearance.Error} on:click={async () => rejectPaymentRequest(message.id)}>
+                                                                        <Icon icon={Shape.XMark}></Icon>
+                                                                    </Button>
+                                                                </div>
+                                                            {:else}
+                                                                <div class="payment_buttons">
+                                                                    <Button hook="text-chat-message" disabled text={$_("payments.payment_declined")} appearance={Appearance.Error} />
+                                                                </div>
+                                                            {/if}
                                                         {:else if !line.includes(tempCDN)}
                                                             <Text hook="text-chat-message" markdown={line} appearance={group.details.remote ? Appearance.Default : Appearance.Alt} />
-                                                        {:else if line.includes(tempCDN)}
+                                                        {:else}
                                                             <div class="sticker">
                                                                 <Text hook="text-chat-message" markdown={line} size={Size.Smallest} appearance={group.details.remote ? Appearance.Default : Appearance.Alt} />
                                                             </div>
@@ -778,11 +791,13 @@
                                                     {/if}
                                                 {/if}
                                             </Message>
+
                                             <svelte:fragment slot="items" let:close>
                                                 <EmojiGroup emojis={$emojis} emojiPick={emoji => reactTo(message.id, emoji, true)} close={close} on:openPicker={_ => (reactingTo = message.id)}></EmojiGroup>
                                             </svelte:fragment>
                                         </ContextMenu>
                                     {/if}
+
                                     {#if Object.keys(message.reactions).length > 0}
                                         <MessageReactions remote={group.details.remote} reactions={Object.values(message.reactions)} onClick={emoji => reactTo(message.id, emoji, true)} />
                                     {/if}
