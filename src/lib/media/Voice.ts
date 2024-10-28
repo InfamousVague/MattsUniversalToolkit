@@ -8,7 +8,7 @@ import Peer, { DataConnection } from "peerjs"
 import { _ } from "svelte-i18n"
 import { get, writable, type Writable } from "svelte/store"
 import type { Room } from "trystero"
-import { joinRoom } from "trystero/ipfs"
+import { joinRoom } from "trystero"
 
 const CALL_ACK = "CALL_ACCEPT"
 
