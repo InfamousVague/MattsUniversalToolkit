@@ -96,7 +96,9 @@
     }
 
     onDestroy(() => {
-        if (scrollContainer.scrollHeight <= scrollContainer.clientHeight) markAsRead($chat.id)
+        if (scrollContainer && scrollContainer.scrollHeight) {
+            if (scrollContainer?.scrollHeight <= scrollContainer?.clientHeight) markAsRead($chat.id)
+        }
     })
 </script>
 
@@ -109,8 +111,8 @@
         </div>
     {:else}
         {#if unreads && unreads.unread > 0}
-            <div class="unreads" aria-label="unreads" role="presentation" on:click={scrollToUnread}>
-                <div class="bookmark"></div>
+            <div class="unreads" data-cy="unreads" aria-label="unreads" role="presentation" on:click={scrollToUnread}>
+                <div class="bookmark" data-cy="unreads-scroll-to"></div>
                 {$_("chat.newMessageSinceAmount", { values: { amount: unreads.unread, date: $date(unreads.since, { format: "medium" }), time: $time(unreads.since) } })}
             </div>
         {/if}
