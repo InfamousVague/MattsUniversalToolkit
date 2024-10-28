@@ -100,6 +100,7 @@
             "select": "Select member(s)",
             "create": "Create Group",
             "noMembers": "No members selected",
+            "noMembersAvailable": "No members available",
             "settings": {
                 "name": "Name",
                 "name.placeholder": "Group Name",
