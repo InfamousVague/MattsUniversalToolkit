@@ -126,7 +126,11 @@ jobs:
         concurrency:
             group: ${{ github.workflow }}-${{ github.ref }}
         steps:
+<<<<<<< HEAD
             - uses: actions/checkout@v4.2.2
+=======
+            - uses: actions/checkout@v3
+>>>>>>> 6ef3d31f (update(ci): draft for improving automation publish report)
               with:
                   repository: Satellite-im/test-reports
                   ref: gh-pages
@@ -155,7 +159,11 @@ jobs:
             - name: Stop ssh-agent job from first deploy required for deploying a second time
               run: killall ssh-agent
 
+<<<<<<< HEAD
             - uses: actions/checkout@v4.2.2
+=======
+            - uses: actions/checkout@v3
+>>>>>>> 6ef3d31f (update(ci): draft for improving automation publish report)
               with:
                   repository: Satellite-im/test-reports
                   ref: gh-pages
