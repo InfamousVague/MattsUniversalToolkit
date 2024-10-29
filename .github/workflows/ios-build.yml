@@ -1,0 +1,55 @@
+name: Build iOS App
+
+on:
+  push:
+    branches:
+      - dev
+  pull_request:
+    branches:
+      - dev
+
+jobs:
+  build:
+    runs-on: macos-latest 
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1.197.0
+        with:
+          ruby-version: '3.3'
+
+      - name: Install CocoaPods
+        run: |
+          gem install cocoapods
+          pod install
+
+      - name: Import Signing Certificate
+        env:
+          CERT_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PWD }} 
+        run: |
+          security create-keychain -p "${{ secrets.MACOS_KEYCHAIN_PASSWORD }}" build.keychain
+          security import certificate.p12 -k build.keychain -P "$MACOS_CERTIFICATE_PWD" -T /usr/bin/codesign
+          security list-keychains -s build.keychain
+          security unlock-keychain -p "${{ secrets.MACOS_KEYCHAIN_PASSWORD }}" build.keychain
+          security set-key-partition-list -S apple-tool:,apple: -s -k "${{ secrets.MACOS_KEYCHAIN_PASSWORD }}" build.keychain
+
+      - name: Download and Install Provisioning Profile
+        run: |
+          echo "${{ secrets.BUILD_PROVISION_PROFILE_BASE64 }}" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/your_provisioning_profile.mobileprovision
+
+      - name: Build the iOS App
+        run: |
+          xcodebuild -workspace App.xcworkspace -scheme App -sdk iphoneos -configuration Release archive -archivePath ${{ github.workspace }}/build/App.xcarchive
+
+      - name: Export .ipa File
+        run: |
+          xcodebuild -exportArchive -archivePath ${{ github.workspace }}/build/App.xcarchive -exportOptionsPlist ExportOptions.plist -exportPath ${{ github.workspace }}/build
+
+      - name: Upload .ipa to Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: App.ipa
+          path: ${{ github.workspace }}/build/*.ipa
