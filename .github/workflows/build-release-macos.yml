@@ -39,3 +39,10 @@ jobs:
                   name: build-macos-official
                   path: src-tauri/target/release/bundle/dmg/*.dmg
                   retention-days: 5
+
+            - name: Github Release MacOS
+              uses: softprops/action-gh-release@v2
+              if: startsWith(github.ref, 'refs/tags/')
+              with:
+                  files: |
+                      src-tauri/target/release/bundle/dmg/*.dmg
