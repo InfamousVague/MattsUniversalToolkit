@@ -75,3 +75,10 @@ jobs:
                   name: build-windows
                   path: src-tauri/target/release/bundle/msi/*.msi
                   retention-days: 5
+
+            - name: Github Release Windows
+              uses: softprops/action-gh-release@v2
+              if: startsWith(github.ref, 'refs/tags/')
+              with:
+                  files: |
+                      src-tauri/target/release/bundle/msi/*.msi

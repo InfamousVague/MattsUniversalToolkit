@@ -43,3 +43,11 @@ jobs:
                       src-tauri/target/release/bundle/deb/*.deb
                       src-tauri/target/release/bundle/deb/SHA256SUM
                   retention-days: 5
+
+            - name: Github Release Linux
+              uses: softprops/action-gh-release@v2
+              if: startsWith(github.ref, 'refs/tags/')
+              with:
+                  files: |
+                      src-tauri/target/release/bundle/deb/*.deb
+                      src-tauri/target/release/bundle/deb/SHA256SUM
