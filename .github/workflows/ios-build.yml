@@ -32,11 +32,20 @@ jobs:
         env:
           MACOS_CERTIFICATE_PWD: ${{ secrets.MACOS_CERTIFICATE_PWD }} 
         run: |
+          # Create the keychain
           security create-keychain -p "${{ secrets.MACOS_KEYCHAIN_PASSWORD }}" build.keychain
-          echo $MACOS_CERTIFICATE | base64 --decode > certificate.p12
-          security import certificate.p12 -k build.keychain -P "$MACOS_CERTIFICATE_PWD" -T /usr/bin/codesign
-          security list-keychains -s build.keychain
+          
+          # Make sure the keychain is unlocked
           security unlock-keychain -p "${{ secrets.MACOS_KEYCHAIN_PASSWORD }}" build.keychain
+          
+          # Set the keychain as the default
+          security list-keychains -s build.keychain
+          
+          # Import the certificate
+          echo $MACOS_CERTIFICATE | base64 --decode > certificate.p12
+          security import certificate.p12 -k build.keychain -P "$MACOS_CERTIFICATE_PWD" -T /usr/bin/codesign || { echo "Import failed"; exit 1; }
+          
+          # Set the key partition list
           security set-key-partition-list -S apple-tool:,apple: -s -k "${{ secrets.MACOS_KEYCHAIN_PASSWORD }}" build.keychain
 
       - name: Download and Install Provisioning Profile
