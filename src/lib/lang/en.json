@@ -110,7 +110,7 @@
                 "add.description": "Allow anyone to add members to the group",
                 "edit": "Edit Members",
                 "details": "Change Details",
-                "details.description": "Allow anyone to change the name and motd of the group",
+                "details.description": "Allow anyone to change the name and MOTD of the group",
                 "photo": "Change Photo",
                 "photo.description": "Allow anyone to change the group photo"
             }
