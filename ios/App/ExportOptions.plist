@@ -3,9 +3,9 @@
 <plist version="1.0">
 <dict>
     <key>method</key>
-    <key>teamID</key>
-    <string>${MACOS_NOTARIZATION_TEAM_ID}</string>
     <string>development</string>
+    <key>teamID</key>
+    <string>${{ secrets.MACOS_NOTARIZATION_TEAM_ID }}</string> 
     <key>provisioningProfiles</key>
     <dict>
         <key>com.Satellite.Uplink</key>
@@ -13,4 +13,3 @@
     </dict>
 </dict>
 </plist>
-
