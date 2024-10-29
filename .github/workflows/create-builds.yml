@@ -155,9 +155,15 @@ jobs:
             - name: Generate manifest.json with platform-specific download links
               run: |
                   cd static
-                  jq --arg windows "https://example.com/download/windows" \
-                      --arg mac "https://example.com/download/mac" \
-                      --arg linux "https://example.com/download/linux" \
+                  # Capture actual URLs for each platform
+                  actual_windows_url=$(echo "${{ steps.post_links.outputs.urls }}" | grep -o 'https://[^ ]*windows.zip')
+                  actual_mac_url=$(echo "${{ steps.post_links.outputs.urls }}" | grep -o 'https://[^ ]*mac.zip')
+                  actual_linux_url=$(echo "${{ steps.post_links.outputs.urls }}" | grep -o 'https://[^ ]*linux.zip')
+
+                  # Update manifest.json with actual URLs
+                  jq --arg windows "$actual_windows_url" \
+                     --arg mac "$actual_mac_url" \
+                     --arg linux "$actual_linux_url" \
                   '.download_links = { "Windows": $windows, "Mac": $mac, "Linux": $linux }' \
                   manifest.json > updated_manifest.json && mv updated_manifest.json manifest.json
 
@@ -167,6 +173,7 @@ jobs:
 
             - name: Commit and push updated manifest.json
               run: |
+                  git checkout sara/update-ci-download-links
                   git config --global user.name "github-actions[bot]"
                   git config --global user.email "github-actions[bot]@users.noreply.github.com"
                   git add static/manifest.json --force  # Use --force to ensure it gets added
