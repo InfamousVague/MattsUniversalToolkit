@@ -30,7 +30,7 @@ jobs:
 
       - name: Import Signing Certificate
         env:
-          CERT_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PWD }} 
+          MACOS_CERTIFICATE_PWD: ${{ secrets.MACOS_CERTIFICATE_PWD }} 
         run: |
           security create-keychain -p "${{ secrets.MACOS_KEYCHAIN_PASSWORD }}" build.keychain
           security import certificate.p12 -k build.keychain -P "$MACOS_CERTIFICATE_PWD" -T /usr/bin/codesign
