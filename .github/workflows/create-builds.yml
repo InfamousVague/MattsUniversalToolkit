@@ -100,6 +100,7 @@ jobs:
                   retention-days: 5
 
     update-manifest:
+        permissions: write-all
         needs: build-installers
         runs-on: ubuntu-latest
         steps:
