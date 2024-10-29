@@ -156,12 +156,13 @@ jobs:
               run: |
                   cd static
                   # Capture actual URLs for each platform
-                  actual_windows_url=$(echo "${{ steps.post_links.outputs.urls }}" | grep -o 'https://[^ ]*windows.zip')
-                  actual_mac_url=$(echo "${{ steps.post_links.outputs.urls }}" | grep -o 'https://[^ ]*mac.zip')
-                  actual_linux_url=$(echo "${{ steps.post_links.outputs.urls }}" | grep -o 'https://[^ ]*linux.zip')
+                  actual_windows_url=$(echo "${{ steps.post_links.outputs.urls }}" | grep -o 'https://nightly.link/[^ ]*build-windows.zip')
+                  actual_mac_url=$(echo "${{ steps.post_links.outputs.urls }}" | grep -o 'https://nightly.link/[^ ]*build-macos.zip')
+                  actual_linux_url=$(echo "${{ steps.post_links.outputs.urls }}" | grep -o 'https://nightly.link/[^ ]*build-ubuntu.zip')
+                  actual_android_url=$(echo "${{ steps.post_links.outputs.urls }}" | grep -o 'https://nightly.link/[^ ]*build-android.zip')
 
                   # Ensure URLs were found
-                  if [ -z "$actual_windows_url" ] || [ -z "$actual_mac_url" ] || [ -z "$actual_linux_url" ]; then
+                  if [ -z "$actual_windows_url" ] || [ -z "$actual_mac_url" ] || [ -z "$actual_linux_url" ] || [ -z "$actual_android_url" ]; then
                       echo "Error: One or more URLs are missing."
                       exit 1
                   fi
@@ -170,7 +171,8 @@ jobs:
                   jq --arg windows "$actual_windows_url" \
                      --arg mac "$actual_mac_url" \
                      --arg linux "$actual_linux_url" \
-                  '.download_links = { "Windows": $windows, "Mac": $mac, "Linux": $linux }' \
+                     --arg android "$actual_android_url" \
+                  '.download_links = { "Windows": $windows, "Mac": $mac, "Linux": $linux, "Android": $android }' \
                   manifest.json > updated_manifest.json && mv updated_manifest.json manifest.json
 
             - name: Check modified manifest.json
