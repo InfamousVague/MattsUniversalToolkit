@@ -101,6 +101,7 @@ jobs:
 
             - name: Generate manifest.json with platform-specific download links
               run: |
+                cd static
                 jq --arg windows "$DOWNLOAD_LINK_WINDOWS" \
                   --arg mac "$DOWNLOAD_LINK_MAC" \
                   --arg linux "$DOWNLOAD_LINK_LINUX" \
