@@ -237,7 +237,6 @@
             <div class="send_address">
                 <Input />
                 <Button appearance={Appearance.Primary} hook="button" on:click={openQRCode} icon><Icon icon={Shape.QRCode} /></Button>
-                <!-- <Label text={$_("generic.or")} /> -->
             </div>
         </div>
         <!-- QR Code Scanner -->
@@ -262,10 +261,6 @@
 </div>
 
 <style lang="scss">
-    // .enter_address {
-    //     display: block;
-    //     align-self: center;
-    // }
     .wallet {
         position: absolute;
         z-index: 100000;
