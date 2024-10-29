@@ -31,22 +31,27 @@ jobs:
       - name: Import Signing Certificate
         env:
           MACOS_CERTIFICATE_PWD: ${{ secrets.MACOS_CERTIFICATE_PWD }} 
+          MACOS_KEYCHAIN_PASSWORD: ${{ secrets.MACOS_KEYCHAIN_PASSWORD }} 
+          MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}  # Ensure this contains the base64-encoded certificate
         run: |
           # Create the keychain
-          security create-keychain -p "${{ secrets.MACOS_KEYCHAIN_PASSWORD }}" build.keychain
+          security create-keychain -p "$MACOS_KEYCHAIN_PASSWORD" build.keychain
           
-          # Make sure the keychain is unlocked
-          security unlock-keychain -p "${{ secrets.MACOS_KEYCHAIN_PASSWORD }}" build.keychain
+          # Unlock the keychain
+          security unlock-keychain -p "$MACOS_KEYCHAIN_PASSWORD" build.keychain
           
           # Set the keychain as the default
           security list-keychains -s build.keychain
           
-          # Import the certificate
-          echo $MACOS_CERTIFICATE | base64 --decode > certificate.p12
-          security import certificate.p12 -k build.keychain -P "$MACOS_CERTIFICATE_PWD" -T /usr/bin/codesign || { echo "Import failed"; exit 1; }
+          # Import the certificate directly from the environment variable
+          security import <(echo "$MACOS_CERTIFICATE" | base64 --decode) \
+            -f pkcs12 \
+            -k build.keychain \
+            -P "$MACOS_CERTIFICATE_PWD" \
+            -T /usr/bin/codesign || { echo "Import failed"; exit 1; }
           
           # Set the key partition list
-          security set-key-partition-list -S apple-tool:,apple: -s -k "${{ secrets.MACOS_KEYCHAIN_PASSWORD }}" build.keychain
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$MACOS_KEYCHAIN_PASSWORD" build.keychain
 
       - name: Download and Install Provisioning Profile
         run: |
