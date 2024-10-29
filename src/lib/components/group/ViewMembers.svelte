@@ -14,8 +14,11 @@
     import { ToastMessage } from "$lib/state/ui/toast"
 
     export let members: User[] = []
-    export let adminControls: boolean = false
     export let activeChat: Chat
+
+    let user = get(Store.state.user)
+
+    let canModify = (activeChat.creator !== undefined && activeChat.creator === user.key) || activeChat.settings.permissions.allowAnyoneToAddUsers
 
     let allRecipients: User[] = []
     let friends: User[] = [] // Initialize friends as an empty array
@@ -95,7 +98,7 @@
 </script>
 
 <div class="members" data-cy="group-chat-members">
-    {#if adminControls}
+    {#if canModify}
         <Label hook="label-group-chat-members" text={$_("chat.group.members")} />
         <div class="recipient-list" data-cy="recipients-list">
             {#each members as recipient}

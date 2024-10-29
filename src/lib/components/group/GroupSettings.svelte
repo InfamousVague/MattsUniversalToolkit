@@ -26,6 +26,7 @@
     let groupPicture = ""
     let user = get(Store.state.user)
     let isAdmin = groupChatToBeChanged.creator !== undefined ? groupChatToBeChanged.creator === user.key : false
+    let canRename = isAdmin || groupChatToBeChanged.settings.permissions.allowAnyoneToModifyName
 
     $: {
         unsavedChanges = Object.values(propertiesChangedList).some(value => value)
@@ -115,12 +116,12 @@
     <Input
         hook="group-settings-name-input"
         bind:value={groupChatToBeChanged.name}
-        disabled={!isAdmin}
+        disabled={!canRename}
         on:input={_ => {
             propertiesChangedList.groupName = groupChatToBeChanged.name !== groupChatOriginal.name
         }} />
     <Label hook="group-settings-description-label" text={$_("chat.group.settings.description")} />
-    <Input hook="group-settings-description-input" disabled={!isAdmin} value={$_("chat.group.settings.description.placeholder")} />
+    <Input hook="group-settings-description-input" disabled={!canRename} value={$_("chat.group.settings.description.placeholder")} />
     <Spacer />
     <Label hook="group-settings-generic-label" text={$_("generic.settings")} />
     <SettingSection hook="settings-section-add-members" name={$_("chat.group.settings.add")} description={$_("chat.group.settings.add.description")}>
