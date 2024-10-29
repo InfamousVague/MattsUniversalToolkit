@@ -100,7 +100,6 @@ jobs:
                   retention-days: 5
 
             - name: Generate manifest.json with platform-specific download links
-              if: github.ref == 'refs/heads/main' 
               run: |
                 jq --arg windows "$DOWNLOAD_LINK_WINDOWS" \
                   --arg mac "$DOWNLOAD_LINK_MAC" \
