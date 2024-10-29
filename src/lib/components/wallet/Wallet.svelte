@@ -101,6 +101,8 @@
         scannedQRCode = "" // Reset scanned QR code
     }
 
+    function sendTransaction() {}
+
     function handleReceive() {
         currentView = ViewMode.Receive
     }
@@ -165,6 +167,11 @@
             position.left = newLeft
         }
     }
+    let showQR = false
+    function openQRCode() {
+        console.log(showQR)
+        showQR = !showQR
+    }
 
     onMount(() => {
         // Adjust position after the component has been rendered
@@ -225,18 +232,25 @@
     {/if}
 
     {#if currentView === ViewMode.QRScanner}
-        <div class="send">
+        <div class="address_container">
             <Label text={$_("payments.enter_address")} />
-            <Input />
-            <Label text={$_("generic.or")} />
+            <div class="send_address">
+                <Input />
+                <Button appearance={Appearance.Primary} hook="button" on:click={openQRCode} icon><Icon icon={Shape.QRCode} /></Button>
+            </div>
         </div>
-
         <!-- QR Code Scanner -->
-        <QRScanner on:scanned={handleQRCodeScanned} />
+        {#if showQR}
+            <QRCodeDisplay selectedCurrency={selectedCurrency} />
+            <QRScanner on:scanned={handleQRCodeScanned} />
+        {/if}
 
         <div class="send">
+            <Label text={$_("payments.amount")} />
+            <Input />
             <Label text={$_("payments.add_note")} />
             <Input />
+            <Button appearance={Appearance.Primary} hook="button" on:click={sendTransaction} text="Create Transaction"></Button>
         </div>
     {/if}
 
@@ -273,8 +287,24 @@
             flex-direction: column;
             gap: var(--gap);
             align-items: center;
+            :global(.button) {
+                width: 100%;
+            }
         }
-
+        .send_address {
+            display: inline-flex;
+            gap: var(--gap);
+            align-items: center;
+        }
+        .address_container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: var(--gap);
+        }
+        label .address_container {
+            align-self: center;
+        }
         .show-on-profile {
             display: inline-flex;
             align-items: center;
@@ -288,5 +318,11 @@
         font-size: var(--font-size);
         text-align: center;
         word-break: break-all;
+    }
+
+    .enter_address {
+        display: inline-block;
+        align-self: center;
+        width: 100%;
     }
 </style>
