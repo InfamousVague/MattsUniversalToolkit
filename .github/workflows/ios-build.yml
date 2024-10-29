@@ -22,6 +22,7 @@ jobs:
           ruby-version: '3.3'
 
       - name: Install CocoaPods
+        working-directory: ios/App 
         run: |
           gem install cocoapods
           pod install
@@ -41,10 +42,12 @@ jobs:
           echo "${{ secrets.BUILD_PROVISION_PROFILE_BASE64 }}" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/your_provisioning_profile.mobileprovision
 
       - name: Build the iOS App
+        working-directory: ios/App
         run: |
           xcodebuild -workspace App.xcworkspace -scheme App -sdk iphoneos -configuration Release archive -archivePath ${{ github.workspace }}/build/App.xcarchive
 
       - name: Export .ipa File
+        working-directory: ios/App
         run: |
           xcodebuild -exportArchive -archivePath ${{ github.workspace }}/build/App.xcarchive -exportOptionsPlist ExportOptions.plist -exportPath ${{ github.workspace }}/build
 
