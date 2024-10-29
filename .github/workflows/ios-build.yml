@@ -73,7 +73,7 @@ jobs:
       - name: Build the iOS App
         working-directory: ios/App
         run: |
-          xcodebuild -workspace App.xcworkspace -scheme App -sdk iphoneos -configuration Release archive -archivePath ${{ github.workspace }}/build/App.xcarchive CODE_SIGN_IDENTITY="iPhone Distribution" DEVELOPMENT_TEAM="${{ secrets.MACOS_NOTARIZATION_TEAM_ID }}" -allowProvisioningUpdates
+          xcodebuild -workspace App.xcworkspace -scheme App -sdk iphoneos -configuration Release archive -archivePath ${{ github.workspace }}/build/App.xcarchive DEVELOPMENT_TEAM="${{ secrets.MACOS_NOTARIZATION_TEAM_ID }}" -allowProvisioningUpdates
 
       - name: Export .ipa File
         working-directory: ios/App
