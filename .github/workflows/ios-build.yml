@@ -24,6 +24,7 @@ jobs:
       - name: Install CocoaPods
         working-directory: ios/App 
         run: |
+          npm i
           gem install cocoapods
           pod install
 
