@@ -32,7 +32,7 @@ jobs:
         env:
           MACOS_CERTIFICATE_PWD: ${{ secrets.MACOS_CERTIFICATE_PWD }} 
           MACOS_KEYCHAIN_PASSWORD: ${{ secrets.MACOS_KEYCHAIN_PASSWORD }} 
-          MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}  # Ensure this contains the base64-encoded certificate
+          MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
         run: |
           # Create the keychain
           security create-keychain -p "$MACOS_KEYCHAIN_PASSWORD" build.keychain
@@ -53,9 +53,22 @@ jobs:
           # Set the key partition list
           security set-key-partition-list -S apple-tool:,apple: -s -k "$MACOS_KEYCHAIN_PASSWORD" build.keychain
 
+      - name: Debug Provisioning Profiles
+        run: |
+          # Create the directory if it does not exist
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          
+          # List the contents of the provisioning profiles directory
+          echo "Provisioning Profiles Directory Contents:"
+          ls ~/Library/MobileDevice/Provisioning\ Profiles
+          
+          # Print the expected provisioning profile path
+          echo "Expected path for the provisioning profile:"
+          echo "~/Library/MobileDevice/Provisioning Profiles/your_provisioning_profile.mobileprovision"
+
       - name: Download and Install Provisioning Profile
         run: |
-          echo "${{ secrets.BUILD_PROVISION_PROFILE_BASE64 }}" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/App.mobileprovision
+          echo "${{ secrets.BUILD_PROVISION_PROFILE_BASE64 }}" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/your_provisioning_profile.mobileprovision
 
       - name: Build the iOS App
         working-directory: ios/App
