@@ -99,6 +99,12 @@ jobs:
                   path: src-tauri/target/release/bundle/msi/*.msi
                   retention-days: 5
 
+    update-manifest:
+        needs: build-installers
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4.2.2
+
             - name: Generate manifest.json with platform-specific download links
               run: |
                 cd static
