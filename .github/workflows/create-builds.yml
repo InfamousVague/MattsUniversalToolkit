@@ -160,6 +160,12 @@ jobs:
                   actual_mac_url=$(echo "${{ steps.post_links.outputs.urls }}" | grep -o 'https://[^ ]*mac.zip')
                   actual_linux_url=$(echo "${{ steps.post_links.outputs.urls }}" | grep -o 'https://[^ ]*linux.zip')
 
+                  # Ensure URLs were found
+                  if [ -z "$actual_windows_url" ] || [ -z "$actual_mac_url" ] || [ -z "$actual_linux_url" ]; then
+                      echo "Error: One or more URLs are missing."
+                      exit 1
+                  fi
+
                   # Update manifest.json with actual URLs
                   jq --arg windows "$actual_windows_url" \
                      --arg mac "$actual_mac_url" \
