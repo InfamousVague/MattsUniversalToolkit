@@ -1,0 +1,57 @@
+name: Build Android Release
+on:
+    push:
+        branches:
+            - main
+    workflow_dispatch:
+
+jobs:
+    build-android-release:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4.2.2
+
+            - name: setup node
+              uses: actions/setup-node@v4.0.4
+              with:
+                  node-version: lts/*
+
+            - name: install Rust stable
+              uses: dtolnay/rust-toolchain@stable
+
+            - name: install dependencies (ubuntu only)
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
+            - name: install frontend dependencies
+              run: npm install
+
+            - name: Build Web Assets 🔨
+              run: npm run build
+
+            - name: Set up JDK
+              uses: actions/setup-java@v4.4.0
+              with:
+                  distribution: "temurin"
+                  java-version: "21"
+
+            - name: Set up Android SDK
+              uses: android-actions/setup-android@v3.2.1
+
+            - name: Sync Capacitor Assets 🔨
+              run: npx cap sync && npx cap copy android && cd android && ./gradlew assembleDebug
+
+            - name: Upload APK
+              uses: actions/upload-artifact@v4.4.0
+              with:
+                  name: build-android
+                  path: android/app/build/outputs/apk/debug/app-debug.apk
+                  retention-days: 5
+
+            - name: Github Release Android
+              uses: softprops/action-gh-release@v2
+              if: startsWith(github.ref, 'refs/tags/')
+              with:
+                  files: |
+                      android/app/build/outputs/apk/debug/app-debug.apk
