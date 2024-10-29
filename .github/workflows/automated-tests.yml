@@ -126,11 +126,7 @@ jobs:
         concurrency:
             group: ${{ github.workflow }}-${{ github.ref }}
         steps:
-<<<<<<< HEAD
             - uses: actions/checkout@v4.2.2
-=======
-            - uses: actions/checkout@v3
->>>>>>> 6ef3d31f (update(ci): draft for improving automation publish report)
               with:
                   repository: Satellite-im/test-reports
                   ref: gh-pages
@@ -159,11 +155,7 @@ jobs:
             - name: Stop ssh-agent job from first deploy required for deploying a second time
               run: killall ssh-agent
 
-<<<<<<< HEAD
             - uses: actions/checkout@v4.2.2
-=======
-            - uses: actions/checkout@v3
->>>>>>> 6ef3d31f (update(ci): draft for improving automation publish report)
               with:
                   repository: Satellite-im/test-reports
                   ref: gh-pages
@@ -195,6 +187,9 @@ jobs:
                   ref: gh-pages
                   path: gh-pages
 
+            - name: Pull changes from gh-pages
+              run: git pull --rebase origin gh-pages
+
             - name: Generate Allure Report
               if: always()
               uses: simple-elf/allure-report-action@master
@@ -210,6 +205,9 @@ jobs:
             - name: Set a timestamp two
               id: timestampidtwo
               run: echo "timestamp=$(date --utc +%Y%m%d_%H%M%SZ)" >> "$GITHUB_OUTPUT"
+
+            - name: Pull changes from gh-pages
+              run: git pull --rebase origin gh-pages
 
             - name: Deploy report to Github Pages
               if: success()
