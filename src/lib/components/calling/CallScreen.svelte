@@ -294,75 +294,73 @@
         {#if !$callTimeout && ($usersDeniedTheCall.length === 0 || $usersDeniedTheCall.length !== chat.users.length - 1)}
             <div id="participants" bind:this={$participantsElement}>
                 {#each usersSplit as users, i}
-                    {#if Math.floor(i / 2) === $page}
-                        <div class="participants-list">
-                            {#each users as user}
-                                {#if user === get(Store.state.user).key}
-                                    <div class="video-container {isFullScreen ? 'fullscreen' : ''}" style={!userCallOptions.video.enabled ? "display: none" : ""}>
-                                        <video data-cy="local-user-video" id="local-user-video" bind:this={localVideoCurrentSrc} style="display: {userCallOptions.video.enabled ? 'block' : 'none'}" muted autoplay>
-                                            <track kind="captions" src="" />
-                                        </video>
-                                        <div class="user-name">{ownUserName}</div>
-                                        {#if !userCallOptions.audio.enabled}
-                                            <div class="mute-status">
-                                                <Icon icon={Shape.MicrophoneSlash}></Icon>
-                                            </div>
-                                        {/if}
-                                    </div>
-                                    {#if !userCallOptions.video.enabled}
-                                        <Participant
-                                            participant={$userCache[user]}
-                                            hasVideo={$userCache[user].media.is_streaming_video}
-                                            isMuted={muted}
-                                            isDeafened={userCallOptions.audio.deafened}
-                                            isTalking={$userCache[user].media.is_playing_audio} />
+                    <div class="participants-list {Math.floor(i / 2) !== $page ? 'hidden' : ''}">
+                        {#each users as user}
+                            {#if user === get(Store.state.user).key}
+                                <div class="video-container {isFullScreen ? 'fullscreen' : ''}" style={!userCallOptions.video.enabled ? "display: none" : ""}>
+                                    <video data-cy="local-user-video" id="local-user-video" bind:this={localVideoCurrentSrc} style="display: {userCallOptions.video.enabled ? 'block' : 'none'}" muted autoplay>
+                                        <track kind="captions" src="" />
+                                    </video>
+                                    <div class="user-name">{ownUserName}</div>
+                                    {#if !userCallOptions.audio.enabled}
+                                        <div class="mute-status">
+                                            <Icon icon={Shape.MicrophoneSlash}></Icon>
+                                        </div>
                                     {/if}
-                                {:else if $userCache[user] && $userCache[user].key !== get(Store.state.user).key && !$remoteStreams[user]}
-                                    {#if showAnimation && !$usersAcceptedTheCall.includes(user)}
-                                        <div class="calling-animation">
-                                            <div class="shaking-participant">
-                                                <Participant participant={$userCache[user]} hasVideo={false} isMuted={true} isDeafened={true} isTalking={false} />
-                                                <p>{message}</p>
-                                            </div>
-                                        </div>
-                                    {:else if $usersAcceptedTheCall.includes(user)}
-                                        <div class="no-response">
-                                            <Participant participant={$userCache[user]} hasVideo={false} isMuted={true} isDeafened={true} isTalking={false} />
-                                            <p>{$_("settings.calling.acceptedCall")}</p>
-                                        </div>
-                                    {:else if noResponseVisible}
-                                        <div class="no-response">
+                                </div>
+                                {#if !userCallOptions.video.enabled}
+                                    <Participant
+                                        participant={$userCache[user]}
+                                        hasVideo={$userCache[user].media.is_streaming_video}
+                                        isMuted={muted}
+                                        isDeafened={userCallOptions.audio.deafened}
+                                        isTalking={$userCache[user].media.is_playing_audio} />
+                                {/if}
+                            {:else if $userCache[user] && $userCache[user].key !== get(Store.state.user).key && !$remoteStreams[user]}
+                                {#if showAnimation && !$usersAcceptedTheCall.includes(user)}
+                                    <div class="calling-animation">
+                                        <div class="shaking-participant">
                                             <Participant participant={$userCache[user]} hasVideo={false} isMuted={true} isDeafened={true} isTalking={false} />
                                             <p>{message}</p>
                                         </div>
-                                    {/if}
-                                {:else if $userCache[user] && $userCache[user].key !== get(Store.state.user).key && $remoteStreams[user]}
-                                    <div
-                                        class="video-container {$userCache[get(Store.state.user).key].media.is_playing_audio ? 'talking' : ''} {isFullScreen ? 'fullscreen' : ''}"
-                                        style={!$remoteStreams[user].user.videoEnabled ? "display: none" : ""}>
-                                        <video data-cy="remote-user-video" id="remote-user-video-{user}" class={$remoteStreams[user].user.videoEnabled ? "" : "disabled"} autoplay muted={false} use:attachStream={user}>
-                                            <track kind="captions" src="" />
-                                        </video>
-                                        <div class="user-name">{$userCache[user].name}</div>
-                                        {#if !$remoteStreams[user].user.audioEnabled}
-                                            <div class="mute-status">
-                                                <Icon icon={Shape.MicrophoneSlash}></Icon>
-                                            </div>
-                                        {/if}
                                     </div>
-
-                                    {#if !$remoteStreams[user].stream || !$remoteStreams[user].user.videoEnabled}
-                                        <Participant
-                                            participant={$userCache[user]}
-                                            hasVideo={$userCache[user].media.is_streaming_video}
-                                            isMuted={$remoteStreams[user] && !$remoteStreams[user].user.audioEnabled}
-                                            isDeafened={$remoteStreams[user] && $remoteStreams[user].user.isDeafened}
-                                            isTalking={$userCache[user].media.is_playing_audio} />
-                                    {/if}
+                                {:else if $usersAcceptedTheCall.includes(user)}
+                                    <div class="no-response">
+                                        <Participant participant={$userCache[user]} hasVideo={false} isMuted={true} isDeafened={true} isTalking={false} />
+                                        <p>{$_("settings.calling.acceptedCall")}</p>
+                                    </div>
+                                {:else if noResponseVisible}
+                                    <div class="no-response">
+                                        <Participant participant={$userCache[user]} hasVideo={false} isMuted={true} isDeafened={true} isTalking={false} />
+                                        <p>{message}</p>
+                                    </div>
                                 {/if}
-                            {/each}
-                        </div>
-                    {/if}
+                            {:else if $userCache[user] && $userCache[user].key !== get(Store.state.user).key && $remoteStreams[user]}
+                                <div
+                                    class="video-container {$userCache[get(Store.state.user).key].media.is_playing_audio ? 'talking' : ''} {isFullScreen ? 'fullscreen' : ''}"
+                                    style={!$remoteStreams[user].user.videoEnabled ? "display: none" : ""}>
+                                    <video data-cy="remote-user-video" id="remote-user-video-{user}" class={$remoteStreams[user].user.videoEnabled ? "" : "disabled"} autoplay muted={false} use:attachStream={user}>
+                                        <track kind="captions" src="" />
+                                    </video>
+                                    <div class="user-name">{$userCache[user].name}</div>
+                                    {#if !$remoteStreams[user].user.audioEnabled}
+                                        <div class="mute-status">
+                                            <Icon icon={Shape.MicrophoneSlash}></Icon>
+                                        </div>
+                                    {/if}
+                                </div>
+
+                                {#if !$remoteStreams[user].stream || !$remoteStreams[user].user.videoEnabled}
+                                    <Participant
+                                        participant={$userCache[user]}
+                                        hasVideo={$userCache[user].media.is_streaming_video}
+                                        isMuted={$remoteStreams[user] && !$remoteStreams[user].user.audioEnabled}
+                                        isDeafened={$remoteStreams[user] && $remoteStreams[user].user.isDeafened}
+                                        isTalking={$userCache[user].media.is_playing_audio} />
+                                {/if}
+                            {/if}
+                        {/each}
+                    </div>
                 {/each}
             </div>
         {:else if $usersDeniedTheCall.length === chat.users.length - 1 && chat.users.length > 1}
@@ -536,6 +534,9 @@
                 gap: var(--gap);
                 justify-content: center;
                 width: 100%;
+                &.hidden {
+                    display: none;
+                }
             }
 
             :global(.participant) {
