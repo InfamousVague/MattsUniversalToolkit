@@ -19,6 +19,11 @@ jobs:
                     - platform: "windows-latest"
 
         runs-on: ${{ matrix.platform }}
+        env:
+          DOWNLOAD_LINK_WINDOWS: "https://example.com/download/windows"
+          DOWNLOAD_LINK_MAC: "https://example.com/download/mac"
+          DOWNLOAD_LINK_LINUX: "https://example.com/download/linux"
+
         steps:
             - uses: actions/checkout@v4.2.2
 
@@ -94,6 +99,25 @@ jobs:
                   path: src-tauri/target/release/bundle/msi/*.msi
                   retention-days: 5
 
+            - name: Generate manifest.json with platform-specific download links
+              if: github.ref == 'refs/heads/main' 
+              run: |
+                jq --arg windows "$DOWNLOAD_LINK_WINDOWS" \
+                  --arg mac "$DOWNLOAD_LINK_MAC" \
+                  --arg linux "$DOWNLOAD_LINK_LINUX" \
+                '.download_links = { "Windows": $windows, "Mac": $mac, "Linux": $linux }' \
+                manifest.json > updated_manifest.json
+                mv updated_manifest.json public/manifest.json
+
+            - name: Commit and push updated manifest.json
+              if: github.ref == 'refs/heads/main'  # Only runs on the main branch
+              run: |
+                git config --global user.name "github-actions[bot]"
+                git config --global user.email "github-actions[bot]@users.noreply.github.com"
+                git add public/manifest.json
+                git commit -m "Update manifest.json with platform-specific download links"
+                git push
+           
             - name: Post Download Links for Artifacts
               if: success()
               uses: actions/github-script@v7.0.1

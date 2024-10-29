@@ -12,9 +12,11 @@
       "purpose": "any maskable"
     }
   ],
-  "permissions": [
-    "unlimitedStorage",
-    "fullscreen"
-  ],
-  "orientation": "portrait"
+  "permissions": ["unlimitedStorage", "fullscreen"],
+  "orientation": "portrait",
+  "download_links": {
+    "Windows": "${DOWNLOAD_LINK_WINDOWS}",
+    "MacOS": "${DOWNLOAD_LINK_MAC}",
+    "Linux": "${DOWNLOAD_LINK_LINUX}"
+  }
 }
