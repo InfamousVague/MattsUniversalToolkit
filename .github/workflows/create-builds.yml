@@ -110,7 +110,6 @@ jobs:
                 mv updated_manifest.json public/manifest.json
 
             - name: Commit and push updated manifest.json
-              if: github.ref == 'refs/heads/main'  # Only runs on the main branch
               run: |
                 git config --global user.name "github-actions[bot]"
                 git config --global user.email "github-actions[bot]@users.noreply.github.com"
