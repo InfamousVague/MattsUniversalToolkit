@@ -112,6 +112,7 @@ jobs:
               uses: actions/github-script@v7.0.1
               with:
                   script: |
+                      const core = require('@actions/core'); // Import core for setOutput
                       async function upsertComment(owner, repo, issue_number, purpose, body) {
                           const {data: comments} = await github.rest.issues.listComments(
                               {owner, repo, issue_number});
@@ -149,13 +150,14 @@ jobs:
                       console.info("Review thread message body:", body);
                       await upsertComment(owner, repo, pull_requests.number,
                           "nightly-link", body);
-                      // Store URLs in an output for later steps
-                      return { urls: body }; // Return the URLs for use in the next step
+                      core.setOutput("urls", body); // Set output for URLs
+
+            - name: Debug URLs Output
+              run: echo "${{ steps.post_links.outputs.urls }}"
 
             - name: Generate manifest.json with platform-specific download links
               run: |
                   cd static
-                  # Capture actual URLs for each platform
                   actual_windows_url=$(echo "${{ steps.post_links.outputs.urls }}" | grep -o 'https://nightly.link/[^ ]*build-windows.zip')
                   actual_mac_url=$(echo "${{ steps.post_links.outputs.urls }}" | grep -o 'https://nightly.link/[^ ]*build-macos.zip')
                   actual_linux_url=$(echo "${{ steps.post_links.outputs.urls }}" | grep -o 'https://nightly.link/[^ ]*build-ubuntu.zip')
