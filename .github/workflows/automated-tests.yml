@@ -124,7 +124,7 @@ jobs:
             contents: write
             issues: read
         concurrency:
-            group: ${{ github.workflow }}-${{ github.ref }}
+            group: deploy-gh-pages-${{ github.ref }}
             cancel-in-progress: true
         steps:
             - uses: actions/checkout@v4.2.2
