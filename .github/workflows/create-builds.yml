@@ -106,7 +106,7 @@ jobs:
                   --arg mac "$DOWNLOAD_LINK_MAC" \
                   --arg linux "$DOWNLOAD_LINK_LINUX" \
                 '.download_links = { "Windows": $windows, "Mac": $mac, "Linux": $linux }' \
-                manifest.json > updated_manifest.json
+                manifest.json
                 
             - name: Commit and push updated manifest.json
               run: |
