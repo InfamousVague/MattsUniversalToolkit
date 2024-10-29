@@ -124,7 +124,8 @@ jobs:
             contents: write
             issues: read
         concurrency:
-            group: ${{ github.workflow }}-${{ github.ref }}
+            group: deploy-gh-pages-${{ github.ref }}
+            cancel-in-progress: true
         steps:
             - uses: actions/checkout@v4.2.2
               with:
@@ -187,6 +188,9 @@ jobs:
                   ref: gh-pages
                   path: gh-pages
 
+            - name: Pull changes from gh-pages
+              run: git pull --rebase origin gh-pages
+
             - name: Generate Allure Report
               if: always()
               uses: simple-elf/allure-report-action@master
@@ -202,6 +206,9 @@ jobs:
             - name: Set a timestamp two
               id: timestampidtwo
               run: echo "timestamp=$(date --utc +%Y%m%d_%H%M%SZ)" >> "$GITHUB_OUTPUT"
+
+            - name: Pull changes from gh-pages
+              run: git pull --rebase origin gh-pages
 
             - name: Deploy report to Github Pages
               if: success()
