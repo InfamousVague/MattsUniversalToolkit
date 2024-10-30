@@ -160,7 +160,6 @@ jobs:
               run: echo "playwright_report_url=https://satellite-im.github.io/test-reports/${{ steps.timestampidone.outputs.timestamp }}/" >> "$GITHUB_OUTPUT"
 
     publish-allure-report:
-        if: always()
         needs: publish-playwright-report
         runs-on: ubuntu-latest
         permissions:
