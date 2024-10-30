@@ -35,7 +35,7 @@ jobs:
       - name: Zip the build
         run: |
           mkdir -p output
-          zip -r output/build.zip ./build  # Adjust './build' if the build output folder is different
+          zip -r output/build.zip ./build 
       
       # Step 6: Upload the ZIP file as an artifact (optional)
       - name: Upload build artifact
