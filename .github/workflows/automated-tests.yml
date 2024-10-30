@@ -145,12 +145,11 @@ jobs:
               run: echo "timestamp=$(date --utc +%Y%m%d_%H%M%SZ)" >> "$GITHUB_OUTPUT"
 
             - name: Deploy Playwright HTML report to Github Pages
-              if: github.ref == 'refs/heads/main'
+              if: always()
               uses: peaceiris/actions-gh-pages@v4
               with:
                   deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
                   external_repository: Satellite-im/test-reports
-                  keep_files: true
                   publish_branch: gh-pages
                   publish_dir: ./playwright-report
                   destination_dir: ${{ steps.timestampidone.outputs.timestamp }}
@@ -211,7 +210,7 @@ jobs:
 
             - name: Deploy report to Github Pages
               uses: peaceiris/actions-gh-pages@v4
-              if: github.ref == 'refs/heads/main'
+              if: always()
               with:
                   deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
                   external_repository: Satellite-im/test-reports
