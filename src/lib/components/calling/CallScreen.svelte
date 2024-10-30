@@ -158,7 +158,7 @@
         /// HACK: To make sure the video elements are loaded before we start the call
         if (VoiceRTCInstance.localVideoCurrentSrc && VoiceRTCInstance.remoteVideoCreator) {
             if (VoiceRTCInstance.toCall && VoiceRTCInstance.toCall.find(did => did !== "") !== undefined && $callInProgress === null) {
-                callSound = await playSound(Sounds.OutgoingCall)
+                callSound = await playSound(Sounds.OutgoingCall, { loop: true })
                 await VoiceRTCInstance.makeCall()
                 timeout = setTimeout(() => {
                     callSound?.stop()
