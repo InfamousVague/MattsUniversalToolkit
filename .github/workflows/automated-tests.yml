@@ -4,8 +4,6 @@ on:
     pull_request:
         types: [opened, synchronize, reopened, edited]
         paths-ignore:
-            - ".github/workflows/**"
-            - "!.github/workflows/automated-tests.yml"
             - ".gitignore"
             - ".prettierrc.json"
             - "PULL_REQUEST_TEMPLATE.md"
