@@ -80,6 +80,55 @@ export type CallUpdater = {
     delete: (user: string) => void
 }
 
+export type StreamMetaHandler = {
+    remove(): void
+}
+
+function handleStreamMeta(did: string, stream: MediaStream): StreamMetaHandler {
+    const audioContext = new window.AudioContext()
+    const mediaStreamSource = audioContext.createMediaStreamSource(stream)
+    const analyser = audioContext.createAnalyser()
+    analyser.fftSize = AUDIO_WINDOW_SIZE
+    analyser.smoothingTimeConstant = 0.1
+    mediaStreamSource.connect(analyser)
+    const dataArray = new Uint8Array(analyser.frequencyBinCount)
+    function volume() {
+        analyser.getByteFrequencyData(dataArray)
+        return dataArray.reduce((prev, value) => (prev && prev > value ? prev : value))
+    }
+
+    function updateMeta(did: string) {
+        let muted = stream.getTracks().find(track => !track.enabled || track.readyState === "ended") !== undefined
+        let speaking = false
+        let user = Store.getUser(did)
+        let current = get(user)
+        let vol = volume()
+        console.log("incoming volume ", vol)
+        if (!muted && vol > VOLUME_THRESHOLD) {
+            speaking = true
+        }
+        if (current.media.is_muted !== muted || current.media.is_playing_audio !== speaking) {
+            user.update(u => {
+                return {
+                    ...u,
+                    media: {
+                        ...u.media,
+                        is_muted: muted,
+                        is_playing_audio: speaking,
+                    },
+                }
+            })
+        }
+    }
+    const checker = setInterval(() => updateMeta(did), 300)
+    return {
+        remove: () => {
+            analyser.disconnect()
+            clearInterval(checker)
+        },
+    }
+}
+
 export class Participant {
     did: string
     remotePeerId: string
@@ -92,7 +141,7 @@ export class Participant {
     }
 
     stream?: MediaStream
-    streamHandler?: [ReturnType<typeof setInterval>, AnalyserNode]
+    streamHandler?: StreamMetaHandler
     remove?: (user: string) => void
 
     constructor(id: string, peer: string) {
@@ -114,60 +163,18 @@ export class Participant {
         return this.remoteVoiceUser
     }
 
-    private async handleStreamMeta(stream: MediaStream) {
-        if (this.streamHandler) {
-            this.streamHandler[1].disconnect()
-            clearInterval(this.streamHandler[0] as any) // IDE is complaining for some reason
-        }
-        const audioContext = new window.AudioContext()
-        const mediaStreamSource = audioContext.createMediaStreamSource(stream)
-        const analyser = audioContext.createAnalyser()
-        analyser.fftSize = AUDIO_WINDOW_SIZE
-        analyser.smoothingTimeConstant = 0.1
-        mediaStreamSource.connect(analyser)
-        const dataArray = new Uint8Array(analyser.frequencyBinCount)
-        function volume() {
-            analyser.getByteFrequencyData(dataArray)
-            return dataArray.reduce((prev, value) => (prev && prev > value ? prev : value))
-        }
-
-        function updateMeta(did: string) {
-            let muted = stream.getTracks().find(track => !track.enabled || track.readyState === "ended") !== undefined
-            let speaking = false
-            let user = Store.getUser(did)
-            let current = get(user)
-            let vol = volume()
-            console.log("incoming volume ", vol)
-            if (!muted && vol > VOLUME_THRESHOLD) {
-                speaking = true
-            }
-            if (current.media.is_muted !== muted || current.media.is_playing_audio !== speaking) {
-                user.update(u => {
-                    return {
-                        ...u,
-                        media: {
-                            ...u.media,
-                            is_muted: muted,
-                            is_playing_audio: speaking,
-                        },
-                    }
-                })
-            }
-        }
-        const checker = setInterval(() => updateMeta(this.did), 300)
-        this.streamHandler = [checker, analyser]
-    }
-
     async handleRemoteStream(stream: MediaStream) {
-        this.handleStreamMeta(stream)
+        if (this.streamHandler) {
+            this.streamHandler.remove()
+        }
+        this.streamHandler = handleStreamMeta(this.did, stream)
         this.stream = stream
     }
 
     close() {
         this.stream?.getTracks().forEach(track => track.stop())
         if (this.streamHandler) {
-            this.streamHandler[1].disconnect()
-            clearInterval(this.streamHandler[0] as any) // IDE is complaining for some reason
+            this.streamHandler.remove()
         }
         VoiceRTCInstance.remoteVideoCreator.delete(this.did)
     }
@@ -292,6 +299,7 @@ export class VoiceRTC {
     localPeer: Peer | null = null
     toCall: string[] | null = null
     localStream: MediaStream | null = null
+    localStreamHandler?: StreamMetaHandler
     localVideoCurrentSrc: HTMLVideoElement | null = null
     remoteVideoCreator: CallUpdater
 
@@ -658,6 +666,10 @@ export class VoiceRTC {
                 }
             }
             this.localStream = await this.createLocalStream()
+            if (this.localStreamHandler) {
+                this.localStreamHandler.remove()
+            }
+            this.localStreamHandler = handleStreamMeta(get(Store.state.user).key, this.localStream)
             if (this.localVideoCurrentSrc) {
                 this.localVideoCurrentSrc.srcObject = this.localStream
                 await this.localVideoCurrentSrc.play()
