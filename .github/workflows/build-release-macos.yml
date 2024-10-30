@@ -1,9 +1,9 @@
 name: Build MacOS Release
+
 on:
-    push:
-        branches:
-            - main
-    workflow_dispatch:
+  push:
+    tags:
+      - "*"
 
 jobs:
     build-macos-release:
@@ -42,7 +42,6 @@ jobs:
 
             - name: Github Release MacOS
               uses: softprops/action-gh-release@v2
-              if: startsWith(github.ref, 'refs/tags/')
               with:
                   files: |
                       src-tauri/target/release/bundle/dmg/*.dmg
