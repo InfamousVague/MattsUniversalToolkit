@@ -560,12 +560,14 @@ export class VoiceRTC {
                         }
                     })
                 }
-                await new Promise(resolve => timeOuts.push(setTimeout(resolve, 5000)))
+                await new Promise(resolve => timeOuts.push(setTimeout(resolve, 3000)))
                 if (connected) {
                     // If connection has been made let it ring for 30 sec.
                     await new Promise(resolve => timeOuts.push(setTimeout(resolve, 30000)))
                     conn.close()
                     break
+                } else {
+                    conn = undefined
                 }
             } catch (error) {
                 attempts += 1
