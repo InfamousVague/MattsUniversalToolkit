@@ -1,9 +1,9 @@
 name: Build Linux Release
+
 on:
-    push:
-        branches:
-            - main
-    workflow_dispatch:
+  push:
+    tags:
+      - "*"
 
 jobs:
     build-linux-release:
@@ -46,7 +46,6 @@ jobs:
 
             - name: Github Release Linux
               uses: softprops/action-gh-release@v2
-              if: startsWith(github.ref, 'refs/tags/')
               with:
                   files: |
                       src-tauri/target/release/bundle/deb/*.deb
