@@ -1,0 +1,88 @@
+name: Build iOS
+
+on:
+    push:
+        branches:
+            - main
+    workflow_dispatch:
+
+jobs:
+    build:
+        runs-on: macos-13
+        name: Build iOS app
+        steps:
+            - name: Checkout source
+              uses: actions/checkout@v4.2.2
+
+            - name: Set up keychain and import certificate
+              env:
+                  APPLE_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
+                  APPLE_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PWD }}
+              run: |
+                  # Create a temporary keychain
+                  security create-keychain -p "" build.keychain
+                  security set-keychain-settings -lut 21600 build.keychain
+
+                  # Import the certificate
+                  echo "$APPLE_CERTIFICATE" | base64 --decode > certificate.p12
+                  security import certificate.p12 -k build.keychain -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+
+                  # Set the keychain as default
+                  security list-keychains -d user -s build.keychain
+                  security unlock-keychain -p "" build.keychain
+
+                  # Give the codesign tool access to the keychain
+                  security set-key-partition-list -S apple-tool:,apple: -k "" build.keychain
+
+            - name: Set up XCode
+              uses: maxim-lobanov/setup-xcode@v1
+              with:
+                  xcode-version: 14.3.1
+
+            - name: setup node
+              uses: actions/setup-node@v4.0.4
+              with:
+                  node-version: lts/*
+
+            - name: Install app dependencies
+              run: npm install
+
+            - name: Build project app
+              run: npm run build
+
+            - name: Capacitor update
+              run: npx cap update
+
+            - name: Capacitor copy
+              run: npx cap copy
+
+            - name: Build project
+              env:
+                  APPLE_TEAM_ID: ${{ secrets.MACOS_NOTARIZATION_TEAM_ID }}
+                  APPLE_SIGNING_IDENTITY: ${{ secrets.MACOS_CERTIFICATE_NAME }}
+              run: xcodebuild -workspace './ios/App/App.xcworkspace' -scheme App -destination generic/platform=iOS -archivePath App.xcarchive archive DEVELOPMENT_TEAM="$APPLE_TEAM_ID" CODE_SIGN_IDENTITY="$APPLE_SIGNING_IDENTITY"
+
+            - name: 🍻 Assemble IPA
+              run: xcodebuild archive -archivePath App.xcarchive -exportArchive -exportOptionsPlist ./archive.plist -exportPath output -allowProvisioningUpdates
+
+            - name: Notarize App with Apple
+              env:
+                  APPLE_ID: ${{ secrets.MACOS_NOTARIZATION_APPLE_ID }}
+                  APPLE_PASSWORD: ${{ secrets.MACOS_NOTARIZATION_PWD }}
+                  APPLE_TEAM_ID: ${{ secrets.MACOS_NOTARIZATION_TEAM_ID }}
+              run: |
+                  xcrun altool --notarize-app -f build/YourApp.ipa \
+                           --primary-bundle-id "com.yourapp.bundle" \
+                           -u "$APPLE_ID" \
+                           -p "$APPLE_PASSWORD"
+
+            - name: Upload release bundle
+              uses: actions/upload-artifact@v3
+              with:
+                  name: app-ios
+                  path: output/
+                  retention-days: 60
+
+            - name: Remove temporary keychain
+              run: |
+                  security delete-keychain build.keychain
