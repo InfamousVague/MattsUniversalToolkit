@@ -52,9 +52,9 @@ export const INTEGRATIONS = {
 }
 
 export const DOWNLOAD_LINKS = {
-    Android: "https://cdn.deepspaceshipping.co/release/2.0.0/Uplink_2.0.0.apk",
-    iOS: "https://cdn.deepspaceshipping.co/release/2.0.0/Uplink.ipa",
-    Windows: "https://cdn.deepspaceshipping.co/release/2.0.0/Uplink.exe",
-    Mac: "https://cdn.deepspaceshipping.co/release/2.0.0/Uplink_2.0.0_aarch64.dmg",
-    Linux: "https://cdn.deepspaceshipping.co/release/2.0.0/Uplink.AppImage",
+    Android: "https://github.com/Satellite-im/UplinkWeb/releases/download/v2.0.0/app-debug.apk",
+    iOS: "https://github.com/Satellite-im/UplinkWeb/releases/download/v2.0.0/Uplink.ipa",
+    Windows: "https://github.com/Satellite-im/UplinkWeb/releases/download/v2.0.0/Uplink_2.0.0_x64_en-US.msi",
+    Mac: "https://github.com/Satellite-im/UplinkWeb/releases/download/v2.0.0/Uplink_2.0.0_aarch64.dmg",
+    Linux: "https://github.com/Satellite-im/UplinkWeb/releases/download/v2.0.0/Uplink_2.0.0_amd64.deb",
 }
