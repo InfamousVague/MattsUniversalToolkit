@@ -1,0 +1,84 @@
+name: Build iOS App
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: macos-latest 
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1.197.0
+        with:
+          ruby-version: '3.3'
+
+      - name: Install CocoaPods
+        working-directory: ios/App 
+        run: |
+          npm i
+          gem install cocoapods
+          pod install
+
+      - name: Import Signing Certificate
+        env:
+          MACOS_CERTIFICATE_PWD: ${{ secrets.MACOS_CERTIFICATE_PWD }} 
+          MACOS_KEYCHAIN_PASSWORD: ${{ secrets.MACOS_KEYCHAIN_PASSWORD }} 
+          MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
+        run: |
+          # Create the keychain
+          security create-keychain -p "$MACOS_KEYCHAIN_PASSWORD" build.keychain
+          
+          # Unlock the keychain
+          security unlock-keychain -p "$MACOS_KEYCHAIN_PASSWORD" build.keychain
+          
+          # Set the keychain as the default
+          security list-keychains -s build.keychain
+          
+          # Import the certificate directly from the environment variable
+          security import <(echo "$MACOS_CERTIFICATE" | base64 --decode) \
+            -f pkcs12 \
+            -k build.keychain \
+            -P "$MACOS_CERTIFICATE_PWD" \
+            -T /usr/bin/codesign || { echo "Import failed"; exit 1; }
+          
+          # Set the key partition list
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$MACOS_KEYCHAIN_PASSWORD" build.keychain
+
+      - name: Debug Provisioning Profiles
+        run: |
+          # Create the directory if it does not exist
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          
+          # List the contents of the provisioning profiles directory
+          echo "Provisioning Profiles Directory Contents:"
+          ls ~/Library/MobileDevice/Provisioning\ Profiles
+          
+          # Print the expected provisioning profile path
+          echo "Expected path for the provisioning profile:"
+          echo "~/Library/MobileDevice/Provisioning Profiles/your_provisioning_profile.mobileprovision"
+
+      - name: Download and Install Provisioning Profile
+        run: |
+          echo "${{ secrets.BUILD_PROVISION_PROFILE_BASE64 }}" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/your_provisioning_profile.mobileprovision
+
+      - name: Build the iOS App
+        working-directory: ios/App
+        run: |
+          xcodebuild -workspace App.xcworkspace -scheme App -sdk iphoneos -configuration Release archive -archivePath ${{ github.workspace }}/build/App.xcarchive DEVELOPMENT_TEAM="${{ secrets.MACOS_NOTARIZATION_TEAM_ID }}" -allowProvisioningUpdates
+
+      - name: Export .ipa File
+        working-directory: ios/App
+        run: |
+          xcodebuild -exportArchive -archivePath ${{ github.workspace }}/build/App.xcarchive -exportOptionsPlist ExportOptions.plist -exportPath ${{ github.workspace }}/build
+
+      - name: Upload .ipa to Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: App.ipa
+          path: ${{ github.workspace }}/build/*.ipa
