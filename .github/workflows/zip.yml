@@ -1,12 +1,11 @@
 name: Build and Zip
 
 on:
-    pull_request:
-        types: [opened, synchronize, reopened, edited]
-        
-    push:
-      branches:
-      - main
+  push:
+    tags:
+      - "*"
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
   build:
@@ -41,4 +40,11 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: build-zip
-          path: build.zip
+          path: target/release/build.zip
+          
+      # Step 7: Copy file to release
+      - name: Copy file to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            target/release/build.zip
