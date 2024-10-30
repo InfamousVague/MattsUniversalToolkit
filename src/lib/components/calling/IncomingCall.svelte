@@ -35,7 +35,7 @@
     Store.state.pendingCall.subscribe(async _ => {
         if (VoiceRTCInstance.incomingCallFrom && !VoiceRTCInstance.toCall && $connectionOpened) {
             if (callSound === null || callSound === undefined) {
-                callSound = await playSound(Sounds.IncomingCall)
+                callSound = await playSound(Sounds.IncomingCall, { loop: true })
             }
             pending = true
             let chat = UIStore.getChat(VoiceRTCInstance.incomingCallFrom[1].metadata.channel)
