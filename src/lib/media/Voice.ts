@@ -282,7 +282,7 @@ export class CallRoom {
 }
 
 const AUDIO_WINDOW_SIZE = 512
-const VOLUME_THRESHOLD = 10
+const VOLUME_THRESHOLD = 0
 
 export const callTimeout = writable(false)
 
