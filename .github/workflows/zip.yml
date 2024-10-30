@@ -31,15 +31,14 @@ jobs:
       - name: Run build script
         run: npm run build
 
-      # Step 5: Create a ZIP of the build
+      # Step 5: Create a single ZIP file of the build directory
       - name: Zip the build
         run: |
-          mkdir -p output
-          zip -r output/build.zip ./build 
-      
+          zip -r build.zip ./build  # Directly create build.zip in the root directory
+
       # Step 6: Upload the ZIP file as an artifact
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: build-zip
-          path: output/build.zip
+          path: build.zip
