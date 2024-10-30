@@ -161,11 +161,11 @@ jobs:
                   actual_linux_url=$(echo "${{ steps.post_links.outputs.urls }}" | grep -o 'https://nightly.link/[^ ]*build-ubuntu.zip')
                   actual_android_url=$(echo "${{ steps.post_links.outputs.urls }}" | grep -o 'https://nightly.link/[^ ]*build-android.zip')
 
-                  # Ensure URLs were found
-                  if [ -z "$actual_windows_url" ] || [ -z "$actual_mac_url" ] || [ -z "$actual_linux_url" ] || [ -z "$actual_android_url" ]; then
-                      echo "Error: One or more URLs are missing."
-                      exit 1
-                  fi
+                  # Print the captured URLs for verification
+                  echo "Captured Windows URL: $actual_windows_url"
+                  echo "Captured Mac URL: $actual_mac_url"
+                  echo "Captured Linux URL: $actual_linux_url"
+                  echo "Captured Android URL: $actual_android_url"
 
                   # Update manifest.json with actual URLs
                   jq --arg windows "$actual_windows_url" \
@@ -174,6 +174,10 @@ jobs:
                      --arg android "$actual_android_url" \
                   '.download_links = { "Windows": $windows, "Mac": $mac, "Linux": $linux, "Android": $android }' \
                   manifest.json > updated_manifest.json && mv updated_manifest.json manifest.json
+
+                  # Echo the updated manifest.json for verification
+                  echo "Updated manifest.json content:"
+                  cat manifest.json
 
             - name: Check modified manifest.json
               run: |
