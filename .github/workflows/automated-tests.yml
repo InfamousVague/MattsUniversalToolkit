@@ -125,6 +125,8 @@ jobs:
             issues: read
         concurrency:
             group: ${{ github.workflow }}-${{ github.ref }}
+        outputs:
+            playwright_report_url: ${{ steps.comment.outputs.playwright_report_url }}
         steps:
             - uses: actions/checkout@v4.2.2
               with:
@@ -153,14 +155,9 @@ jobs:
                   publish_dir: ./playwright-report
                   destination_dir: ${{ steps.timestampidone.outputs.timestamp }}
 
-            - name: Comment PR with Playwright test results
-              if: always() && github.event_name == 'pull_request'
-              uses: mshick/add-pr-comment@v2.8.2
-              with:
-                  message: |
-                      Automated tests execution is complete! You can find the Playwright test report [here](https://satellite-im.github.io/test-reports/${{ steps.timestampidone.outputs.timestamp }}/)
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            - name: Set Playwright report URL output
+              id: comment
+              run: echo "playwright_report_url=https://satellite-im.github.io/test-reports/${{ steps.timestampidone.outputs.timestamp }}/" >> "$GITHUB_OUTPUT"
 
     publish-allure-report:
         if: always()
@@ -227,7 +224,7 @@ jobs:
               uses: mshick/add-pr-comment@v2.8.2
               with:
                   message: |
-                      Automated tests execution is complete! You can find the Allure Test Report [here](https://satellite-im.github.io/test-reports/${{ github.run_number }})
+                      Automated tests execution is complete! You can find the Playwright test report [here](${{ needs.publish-playwright-report.outputs.playwright_report_url }}) and the Allure Test Report [here](https://satellite-im.github.io/test-reports/${{ github.run_number }})
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
