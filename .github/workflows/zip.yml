@@ -1,0 +1,50 @@
+name: Build and Zip
+
+on:
+  push:
+    tags:
+      - "*"
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Check out the repository
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      # Step 2: Set up Node.js
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      # Step 3: Install dependencies
+      - name: Install dependencies
+        run: npm install
+
+      # Step 4: Build the project
+      - name: Run build script
+        run: npm run build
+
+      # Step 5: Create a single ZIP file of the build directory
+      - name: Zip the build
+        run: |
+          zip -r build.zip ./build  # Directly create build.zip in the root directory
+
+      # Step 6: Upload the ZIP file as an artifact
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-zip
+          path: target/release/build.zip
+          
+      # Step 7: Copy file to release
+      - name: Copy file to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            target/release/build.zip
