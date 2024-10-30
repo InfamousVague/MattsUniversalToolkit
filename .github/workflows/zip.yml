@@ -37,7 +37,7 @@ jobs:
           mkdir -p output
           zip -r output/build.zip ./build 
       
-      # Step 6: Upload the ZIP file as an artifact (optional)
+      # Step 6: Upload the ZIP file as an artifact
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
