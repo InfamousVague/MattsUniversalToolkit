@@ -152,14 +152,18 @@ jobs:
                       // Store URLs in an output for later steps
                       return { urls: body }; // Return the URLs for use in the next step
 
+            - name: Debug post_links output
+              run: echo "Captured URLs: ${{ steps.post_links.outputs.urls }}"
+
             - name: Generate manifest.json with platform-specific download links
               run: |
                   cd static
-                  # Capture actual URLs for each platform
-                  actual_windows_url=$(echo "${{ steps.post_links.outputs.urls }}" | grep -o 'https://nightly.link/[^ ]*build-windows.zip')
-                  actual_mac_url=$(echo "${{ steps.post_links.outputs.urls }}" | grep -o 'https://nightly.link/[^ ]*build-macos.zip')
-                  actual_linux_url=$(echo "${{ steps.post_links.outputs.urls }}" | grep -o 'https://nightly.link/[^ ]*build-ubuntu.zip')
-                  actual_android_url=$(echo "${{ steps.post_links.outputs.urls }}" | grep -o 'https://nightly.link/[^ ]*build-android.zip')
+                  
+                  # Capture actual URLs for each platform with default values if URLs are not found
+                  actual_windows_url=$(echo "${{ steps.post_links.outputs.urls }}" | grep -o 'https://nightly.link/[^ ]*build-windows.zip' || echo "Windows URL not found")
+                  actual_mac_url=$(echo "${{ steps.post_links.outputs.urls }}" | grep -o 'https://nightly.link/[^ ]*build-macos.zip' || echo "Mac URL not found")
+                  actual_linux_url=$(echo "${{ steps.post_links.outputs.urls }}" | grep -o 'https://nightly.link/[^ ]*build-ubuntu.zip' || echo "Linux URL not found")
+                  actual_android_url=$(echo "${{ steps.post_links.outputs.urls }}" | grep -o 'https://nightly.link/[^ ]*build-android.zip' || echo "Android URL not found")
 
                   # Print the captured URLs for verification
                   echo "Captured Windows URL: $actual_windows_url"
