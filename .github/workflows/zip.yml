@@ -34,10 +34,11 @@ jobs:
       - name: Run build script
         run: npm run build
 
-      # Step 5: Create a single ZIP file of the build directory
+      # Step 5: Create a single ZIP file in target/release
       - name: Zip the build
         run: |
-          zip -r build.zip ./build  # Directly create build.zip in the root directory
+          mkdir -p target/release
+          zip -r target/release/build.zip ./build  # Create the ZIP file directly in target/release
 
       # Step 6: Upload the ZIP file as an artifact
       - name: Upload build artifact
@@ -45,10 +46,9 @@ jobs:
         with:
           name: build-zip
           path: target/release/build.zip
-          
+
       # Step 7: Copy file to release
       - name: Copy file to release
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            target/release/build.zip
+          files: target/release/build.zip
