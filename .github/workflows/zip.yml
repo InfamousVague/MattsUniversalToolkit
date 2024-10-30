@@ -1,0 +1,45 @@
+name: Build and Zip
+
+on:
+    pull_request:
+        types: [opened, synchronize, reopened, edited]
+        
+    push:
+      branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Check out the repository
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      # Step 2: Set up Node.js
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      # Step 3: Install dependencies
+      - name: Install dependencies
+        run: npm install
+
+      # Step 4: Build the project
+      - name: Run build script
+        run: npm run build
+
+      # Step 5: Create a ZIP of the build
+      - name: Zip the build
+        run: |
+          mkdir -p output
+          zip -r output/build.zip ./build  # Adjust './build' if the build output folder is different
+      
+      # Step 6: Upload the ZIP file as an artifact (optional)
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-zip
+          path: output/build.zip
