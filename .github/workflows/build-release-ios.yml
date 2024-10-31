@@ -4,8 +4,6 @@ on:
     pull_request:
         types: [opened, synchronize, reopened, edited]
         paths-ignore:
-            - ".github/workflows/**"
-            - "!.github/workflows/automated-tests.yml"
             - ".gitignore"
             - ".prettierrc.json"
             - "PULL_REQUEST_TEMPLATE.md"
@@ -66,22 +64,25 @@ jobs:
               run: npx cap copy ios
 
             - name: Build project
+              working-directory: ios/App
               env:
                   APPLE_TEAM_ID: ${{ secrets.MACOS_NOTARIZATION_TEAM_ID }}
                   APPLE_SIGNING_IDENTITY: ${{ secrets.MACOS_CERTIFICATE_NAME }}
-              run: xcodebuild -workspace './ios/App/App.xcworkspace' -scheme App -destination generic/platform=iOS -archivePath App.xcarchive archive DEVELOPMENT_TEAM="$APPLE_TEAM_ID" CODE_SIGN_IDENTITY="$APPLE_SIGNING_IDENTITY"
+              run: xcodebuild -workspace App.xcworkspace -scheme App -destination generic/platform=iOS -archivePath App.xcarchive archive DEVELOPMENT_TEAM="$APPLE_TEAM_ID" CODE_SIGN_IDENTITY="$APPLE_SIGNING_IDENTITY"
 
             - name: 🍻 Assemble IPA
+              working-directory: ios/App
               run: xcodebuild archive -archivePath App.xcarchive -exportArchive -exportOptionsPlist ./archive.plist -exportPath output -allowProvisioningUpdates
 
             - name: Notarize App with Apple
+              working-directory: ios/App
               env:
                   APPLE_ID: ${{ secrets.MACOS_NOTARIZATION_APPLE_ID }}
                   APPLE_PASSWORD: ${{ secrets.MACOS_NOTARIZATION_PWD }}
                   APPLE_TEAM_ID: ${{ secrets.MACOS_NOTARIZATION_TEAM_ID }}
               run: |
-                  xcrun altool --notarize-app -f build/YourApp.ipa \
-                           --primary-bundle-id "com.yourapp.bundle" \
+                  xcrun altool --notarize-app -f build/Uplink.ipa \
+                           --primary-bundle-id "com.Satellite.Uplink" \
                            -u "$APPLE_ID" \
                            -p "$APPLE_PASSWORD"
 
@@ -89,7 +90,7 @@ jobs:
               uses: actions/upload-artifact@v4.4.3
               with:
                   name: app-ios
-                  path: output/
+                  path: ios/App/output/
                   retention-days: 60
 
             - name: Remove temporary keychain
