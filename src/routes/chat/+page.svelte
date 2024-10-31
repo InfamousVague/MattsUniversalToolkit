@@ -306,11 +306,9 @@
         let rejectTranser = transfer.torejectString(message.id)
         let txt = rejectTranser.split("\n")
         if (paymentType === "result") {
-            console.log($rejectedPayments)
             let result = await RaygunStoreInstance.send(chat.id, txt, [])
             result.onSuccess(res => {
                 if (getValidPaymentRequest(message.text[0])) {
-                    console.log(message, res, "resecvexd?")
                     getValidPaymentRequest(message.text[0])?.execute()
                 }
                 Store.state.paymentTracker.update(payments => {
@@ -330,10 +328,8 @@
             })
         }
         if (paymentType === "reject") {
-            console.log("REJECTED")
             let result = await RaygunStoreInstance.send(chat.id, txt, [])
             result.onSuccess(res => {
-                console.log(message, res, "resecvexd?")
                 Store.state.paymentTracker.update(payments => {
                     // Check if any PaymentTracker object has the same messageId
                     const alreadyRejected = payments.some(payment => payment.messageId === message.id)
@@ -378,6 +374,27 @@
             }
         }, 500)
     })
+
+    function checkForActiveRequest(message, messageLine) {
+        const idMatch = messageLine.match(/^\/reject\s([a-f0-9-]{36})$/)
+        if (idMatch) {
+            const messageId = idMatch[1] // Extracted ID
+
+            let wasAdded = false
+            Store.state.paymentTracker.update(payments => {
+                const alreadyRejected = payments.some(payment => payment.messageId === messageId)
+
+                if (!alreadyRejected) {
+                    wasAdded = true
+                    return [...payments, { messageId, senderId: message.details.origin, rejectedPayment: false }]
+                }
+                return payments
+            })
+
+            return wasAdded
+        }
+        return false
+    }
 
     function getPinned(conversation: ConversationMessages | undefined): MessageType[] {
         if (!conversation) return []
@@ -798,14 +815,23 @@
                                                     <Input hook="chat-message-edit-input-{editing_message}" alt bind:value={editing_text} autoFocus rich on:enter={_ => edit_message(message.id, editing_text ? editing_text : "")} />
                                                 {:else}
                                                     {#each message.text as line}
-                                                        {#if line.includes("/reject")}
-                                                            <!-- Display message for rejected payment -->
-                                                            <Text hook="text-chat-message" markdown={"Payment Rejected"} appearance={group.details.remote ? Appearance.Default : Appearance.Alt} />
+                                                        {#if line.startsWith("/reject")}
+                                                            {#if $own_user.key !== message.details.origin}
+                                                                <Text hook="text-chat-message" markdown={"Payment Rejected"} appearance={group.details.remote ? Appearance.Default : Appearance.Alt} />
+                                                            {/if}
+                                                            {#if $own_user.key === message.details.origin}
+                                                                <Text hook="text-chat-message" markdown={"You canceled"} appearance={group.details.remote ? Appearance.Default : Appearance.Alt} />
+                                                            {/if}
                                                         {:else if getValidPaymentRequest(line) !== undefined}
                                                             {#if !$rejectedPayments.find(payments => payments.messageId === message.id)}
                                                                 {#if $own_user.key !== message.details.origin}
-                                                                    <Button hook="text-chat-message" class="send_coin" text="Send Coin" on:click={async () => getValidPaymentRequest(line)?.execute()}></Button>
+                                                                    <Button hook="text-chat-message" class="send_coin" text="Send Coin" on:click={async () => getValidPaymentRequest(line, message.id)?.execute()}></Button>
                                                                     <Button hook="text-chat-message" text="Reject Coin" appearance={Appearance.Error} on:click={async () => sendPaymentMessage(message, "reject")}>
+                                                                        <Icon icon={Shape.XMark}></Icon>
+                                                                    </Button>
+                                                                {:else if !checkForActiveRequest(message, line)}
+                                                                    <Button hook="text-chat-message" class="send_coin" text="Sent request of ''"></Button>
+                                                                    <Button hook="text-chat-message" text="cancel request" appearance={Appearance.Error} on:click={async () => sendPaymentMessage(message, "reject")}>
                                                                         <Icon icon={Shape.XMark}></Icon>
                                                                     </Button>
                                                                 {:else}
@@ -815,7 +841,7 @@
                                                                     </Button>
                                                                 {/if}
                                                             {:else}
-                                                                {#if $own_user.key !== message.details.origin}
+                                                                {#if $own_user.key !== message.details.origin && !checkForActiveRequest(message, line)}
                                                                     <Button hook="text-chat-message" disabled text={"Payment Declined"} appearance={Appearance.Error} />
                                                                 {:else}
                                                                     <Button hook="text-chat-message" disabled text={"Canceled request"} appearance={Appearance.Error} />

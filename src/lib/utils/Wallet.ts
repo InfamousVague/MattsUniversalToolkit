@@ -508,7 +508,7 @@ export class Transfer {
     }
 }
 
-export function getValidPaymentRequest(msg: string): Transfer | undefined {
+export function getValidPaymentRequest(msg: string, msgId?: string): Transfer | undefined {
     let requestCmd = "/request"
     let rejectCmd = "/reject"
     if (msg.startsWith(requestCmd)) {
