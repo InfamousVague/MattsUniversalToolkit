@@ -98,7 +98,7 @@ function handleStreamMeta(did: string, stream: MediaStream): StreamMetaHandler {
     }
 
     function updateMeta(did: string) {
-        let muted = stream.getTracks().find(track => !track.enabled || track.readyState === "ended") !== undefined
+        let muted = stream.getAudioTracks().find(track => !track.enabled || track.readyState === "ended") !== undefined
         let speaking = false
         let user = Store.getUser(did)
         let current = get(user)
@@ -108,7 +108,6 @@ function handleStreamMeta(did: string, stream: MediaStream): StreamMetaHandler {
             speaking = true
         }
         if (current.media.is_muted !== muted || current.media.is_playing_audio !== speaking) {
-            console.log("updating meta for ", did, get(user))
             user.update(u => {
                 return {
                     ...u,
@@ -121,6 +120,7 @@ function handleStreamMeta(did: string, stream: MediaStream): StreamMetaHandler {
             })
         }
     }
+    console.log("init stream listener")
     const checker = setInterval(() => updateMeta(did), 300)
     return {
         remove: () => {
@@ -749,6 +749,9 @@ export class VoiceRTC {
         }
         if (this.localStream) this.localStream.getTracks().forEach(track => track.stop())
         this.localStream = null
+        if (this.localStreamHandler) {
+            this.localStreamHandler.remove()
+        }
 
         this.call?.room.leave()
         this.call = null
