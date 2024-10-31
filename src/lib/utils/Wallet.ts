@@ -460,12 +460,14 @@ export class Transfer {
     amount: bigint
     toAddress: string
     amountPreview: string
+    id: string
 
     constructor() {
         this.asset = { kind: AssetType.None, id: "" }
         this.amount = BigInt(0)
         this.toAddress = ""
         this.amountPreview = ""
+        this.id = ""
     }
 
     isValid(): boolean {
@@ -489,6 +491,11 @@ export class Transfer {
         return `/request ${transfer}`
     }
 
+    torejectString(id: string) {
+        let transfer = JSON.stringify(this, (k, v) => (k === "amount" && typeof v === "bigint" ? v.toString() : v))
+        return `/reject ${id}`
+    }
+
     toDisplayString(): string {
         let id = this.asset.id === "n/a" ? "" : this.asset.id
         return `Send ${this.amountPreview} to ${shortenAddr(this.toAddress, 6)}`
@@ -502,9 +509,25 @@ export class Transfer {
 }
 
 export function getValidPaymentRequest(msg: string): Transfer | undefined {
-    let cmd = "/request "
-    if (msg.startsWith(cmd)) {
-        let json = msg.substring(cmd.length, msg.length)
+    let requestCmd = "/request"
+    let rejectCmd = "/reject"
+    if (msg.startsWith(requestCmd)) {
+        let json = msg.substring(requestCmd.length, msg.length)
+        let transfer = new Transfer()
+        try {
+            let parsed = JSON.parse(json, (k, v) => (k === "amount" && typeof v === "string" ? BigInt(v) : v))
+            transfer.asset = parsed.asset
+            transfer.amount = parsed.amount
+            transfer.toAddress = parsed.toAddress
+            transfer.amountPreview = parsed.amountPreview
+        } catch {
+            // if it wasn't valid json, do nothing.
+        }
+        if (transfer.asset.kind !== AssetType.None && transfer.isValid()) {
+            return transfer
+        }
+    } else if (msg.startsWith(rejectCmd)) {
+        let json = msg.substring(rejectCmd.length, msg.length)
         let transfer = new Transfer()
         try {
             let parsed = JSON.parse(json, (k, v) => (k === "amount" && typeof v === "string" ? BigInt(v) : v))

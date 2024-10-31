@@ -411,6 +411,12 @@ export type Transaction = {
     note: string
 }
 
+export type PaymentTracker = {
+    messageId: string
+    senderId: string
+    rejectedPayment: boolean
+}
+
 export type Keybind = {
     action: KeybindAction
     key: string

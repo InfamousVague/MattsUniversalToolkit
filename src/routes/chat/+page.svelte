@@ -46,7 +46,7 @@
     import FileUploadPreview from "$lib/elements/FileUploadPreview.svelte"
     import TextDocument from "$lib/components/messaging/embeds/TextDocument.svelte"
     import StoreResolver from "$lib/components/utils/StoreResolver.svelte"
-    import { getValidPaymentRequest } from "$lib/utils/Wallet"
+    import { getValidPaymentRequest, Transfer } from "$lib/utils/Wallet"
     import { onMount } from "svelte"
     import PinnedMessages from "$lib/components/messaging/PinnedMessages.svelte"
     import { MessageEvent } from "warp-wasm"
@@ -63,6 +63,7 @@
     let contentAsideOpen = false
     let showBrowseFilesModal = false
     let clipboardWrite = false
+    // const user = get(Store.state.user)
 
     const checkClipboardPermission = async () => {
         try {
@@ -299,15 +300,56 @@
 
     $: rejectedPayments = Store.state.paymentTracker
 
-    function rejectPaymentRequest(messageId: string) {
-        Store.state.paymentTracker.update(payments => {
-            if (!payments.includes(messageId)) {
-                return [...payments, messageId]
-            } else {
-                console.log(`MessageId ${messageId} is already in the rejected payments list`)
-                return payments
-            }
-        })
+    async function sendPaymentMessage(message: MessageType, paymentType: string) {
+        let transfer = new Transfer()
+        let chat = get(Store.state.activeChat)
+        let rejectTranser = transfer.torejectString(message.id)
+        let txt = rejectTranser.split("\n")
+        if (paymentType === "result") {
+            console.log($rejectedPayments)
+            let result = await RaygunStoreInstance.send(chat.id, txt, [])
+            result.onSuccess(res => {
+                if (getValidPaymentRequest(message.text[0])) {
+                    console.log(message, res, "resecvexd?")
+                    getValidPaymentRequest(message.text[0])?.execute()
+                }
+                Store.state.paymentTracker.update(payments => {
+                    // Check if any PaymentTracker object has the same messageId
+                    const alreadyRejected = payments.some(payment => payment.messageId === message.id)
+
+                    if (!alreadyRejected) {
+                        // Add a new PaymentTracker object
+                        return [...payments, { messageId: message.id, senderId: message.details.origin, rejectedPayment: false }]
+                    } else {
+                        console.log(`MessageId ${message.id} is already in the rejected payments list`)
+                        return payments // No changes
+                    }
+                })
+                transfer.toCmdString()
+                ConversationStore.addPendingMessages(chat.id, res.message, txt)
+            })
+        }
+        if (paymentType === "reject") {
+            console.log("REJECTED")
+            let result = await RaygunStoreInstance.send(chat.id, txt, [])
+            result.onSuccess(res => {
+                console.log(message, res, "resecvexd?")
+                Store.state.paymentTracker.update(payments => {
+                    // Check if any PaymentTracker object has the same messageId
+                    const alreadyRejected = payments.some(payment => payment.messageId === message.id)
+
+                    if (!alreadyRejected) {
+                        // Add a new PaymentTracker object
+                        return [...payments, { messageId: message.id, senderId: message.details.origin, rejectedPayment: true }]
+                    } else {
+                        console.log(`MessageId ${message.id} is already in the rejected payments list`)
+                        return payments // No changes
+                    }
+                })
+                transfer.torejectString(message.id)
+                ConversationStore.addPendingMessages(chat.id, res.message, txt)
+            })
+        }
     }
 
     let activeCallInProgress = false
@@ -756,15 +798,30 @@
                                                     <Input hook="chat-message-edit-input-{editing_message}" alt bind:value={editing_text} autoFocus rich on:enter={_ => edit_message(message.id, editing_text ? editing_text : "")} />
                                                 {:else}
                                                     {#each message.text as line}
-                                                        {#if getValidPaymentRequest(line) != undefined}
-                                                            {#if !$rejectedPayments.find(id => id === message.id)}
-                                                                <Button hook="text-chat-message" class="send_coin" text={getValidPaymentRequest(line)?.toDisplayString()} on:click={async () => getValidPaymentRequest(line)?.execute()}
-                                                                ></Button>
-                                                                <Button hook="text-chat-message" text={$_("payments.decline")} appearance={Appearance.Error} on:click={async () => rejectPaymentRequest(message.id)}>
-                                                                    <Icon icon={Shape.XMark}></Icon>
-                                                                </Button>
+                                                        {#if line.includes("/reject")}
+                                                            <!-- Display message for rejected payment -->
+                                                            <Text hook="text-chat-message" markdown={"Payment Rejected"} appearance={group.details.remote ? Appearance.Default : Appearance.Alt} />
+                                                        {:else if getValidPaymentRequest(line) !== undefined}
+                                                            {#if !$rejectedPayments.find(payments => payments.messageId === message.id)}
+                                                                {#if $own_user.key !== message.details.origin}
+                                                                    <Button hook="text-chat-message" class="send_coin" text="Send Coin" on:click={async () => getValidPaymentRequest(line)?.execute()}></Button>
+                                                                    <Button hook="text-chat-message" text="Reject Coin" appearance={Appearance.Error} on:click={async () => sendPaymentMessage(message, "reject")}>
+                                                                        <Icon icon={Shape.XMark}></Icon>
+                                                                    </Button>
+                                                                {:else}
+                                                                    <Button hook="text-chat-message" class="send_coin" text="Sent request of ''"></Button>
+                                                                    <Button hook="text-chat-message" text="cancel request" appearance={Appearance.Error} on:click={async () => sendPaymentMessage(message, "reject")}>
+                                                                        <Icon icon={Shape.XMark}></Icon>
+                                                                    </Button>
+                                                                {/if}
                                                             {:else}
-                                                                <Button hook="text-chat-message" disabled text={$_("payments.payment_declined")} appearance={Appearance.Error} />
+                                                                {#if $own_user.key !== message.details.origin}
+                                                                    <Button hook="text-chat-message" disabled text={"Payment Declined"} appearance={Appearance.Error} />
+                                                                {:else}
+                                                                    <Button hook="text-chat-message" disabled text={"Canceled request"} appearance={Appearance.Error} />
+                                                                {/if}
+                                                                <!-- <Button hook="text-chat-message" disabled text={$_("payments.payment_declined")} appearance={Appearance.Error} /> -->
+                                                                <!-- <Text hook="text-chat-message" markdown={"USER PAYMENT"} appearance={group.details.remote ? Appearance.Default : Appearance.Alt} /> -->
                                                             {/if}
                                                         {:else if !line.includes(tempCDN)}
                                                             <Text hook="text-chat-message" markdown={line} appearance={group.details.remote ? Appearance.Default : Appearance.Alt} />
