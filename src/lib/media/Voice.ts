@@ -120,7 +120,6 @@ function handleStreamMeta(did: string, stream: MediaStream): StreamMetaHandler {
             })
         }
     }
-    console.log("init stream listener")
     const checker = setInterval(() => updateMeta(did), 300)
     return {
         remove: () => {
