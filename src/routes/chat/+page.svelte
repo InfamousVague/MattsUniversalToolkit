@@ -816,11 +816,12 @@
                                                 {:else}
                                                     {#each message.text as line}
                                                         {#if line.startsWith("/reject")}
-                                                            {#if $own_user.key !== message.details.origin}
-                                                                <Text hook="text-chat-message" markdown={"Payment Rejected"} appearance={group.details.remote ? Appearance.Default : Appearance.Alt} />
-                                                            {/if}
-                                                            {#if $own_user.key === message.details.origin}
-                                                                <Text hook="text-chat-message" markdown={"You canceled"} appearance={group.details.remote ? Appearance.Default : Appearance.Alt} />
+                                                            {#if !checkForActiveRequest(message, line)}
+                                                                {#if $own_user.key !== message.details.origin}
+                                                                    <Text hook="text-chat-message" markdown={"Payment Rejected"} appearance={group.details.remote ? Appearance.Default : Appearance.Alt} />
+                                                                {:else}
+                                                                    <Text hook="text-chat-message" markdown={"You canceled"} appearance={group.details.remote ? Appearance.Default : Appearance.Alt} />
+                                                                {/if}
                                                             {/if}
                                                         {:else if getValidPaymentRequest(line) !== undefined}
                                                             {#if !$rejectedPayments.find(payments => payments.messageId === message.id)}
