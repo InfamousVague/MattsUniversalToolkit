@@ -108,6 +108,7 @@ function handleStreamMeta(did: string, stream: MediaStream): StreamMetaHandler {
             speaking = true
         }
         if (current.media.is_muted !== muted || current.media.is_playing_audio !== speaking) {
+            console.log("updating meta for ", did, get(user))
             user.update(u => {
                 return {
                     ...u,
