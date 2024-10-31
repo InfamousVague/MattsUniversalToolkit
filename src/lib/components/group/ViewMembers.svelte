@@ -21,6 +21,16 @@
     let friends: User[] = [] // Initialize friends as an empty array
 
     function update_members(user: User) {
+        if (user.key === activeChat.creator) {
+            Store.addToastNotification(new ToastMessage("", `You can not remove the group creator`, 2))
+            members = members
+            return
+        }
+        if (members.length < 3) {
+            Store.addToastNotification(new ToastMessage("", `A group can not exist with one person`, 2))
+            members = members
+            return
+        }
         let group_members = [...members]
 
         if (group_members.includes(user)) {
@@ -34,12 +44,12 @@
     }
 
     function remove_member(user: User) {
-        if (members.length < 3) {
-            Store.addToastNotification(new ToastMessage("", `A group can not exist with one person`, 2))
-            return
-        }
         if (user.key === activeChat.creator) {
             Store.addToastNotification(new ToastMessage("", `You can not remove the group creator`, 2))
+            return
+        }
+        if (members.length < 3) {
+            Store.addToastNotification(new ToastMessage("", `A group can not exist with one person`, 2))
             return
         }
 
