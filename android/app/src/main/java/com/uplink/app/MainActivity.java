@@ -1,4 +1,4 @@
-package com.uplink.app;
+package im.satellite.core.mobile;
 
 import com.getcapacitor.BridgeActivity;
 
