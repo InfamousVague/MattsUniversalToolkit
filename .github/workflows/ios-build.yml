@@ -1,6 +1,9 @@
 name: Build iOS App
 
 on:
+  pull_request:
+      types: [opened, synchronize, reopened, edited]
+      
   push:
     branches:
       - main
@@ -61,7 +64,7 @@ jobs:
           
           # Print the expected provisioning profile path
           echo "Expected path for the provisioning profile:"
-          echo "~/Library/MobileDevice/Provisioning Profiles/your_provisioning_profile.mobileprovision"
+          echo "~/Library/MobileDevice/Provisioning Profiles/satelliteprovisioning.mobileprovision"
 
       - name: Download and Install Provisioning Profile
         run: |
