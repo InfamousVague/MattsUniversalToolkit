@@ -1,10 +1,10 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace "im.satellite.core.mobile"
+    namespace "com.satellite.uplink.com"
     compileSdk rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "im.satellite.core.mobile"
+        applicationId "com.satellite.uplink.com"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
