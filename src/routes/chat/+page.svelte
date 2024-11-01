@@ -63,7 +63,6 @@
     let contentAsideOpen = false
     let showBrowseFilesModal = false
     let clipboardWrite = false
-    // const user = get(Store.state.user)
 
     const checkClipboardPermission = async () => {
         try {
@@ -312,15 +311,13 @@
                     getValidPaymentRequest(message.text[0])?.execute()
                 }
                 Store.state.paymentTracker.update(payments => {
-                    // Check if any PaymentTracker object has the same messageId
                     const alreadyRejected = payments.some(payment => payment.messageId === message.id)
 
                     if (!alreadyRejected) {
-                        // Add a new PaymentTracker object
                         return [...payments, { messageId: message.id, senderId: message.details.origin, rejectedPayment: false }]
                     } else {
                         console.log(`MessageId ${message.id} is already in the rejected payments list`)
-                        return payments // No changes
+                        return payments
                     }
                 })
                 transfer.toCmdString()
@@ -331,15 +328,13 @@
             let result = await RaygunStoreInstance.send(chat.id, txt, [])
             result.onSuccess(res => {
                 Store.state.paymentTracker.update(payments => {
-                    // Check if any PaymentTracker object has the same messageId
                     const alreadyRejected = payments.some(payment => payment.messageId === message.id)
 
                     if (!alreadyRejected) {
-                        // Add a new PaymentTracker object
                         return [...payments, { messageId: message.id, senderId: message.details.origin, rejectedPayment: true }]
                     } else {
                         console.log(`MessageId ${message.id} is already in the rejected payments list`)
-                        return payments // No changes
+                        return payments
                     }
                 })
                 transfer.torejectString(message.id)
@@ -375,10 +370,10 @@
         }, 500)
     })
 
-    function checkForActiveRequest(message, messageLine) {
+    function checkForActiveRequest(message: MessageType, messageLine: string) {
         const idMatch = messageLine.match(/^\/reject\s([a-f0-9-]{36})$/)
         if (idMatch) {
-            const messageId = idMatch[1] // Extracted ID
+            const messageId = idMatch[1]
 
             let wasAdded = false
             Store.state.paymentTracker.update(payments => {
@@ -841,14 +836,10 @@
                                                                         <Icon icon={Shape.XMark}></Icon>
                                                                     </Button>
                                                                 {/if}
+                                                            {:else if $own_user.key !== message.details.origin && checkForActiveRequest(message, line)}
+                                                                <Button hook="text-chat-message" disabled text={"Payment Declined"} appearance={Appearance.Error} />
                                                             {:else}
-                                                                {#if $own_user.key !== message.details.origin && !checkForActiveRequest(message, line)}
-                                                                    <Button hook="text-chat-message" disabled text={"Payment Declined"} appearance={Appearance.Error} />
-                                                                {:else}
-                                                                    <Button hook="text-chat-message" disabled text={"Canceled request"} appearance={Appearance.Error} />
-                                                                {/if}
-                                                                <!-- <Button hook="text-chat-message" disabled text={$_("payments.payment_declined")} appearance={Appearance.Error} /> -->
-                                                                <!-- <Text hook="text-chat-message" markdown={"USER PAYMENT"} appearance={group.details.remote ? Appearance.Default : Appearance.Alt} /> -->
+                                                                <Button hook="text-chat-message" disabled text={"Canceled request"} appearance={Appearance.Error} />
                                                             {/if}
                                                         {:else if !line.includes(tempCDN)}
                                                             <Text hook="text-chat-message" markdown={line} appearance={group.details.remote ? Appearance.Default : Appearance.Alt} />
@@ -1168,8 +1159,6 @@
             }
         }
         .payment_buttons .button .error {
-            // display: inline-flex;
-            // max-width: fit-content;
             padding-top: var(--gap-more);
         }
     }
