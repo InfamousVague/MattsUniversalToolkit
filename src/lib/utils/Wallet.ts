@@ -533,9 +533,7 @@ export function getValidPaymentRequest(msg: string, msgId?: string): Transfer | 
             transfer.amount = parsed.amount
             transfer.toAddress = parsed.toAddress
             transfer.amountPreview = parsed.amountPreview
-        } catch {
-            // if it wasn't valid json, do nothing.
-        }
+        } catch {}
         if (transfer.asset.kind !== AssetType.None && transfer.isValid()) {
             return transfer
         }
