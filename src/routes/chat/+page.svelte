@@ -5,11 +5,26 @@
     import { animationDuration } from "$lib/globals/animations"
     import { slide } from "svelte/transition"
     import { Chatbar, Sidebar, Topbar, Profile } from "$lib/layouts"
-    import { ImageEmbed, ChatPreview, Conversation, Message, MessageGroup, MessageReactions, MessageReplyContainer, ProfilePicture, Modal, ProfilePictureMany, ChatFilter, ContextMenu, EmojiGroup } from "$lib/components"
+    import {
+        ImageEmbed,
+        ChatPreview,
+        Conversation,
+        Message as MessageComponent,
+        MessageGroup,
+        MessageReactions,
+        MessageReplyContainer,
+        ProfilePicture,
+        Modal,
+        ProfilePictureMany,
+        ChatFilter,
+        ContextMenu,
+        EmojiGroup,
+        MessageText,
+    } from "$lib/components"
     import CreateTransaction from "$lib/components/wallet/CreateTransaction.svelte"
     import { Button, FileInput, Icon, Label, Text } from "$lib/elements"
     import CallScreen from "$lib/components/calling/CallScreen.svelte"
-    import { type MessageGroup as MessageGroupType } from "$lib/types"
+    import { MessageType, type MessageGroup as MessageGroupType } from "$lib/types"
     import EncryptedNotice from "$lib/components/messaging/EncryptedNotice.svelte"
     import { Store } from "$lib/state/Store"
     import { derived, get } from "svelte/store"
@@ -21,19 +36,17 @@
     import ViewMembers from "$lib/components/group/ViewMembers.svelte"
     import Market from "$lib/components/market/Market.svelte"
     import { RaygunStoreInstance } from "$lib/wasm/RaygunStore"
-    import type { Attachment, FileInfo, Message as MessageType, User } from "$lib/types"
+    import type { Attachment, Message, User } from "$lib/types"
     import Input from "$lib/elements/Input/Input.svelte"
     import PendingMessage from "$lib/components/messaging/message/PendingMessage.svelte"
     import PendingMessageGroup from "$lib/components/messaging/PendingMessageGroup.svelte"
     import FileUploadPreview from "$lib/elements/FileUploadPreview.svelte"
     import StoreResolver from "$lib/components/utils/StoreResolver.svelte"
-    import { getValidPaymentRequest } from "$lib/utils/Wallet"
     import { onMount } from "svelte"
     import PinnedMessages from "$lib/components/messaging/PinnedMessages.svelte"
     import { MessageEvent } from "warp-wasm"
     import { debounce, getTimeAgo } from "$lib/utils/Functions"
     import Controls from "$lib/layouts/Controls.svelte"
-    import { tempCDN } from "$lib/utils/CommonVariables"
     import { checkMobile } from "$lib/utils/Mobile"
     import BrowseFiles from "../files/BrowseFiles.svelte"
     import AttachmentRenderer from "$lib/components/messaging/AttachmentRenderer.svelte"
@@ -68,7 +81,7 @@
     // TODO(Lucas): Need to improve that for chats when not necessary all users are friends
     $: loading = get(UIStore.state.chats).length > 0 && !$activeChat.users.slice(1).some(userId => $users[userId]?.name !== undefined)
 
-    $: chatName = $activeChat.kind === ChatType.DirectMessage ? $users[$activeChat.users[1]]?.name : $activeChat.name ?? $users[$activeChat.users[1]]?.name
+    $: chatName = $activeChat.kind === ChatType.DirectMessage ? $users[$activeChat.users[1]]?.name : ($activeChat.name ?? $users[$activeChat.users[1]]?.name)
     $: statusMessage = $activeChat.kind === ChatType.DirectMessage ? $users[$activeChat.users[1]]?.profile?.status_message : $activeChat.motd
     $: pinned = getPinned($conversation)
 
@@ -92,7 +105,7 @@
     let editing_text: string | undefined = undefined
     $: emojis = UIStore.getMostUsed()
     $: own_user = Store.state.user
-    let replyTo: MessageType | undefined = undefined
+    let replyTo: Message | undefined = undefined
     let reactingTo: string | undefined
     let fileUpload: FileInput
 
@@ -150,7 +163,7 @@
         })
     }
 
-    function build_context_items(message: MessageType, file?: Attachment) {
+    function build_context_items(message: Message, file?: Attachment) {
         return [
             message.pinned
                 ? {
@@ -204,11 +217,7 @@
                 : []),
             ...(message.details.origin === $own_user.key
                 ? [
-                      ...(!message.text.some(text => text.includes("giphy.com")) &&
-                      !message.text.some(text => text.includes(tempCDN)) &&
-                      !message.text.some(text => text.includes(get(_)("settings.calling.callMissed"))) &&
-                      !message.text.some(text => text.includes(get(_)("settings.calling.endCallMessage"))) &&
-                      !message.text.some(text => text.includes(get(_)("settings.calling.startCallMessage")))
+                      ...(message.type === MessageType.DEFAULT
                           ? [
                                 {
                                     id: "edit",
@@ -222,9 +231,7 @@
                                 },
                             ]
                           : []),
-                      ...(!message.text.some(text => text.includes(get(_)("settings.calling.callMissed"))) &&
-                      !message.text.some(text => text.includes(get(_)("settings.calling.endCallMessage"))) &&
-                      !message.text.some(text => text.includes(get(_)("settings.calling.startCallMessage")))
+                      ...(message.type === MessageType.DEFAULT
                           ? [
                                 {
                                     id: "delete",
@@ -305,7 +312,7 @@
         }, 500)
     })
 
-    function getPinned(conversation: ConversationMessages | undefined): MessageType[] {
+    function getPinned(conversation: ConversationMessages | undefined): Message[] {
         if (!conversation) return []
         return conversation!.messages.flatMap(g => g.messages.filter(m => m.pinned))
     }
@@ -319,7 +326,7 @@
 
     function splitUnreads(groups: MessageGroupType[]): [MessageGroupType[], MessageGroupType[]] {
         let splitMessages = (group: MessageGroupType) => {
-            return group.messages.reduce<[MessageType[], MessageType[]]>(
+            return group.messages.reduce<[Message[], Message[]]>(
                 ([read, unreads], message) => {
                     if (message.details.at > $activeChat.last_view_date) {
                         unreads.push(message)
@@ -688,11 +695,11 @@
                             {#if group.messages[0].inReplyTo}
                                 <StoreResolver value={group.messages[0].inReplyTo.details.origin} resolver={v => Store.getUser(v)} let:resolved>
                                     <MessageReplyContainer first remote={group.messages[0].details.remote} image={resolved.profile.photo.image}>
-                                        <Message reply remote={group.messages[0].inReplyTo.details.remote}>
+                                        <MessageComponent reply remote={group.messages[0].inReplyTo.details.remote}>
                                             {#each group.messages[0].inReplyTo.text as line}
                                                 <Text markdown={line} muted size={Size.Small} />
                                             {/each}
-                                        </Message>
+                                        </MessageComponent>
                                     </MessageReplyContainer>
                                 </StoreResolver>
                             {/if}
@@ -715,17 +722,17 @@
                                     {#if message.inReplyTo && idx !== 0}
                                         <StoreResolver value={message.inReplyTo.details.origin} resolver={v => Store.getUser(v)} let:resolved>
                                             <MessageReplyContainer remote={message.details.remote} image={resolved.profile.photo.image}>
-                                                <Message reply remote={message.details.remote}>
+                                                <MessageComponent reply remote={message.details.remote}>
                                                     {#each message.inReplyTo.text as line}
                                                         <Text markdown={line} muted size={Size.Small} />
                                                     {/each}
-                                                </Message>
+                                                </MessageComponent>
                                             </MessageReplyContainer>
                                         </StoreResolver>
                                     {/if}
                                     {#if message.text.length > 0 || message.attachments.length > 0}
                                         <ContextMenu hook="context-menu-chat-message" items={build_context_items(message)}>
-                                            <Message
+                                            <MessageComponent
                                                 id={message.id}
                                                 pinned={message.pinned}
                                                 slot="content"
@@ -737,18 +744,7 @@
                                                 {#if editing_message === message.id}
                                                     <Input hook="chat-message-edit-input-{editing_message}" alt bind:value={editing_text} autoFocus rich on:enter={_ => edit_message(message.id, editing_text ? editing_text : "")} />
                                                 {:else}
-                                                    {#each message.text as line}
-                                                        {#if getValidPaymentRequest(line) != undefined}
-                                                            <Button text={getValidPaymentRequest(line)?.toDisplayString()} on:click={async () => getValidPaymentRequest(line)?.execute()}></Button>
-                                                        {:else if !line.includes(tempCDN)}
-                                                            <Text hook="text-chat-message" markdown={line} appearance={group.details.remote ? Appearance.Default : Appearance.Alt} />
-                                                        {:else if line.includes(tempCDN)}
-                                                            <div class="sticker">
-                                                                <Text hook="text-chat-message" markdown={line} size={Size.Smallest} appearance={group.details.remote ? Appearance.Default : Appearance.Alt} />
-                                                            </div>
-                                                        {/if}
-                                                    {/each}
-
+                                                    <MessageText chat={$activeChat.id} texts={message.text} remote={group.details.remote} type={message.type} />
                                                     {#if message.attachments.length > 0}
                                                         <AttachmentRenderer
                                                             attachments={message.attachments}
@@ -761,7 +757,7 @@
                                                             on:share={e => (fileToShare = [e.detail, $activeChat.id])} />
                                                     {/if}
                                                 {/if}
-                                            </Message>
+                                            </MessageComponent>
                                             <svelte:fragment slot="items" let:close>
                                                 <EmojiGroup emojis={$emojis} emojiPick={emoji => reactTo(message.id, emoji, true)} close={close} on:openPicker={_ => (reactingTo = message.id)}></EmojiGroup>
                                             </svelte:fragment>
@@ -1055,9 +1051,5 @@
                 max-width: 100%;
             }
         }
-    }
-
-    .sticker {
-        width: var(--sticker-width-rendered);
     }
 </style>

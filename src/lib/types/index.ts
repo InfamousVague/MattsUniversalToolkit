@@ -15,7 +15,9 @@ import {
     CommunitySettingsRoute,
 } from "$lib/enums"
 import type { Cancellable } from "$lib/utils/CancellablePromise"
-import type { Writable } from "svelte/store"
+import { tempCDN } from "$lib/utils/CommonVariables"
+import { get, type Writable } from "svelte/store"
+import { _ } from "svelte-i18n"
 
 export interface Serialize {
     serialize(): any
@@ -359,6 +361,28 @@ export type MessageDetails = {
     remote: boolean
 }
 
+export enum MessageType {
+    DEFAULT,
+    SYSTEM, // Until warp supports some built in system message method its client sided
+    CALL_START,
+    CDN,
+}
+
+export function messageTypeFromTexts(texts: string[]): MessageType {
+    if (texts.some(text => text.includes(tempCDN))) {
+        return MessageType.CDN
+    }
+    const endCallReg = new RegExp(get(_)("settings.calling.endCallMessage", { values: { formattedEndTime: "(.*)", duration: "(.*)" } }))
+    if (texts.some(text => text.includes("giphy.com")) || texts.some(text => text.includes(get(_)("settings.calling.callMissed"))) || texts.some(text => text.match(endCallReg))) {
+        return MessageType.SYSTEM
+    }
+    const startCallReg = new RegExp(get(_)("settings.calling.startCallMessage", { values: { value: "(.*)" } }))
+    if (texts.some(text => text.match(startCallReg))) {
+        return MessageType.CALL_START
+    }
+    return MessageType.DEFAULT
+}
+
 export type Message = {
     id: string
     details: MessageDetails
@@ -367,6 +391,7 @@ export type Message = {
     attachments: Attachment[]
     text: string[]
     pinned: boolean
+    type: MessageType
 }
 
 export function mentions_user(message: Message, user: string): boolean {

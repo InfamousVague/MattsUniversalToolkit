@@ -1,5 +1,5 @@
 import { Appearance, MessageAttachmentKind, Shape } from "$lib/enums"
-import type { MessageGroup } from "$lib/types"
+import { MessageType, type MessageGroup } from "$lib/types"
 import { mock_users } from "./users"
 
 import { v4 as uuidv4 } from "uuid"
@@ -37,6 +37,7 @@ export let mock_messages: MessageGroup[] = [
                 },
                 attachments: [],
                 pinned: false,
+                type: MessageType.DEFAULT,
             },
             {
                 id: uuidv4(),
@@ -63,6 +64,7 @@ export let mock_messages: MessageGroup[] = [
                     },
                 ],
                 pinned: false,
+                type: MessageType.DEFAULT,
             },
             {
                 id: uuidv4(),
@@ -83,6 +85,7 @@ export let mock_messages: MessageGroup[] = [
                     },
                 ],
                 pinned: false,
+                type: MessageType.DEFAULT,
             },
             {
                 id: uuidv4(),
@@ -96,6 +99,7 @@ export let mock_messages: MessageGroup[] = [
                 reactions: {},
                 attachments: [],
                 pinned: false,
+                type: MessageType.DEFAULT,
             },
             {
                 id: uuidv4(),
@@ -109,6 +113,7 @@ export let mock_messages: MessageGroup[] = [
                 reactions: {},
                 attachments: [],
                 pinned: false,
+                type: MessageType.DEFAULT,
             },
         ],
     },
@@ -151,6 +156,7 @@ export let mock_messages: MessageGroup[] = [
                     },
                 ],
                 pinned: true,
+                type: MessageType.DEFAULT,
             },
             {
                 id: uuidv4(),
@@ -171,6 +177,7 @@ export let mock_messages: MessageGroup[] = [
                     },
                 ],
                 pinned: false,
+                type: MessageType.DEFAULT,
             },
             {
                 id: uuidv4(),
@@ -191,6 +198,7 @@ export let mock_messages: MessageGroup[] = [
                     },
                 ],
                 pinned: false,
+                type: MessageType.DEFAULT,
             },
             {
                 id: uuidv4(),
@@ -204,6 +212,7 @@ export let mock_messages: MessageGroup[] = [
                 reactions: {},
                 attachments: [],
                 pinned: false,
+                type: MessageType.DEFAULT,
             },
         ],
     },
@@ -235,10 +244,12 @@ export let mock_messages: MessageGroup[] = [
                     reactions: {},
                     attachments: [],
                     pinned: false,
+                    type: MessageType.DEFAULT,
                 },
                 reactions: {},
                 attachments: [],
                 pinned: true,
+                type: MessageType.DEFAULT,
             },
         ],
     },
