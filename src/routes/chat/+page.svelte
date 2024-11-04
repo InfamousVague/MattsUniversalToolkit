@@ -833,7 +833,7 @@
                                                                     </Button>
                                                                 {/if}
                                                             {:else if $own_user.key !== message.details.origin && !checkForActiveRequest(message, line)}
-                                                                <Button hook="text-chat-message" disabled text={$_("payments.you_cancelled_request")} appearance={Appearance.Error} />
+                                                                <Button hook="text-chat-message" disabled text={$_("payments.you_canceled_request")} appearance={Appearance.Error} />
                                                             {:else}
                                                                 <Button hook="text-chat-message" disabled text={$_("payments.payment_declined")} appearance={Appearance.Error} />
                                                             {/if}

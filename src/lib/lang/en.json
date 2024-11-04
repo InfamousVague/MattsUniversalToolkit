@@ -210,7 +210,7 @@
         "canceled_request": "Canceled Request",
         "network": "Network",
         "payment_declined": "Payment Declined",
-        "you_cancelled_request": "You Canceled Request",
+        "you_canceled_request": "You Canceled Request",
         "assetType": "Asset type",
         "assetName": "Asset name",
         "assetId": "Asset Id",
