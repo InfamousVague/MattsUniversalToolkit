@@ -106,20 +106,26 @@
 
         <Label hook="label-create-group-select-members" text={$_("chat.group.select")} />
         <div class="user-selection-list {embedded ? 'embedded' : ''}" data-cy="user-selection-list">
-            {#each $friends as recipient}
-                <button data-cy="single-user" class="user" on:click={() => update_recipients(recipient)}>
-                    <ProfilePicture hook="single-user-profile-picture" id={recipient.key} size={Size.Small} image={recipient.profile.photo.image} status={recipient.profile.status} />
-                    <div class="info" data-cy="single-user-info">
-                        <Text hook="single-user-name" singleLine size={Size.Medium}>
-                            {recipient.name}
-                        </Text>
-                        <Text hook="single-user-key" singleLine muted>
-                            {recipient.key}
-                        </Text>
-                    </div>
-                    <Checkbox hook="single-user-checkbox" checked={contains_recipient(recipients, recipient)} />
-                </button>
-            {/each}
+            {#if $friends.length > 0}
+                {#each $friends as recipient}
+                    <button data-cy="single-user" class="user" on:click={() => update_recipients(recipient)}>
+                        <ProfilePicture hook="single-user-profile-picture" id={recipient.key} size={Size.Small} image={recipient.profile.photo.image} status={recipient.profile.status} />
+                        <div class="info" data-cy="single-user-info">
+                            <Text hook="single-user-name" singleLine size={Size.Medium}>
+                                {recipient.name}
+                            </Text>
+                            <Text hook="single-user-key" singleLine muted>
+                                {recipient.key}
+                            </Text>
+                        </div>
+                        <Checkbox hook="single-user-checkbox" checked={contains_recipient(recipients, recipient)} />
+                    </button>
+                {/each}
+            {:else}
+                <Text hook="text-no-users" appearance={Appearance.Muted} size={Size.Small}>
+                    {$_("chat.group.noMembersAvailable")}
+                </Text>
+            {/if}
         </div>
 
         <!-- Display error message if no recipients are selected -->
@@ -130,7 +136,13 @@
         {/if}
 
         <Controls>
-            <Button hook="button-create-group" text={$_("chat.group.create")} fill disabled={nameError} on:click={onCreate}>
+            <Button
+                hook="button-create-group"
+                text={$_("chat.group.create")}
+                fill
+                disabled={nameError || recipients.length === 0 || $friends.length === 0}
+                on:click={onCreate}
+            >
                 <Icon icon={Shape.ChatPlus} />
             </Button>
         </Controls>

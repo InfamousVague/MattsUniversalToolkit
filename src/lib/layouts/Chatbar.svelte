@@ -185,14 +185,14 @@
 
     <slot></slot>
     {#if replyTo}
-        <div class="chatbar-reply">
+        <div class="chatbar-reply" data-cy="chatbar-reply">
             <StoreResolver value={replyTo.details.origin} resolver={v => Store.getUser(v)} let:resolved>
-                <Label text={$_("chat.replyTo", { values: { user: resolved.name } })} />
+                <Label hook="label-reply-to" text={$_("chat.replyTo", { values: { user: resolved.name } })} />
                 <div class="reply-message">
                     <Message id={replyTo.id} remote={false} position={MessagePosition.First} morePadding={replyTo.text.length > 1 || replyTo.attachments.length > 0}>
                         {#each replyTo.text as line}
                             {#if getValidPaymentRequest(line) != undefined}
-                                <Button text={getValidPaymentRequest(line)?.toDisplayString()} on:click={async () => getValidPaymentRequest(line)?.execute()}></Button>
+                                <Button hook="button-payment-request" text={getValidPaymentRequest(line)?.toDisplayString()} on:click={async () => getValidPaymentRequest(line)?.execute()}></Button>
                             {:else if !line.includes(VoiceRTCMessageType.Calling) && !line.includes(VoiceRTCMessageType.EndingCall) && !line.includes(tempCDN)}
                                 <Text hook="text-chat-message" markdown={line} />
                             {:else if line.includes(tempCDN)}
@@ -203,14 +203,14 @@
                         {/each}
 
                         {#if replyTo.attachments.length > 0}
-                            <div class="attachment-container">
+                            <div class="attachment-container" data-cy="reply-attachment-container">
                                 <Icon icon={Shape.Document} size={Size.Large} />
                                 {$_("chat.attachments-count", { values: { amount: replyTo.attachments.length } })}
                             </div>
                         {/if}
                     </Message>
                     <ProfilePicture id={resolved.key} hook="message-group-remote-profile-picture" size={Size.Small} image={resolved.profile.photo.image} status={resolved.profile.status} highlight={Appearance.Default} notifications={0} />
-                    <Button appearance={Appearance.Default} icon={true} small={true} on:click={_ => (replyTo = undefined)}>
+                    <Button hook="button-cancel-reply" appearance={Appearance.Default} icon={true} small={true} on:click={_ => (replyTo = undefined)}>
                         <Icon icon={Shape.XMark} />
                     </Button>
                 </div>
