@@ -384,7 +384,17 @@ export class VoiceRTC {
     }
 
     async setVideoElements(localVideoCurrentSrc: HTMLVideoElement) {
+        let current: MediaProvider | null = null
+        if (this.localVideoCurrentSrc) {
+            this.localVideoCurrentSrc.pause()
+            current = this.localVideoCurrentSrc.srcObject
+            this.localVideoCurrentSrc.srcObject = null
+        }
         this.localVideoCurrentSrc = localVideoCurrentSrc
+        if (current != null) {
+            this.localVideoCurrentSrc.srcObject = current
+            this.localVideoCurrentSrc.play()
+        }
         new Promise(resolve => setTimeout(resolve, 500))
     }
 
