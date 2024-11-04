@@ -6,7 +6,7 @@ import { UIStore } from "../state/ui"
 import { ConversationStore } from "../state/conversation"
 import { MessageOptions } from "warp-wasm"
 import { ChatType, MessageAttachmentKind, Route } from "$lib/enums"
-import { type User, type Chat, defaultChat, type Message, mentions_user, type Attachment } from "$lib/types"
+import { type User, type Chat, defaultChat, type Message, mentions_user, type Attachment, messageTypeFromTexts } from "$lib/types"
 import { WarpError, handleErrors } from "./HandleWarpErrors"
 import { failure, success, type Result } from "$lib/utils/Result"
 import { create_cancellable_handler, type Cancellable } from "$lib/utils/CancellablePromise"
@@ -777,6 +777,7 @@ class RaygunStore {
             reactions: message.reactions(),
             attachments: attachments.map(f => this.convertWarpAttachment(f)),
             pinned: message.pinned(),
+            type: messageTypeFromTexts(message.lines()),
         }
     }
 
