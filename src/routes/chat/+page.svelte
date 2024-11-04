@@ -836,7 +836,7 @@
                                                                         <Icon icon={Shape.XMark}></Icon>
                                                                     </Button>
                                                                 {/if}
-                                                            {:else if $own_user.key !== message.details.origin && !checkForActiveRequest(message, line)}
+                                                            {:else if $own_user.key !== message.details.origin && checkForActiveRequest(message, line)}
                                                                 <Button hook="text-chat-message" disabled text={$_("payments.you_cancelled_request")} appearance={Appearance.Error} />
                                                             {:else}
                                                                 <Button hook="text-chat-message" disabled text={$_("payments.payment_declined")} appearance={Appearance.Error} />
@@ -1018,7 +1018,6 @@
         {/if}
     </div>
     {#if contentAsideOpen}
-        <!-- All aside menus should render from this element. Please display only one at a time. -->
         <div class="aside" transition:slide={{ duration: animationDuration, axis: "x" }}>
             <Profile user={$users[$activeChat.users[0]]} />
         </div>

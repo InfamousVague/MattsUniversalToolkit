@@ -6,7 +6,8 @@
     import { RaygunStoreInstance } from "$lib/wasm/RaygunStore"
     import { get } from "svelte/store"
     import { _ } from "svelte-i18n"
-    import { Select } from "$lib/elements"
+    import { Select, Text } from "$lib/elements"
+    import { Size } from "$lib/enums"
 
     export let onClose
 
@@ -57,16 +58,31 @@
 </script>
 
 <div>
-    <div>{$_("payments.assetType") + ":"}<Select bind:selected={transfer.asset.kind} options={Object.values(AssetType).map(value => ({ value: value, text: value }))} on:change={onChangeAssetKind} /></div>
+    <Text size={Size.Large} centered={true} hook="chat-topbar-username" class="min-text" singleLine>Transfer Funds</Text>
+    <div class="transfer_type">
+        <Button
+            disabled={!transfer.isValid()}
+            on:click={async () => {
+                await sendMessage(transfer.toCmdString())
+                onClose()
+            }}>{$_("payments.send")}</Button>
+        <Button
+            disabled={!transfer.isValid()}
+            on:click={async () => {
+                await sendMessage(transfer.toCmdString())
+                onClose()
+            }}>{$_("payments.request")}</Button>
+    </div>
+    <div class="asset_selector">{$_("payments.assetType") + ":"}<Select bind:selected={transfer.asset.kind} options={Object.values(AssetType).map(value => ({ value: value, text: value }))} on:change={onChangeAssetKind} /></div>
     {#if needsAssetId()}
-        <div>{$_("payments.assetId") + ":"}<input bind:value={transfer.asset.id} on:change={onInputAmount} /></div>
+        <div class="payment_amount">{$_("payments.assetId") + ":"}<input bind:value={transfer.asset.id} on:change={onInputAmount} /></div>
     {/if}
-    <div>{transfer.amountPreview}</div>
+    <div class="payment_amount">{transfer.amountPreview}</div>
     <div>{$_("payments.amount") + ":"} <input bind:value={inputAmount} type="text" on:input={onInputAmount} /></div>
     {#if transfer.toAddress !== ""}
         <div>{$_("payments.receiving_to")}: {shortenAddr(transfer.toAddress, 6)}</div>
     {/if}
-
+    <div class="send_button"></div>
     <Button
         disabled={!transfer.isValid()}
         on:click={async () => {
@@ -74,3 +90,19 @@
             onClose()
         }}>{$_("payments.request")}</Button>
 </div>
+
+<style lang="scss">
+    .transfer_type {
+        display: inline;
+        width: 100%;
+        align-items: center;
+    }
+    .payment_amount {
+        display: inline-flex;
+        gap: var(--gap-less);
+    }
+    .send_button {
+        display: inline-flex;
+        gap: var(--gap-less);
+    }
+</style>
