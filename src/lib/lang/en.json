@@ -205,6 +205,7 @@
         "sent_request": "Sent Request",
         "cancel_request": "Cancel Request",
         "canceled_request": "Canceled Request",
+        "network": "Network",
         "payment_declined": "Payment Declined",
         "you_cancelled_request": "You Canceled Request",
         "assetType": "Asset type",
