@@ -24,12 +24,19 @@
     export let deafened: boolean = get(Store.state.devices.deafened)
     export let chat: Chat
 
+    $: highlightUser = writable<string | undefined>(undefined)
+
     let showVolumeMixer = false
     let showCallSettings = false
     let muted: boolean = !VoiceRTCInstance.callOptions.audio.enabled
     let cameraEnabled: boolean = get(Store.state.devices.cameraEnabled)
     let isFullScreen = false
-    let localVideoCurrentSrc: HTMLVideoElement
+    $: localVideoCurrentSrc = writable<HTMLVideoElement | undefined>(undefined)
+    $: {
+        if ($localVideoCurrentSrc) {
+            VoiceRTCInstance.setVideoElements($localVideoCurrentSrc)
+        }
+    }
 
     let showAnimation = true
     let message = $_("settings.calling.connecting")
@@ -184,7 +191,6 @@
         callTimeout.set(false)
         usersAcceptedTheCall.set([])
         document.addEventListener("mousedown", handleClickOutside)
-        await VoiceRTCInstance.setVideoElements(localVideoCurrentSrc)
         /// HACK: To make sure the video elements are loaded before we start the call
         if (VoiceRTCInstance.localVideoCurrentSrc && VoiceRTCInstance.remoteVideoCreator) {
             if (VoiceRTCInstance.toCall && VoiceRTCInstance.toCall.find(did => did !== "") !== undefined && $callInProgress === null) {
@@ -262,7 +268,10 @@
                     return bVideoEnabled - aVideoEnabled
                 })
             users = [self, ...users]
-            usersSplit = chat.users.reduce<string[][]>((res, item, index) => {
+            if ($highlightUser) {
+                users = users.filter(user => user !== $highlightUser)
+            }
+            usersSplit = users.reduce<string[][]>((res, item, index) => {
                 const chunk = Math.floor(index / vidPerRow)
                 if (!res[chunk]) {
                     res[chunk] = []
@@ -271,6 +280,15 @@
                 return res
             }, [])
         }, 100)()
+    }
+
+    function setHighlightUser(user: string) {
+        if (user === $highlightUser) {
+            $highlightUser = undefined
+        } else {
+            $highlightUser = user
+        }
+        updateUserListSplit()
     }
 </script>
 
@@ -315,12 +333,65 @@
 
         {#if !$callTimeout && ($usersDeniedTheCall.length === 0 || $usersDeniedTheCall.length !== chat.users.length - 1)}
             <div id="participants" bind:this={$participantsElement}>
+                {#if $highlightUser && ($highlightUser === get(Store.state.user).key || $remoteStreams[$highlightUser])}
+                    {@const user = $highlightUser}
+                    <div class="highlight-user">
+                        {#if user === get(Store.state.user).key}
+                            <div class="video-container {isFullScreen ? 'fullscreen' : ''}" style={!userCallOptions.video.enabled ? "display: none" : ""} role="none" on:click={_ => setHighlightUser(user)}>
+                                <video data-cy="local-user-video" id="local-user-video" bind:this={$localVideoCurrentSrc} style="display: {userCallOptions.video.enabled ? 'block' : 'none'}" muted autoplay>
+                                    <track kind="captions" src="" />
+                                </video>
+                                <div class="user-name">{ownUserName}</div>
+                                {#if !userCallOptions.audio.enabled}
+                                    <div class="mute-status">
+                                        <Icon icon={Shape.MicrophoneSlash}></Icon>
+                                    </div>
+                                {/if}
+                            </div>
+                            {#if !userCallOptions.video.enabled}
+                                <Participant
+                                    participant={$userCache[user]}
+                                    hasVideo={$userCache[user].media.is_streaming_video}
+                                    isMuted={muted}
+                                    isDeafened={userCallOptions.audio.deafened}
+                                    isTalking={$userCache[user].media.is_playing_audio}
+                                    on:click={_ => setHighlightUser(user)} />
+                            {/if}
+                        {:else if $remoteStreams[user]}
+                            <div
+                                class="video-container {$userCache[get(Store.state.user).key].media.is_playing_audio ? 'talking' : ''} {isFullScreen ? 'fullscreen' : ''}"
+                                style={!$remoteStreams[user].user.videoEnabled ? "display: none" : ""}
+                                role="none"
+                                on:click={_ => setHighlightUser(user)}>
+                                <video data-cy="remote-user-video" id="remote-user-video-{user}" class={$remoteStreams[user].user.videoEnabled ? "" : "disabled"} autoplay muted={false} use:attachStream={user}>
+                                    <track kind="captions" src="" />
+                                </video>
+                                <div class="user-name">{$userCache[user].name}</div>
+                                {#if !$remoteStreams[user].user.audioEnabled}
+                                    <div class="mute-status">
+                                        <Icon icon={Shape.MicrophoneSlash}></Icon>
+                                    </div>
+                                {/if}
+                            </div>
+
+                            {#if !$remoteStreams[user].stream || !$remoteStreams[user].user.videoEnabled}
+                                <Participant
+                                    participant={$userCache[user]}
+                                    hasVideo={$userCache[user].media.is_streaming_video}
+                                    isMuted={$remoteStreams[user] && !$remoteStreams[user].user.audioEnabled}
+                                    isDeafened={$remoteStreams[user] && $remoteStreams[user].user.isDeafened}
+                                    isTalking={$userCache[user].media.is_playing_audio}
+                                    on:click={_ => setHighlightUser(user)} />
+                            {/if}
+                        {/if}
+                    </div>
+                {/if}
                 {#each usersSplit as users, i}
-                    <div class="participants-list {Math.floor(i / 2) !== $page ? 'hidden' : ''}">
+                    <div class="participants-list {$highlightUser || Math.floor(i / 2) !== $page ? 'hidden' : ''}">
                         {#each users as user}
                             {#if user === get(Store.state.user).key}
-                                <div class="video-container {isFullScreen ? 'fullscreen' : ''}" style={!userCallOptions.video.enabled ? "display: none" : ""}>
-                                    <video data-cy="local-user-video" id="local-user-video" bind:this={localVideoCurrentSrc} style="display: {userCallOptions.video.enabled ? 'block' : 'none'}" muted autoplay>
+                                <div class="video-container {isFullScreen ? 'fullscreen' : ''}" style={!userCallOptions.video.enabled ? "display: none" : ""} role="none" on:click={_ => setHighlightUser(user)}>
+                                    <video data-cy="local-user-video" id="local-user-video" bind:this={$localVideoCurrentSrc} style="display: {userCallOptions.video.enabled ? 'block' : 'none'}" muted autoplay>
                                         <track kind="captions" src="" />
                                     </video>
                                     <div class="user-name">{ownUserName}</div>
@@ -336,7 +407,8 @@
                                         hasVideo={$userCache[user].media.is_streaming_video}
                                         isMuted={muted}
                                         isDeafened={userCallOptions.audio.deafened}
-                                        isTalking={$userCache[user].media.is_playing_audio} />
+                                        isTalking={$userCache[user].media.is_playing_audio}
+                                        on:click={_ => setHighlightUser(user)} />
                                 {/if}
                             {:else if $userCache[user] && $userCache[user].key !== get(Store.state.user).key && !$remoteStreams[user]}
                                 {#if showAnimation && !$usersAcceptedTheCall.includes(user)}
@@ -360,7 +432,9 @@
                             {:else if $userCache[user] && $userCache[user].key !== get(Store.state.user).key && $remoteStreams[user]}
                                 <div
                                     class="video-container {$userCache[get(Store.state.user).key].media.is_playing_audio ? 'talking' : ''} {isFullScreen ? 'fullscreen' : ''}"
-                                    style={!$remoteStreams[user].user.videoEnabled ? "display: none" : ""}>
+                                    style={!$remoteStreams[user].user.videoEnabled ? "display: none" : ""}
+                                    role="none"
+                                    on:click={_ => setHighlightUser(user)}>
                                     <video data-cy="remote-user-video" id="remote-user-video-{user}" class={$remoteStreams[user].user.videoEnabled ? "" : "disabled"} autoplay muted={false} use:attachStream={user}>
                                         <track kind="captions" src="" />
                                     </video>
@@ -378,7 +452,8 @@
                                         hasVideo={$userCache[user].media.is_streaming_video}
                                         isMuted={$remoteStreams[user] && !$remoteStreams[user].user.audioEnabled}
                                         isDeafened={$remoteStreams[user] && $remoteStreams[user].user.isDeafened}
-                                        isTalking={$userCache[user].media.is_playing_audio} />
+                                        isTalking={$userCache[user].media.is_playing_audio}
+                                        on:click={_ => setHighlightUser(user)} />
                                 {/if}
                             {/if}
                         {/each}
@@ -527,6 +602,11 @@
             flex: 100%;
         }
 
+        .highlight-user {
+            height: 100%;
+            width: 100%;
+        }
+
         .toolbar {
             width: 100%;
             display: inline-flex;
@@ -581,6 +661,8 @@
         }
 
         .calling-animation {
+            width: 100%;
+            height: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -619,6 +701,8 @@
         }
 
         .no-response {
+            width: 100%;
+            height: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -639,6 +723,7 @@
             border-radius: 12px;
             overflow: hidden;
             border: 2px solid var(--color-muted);
+            cursor: pointer;
             &.talking {
                 border: 2px solid var(--success-color);
             }
