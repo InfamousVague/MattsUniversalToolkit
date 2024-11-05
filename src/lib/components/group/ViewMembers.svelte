@@ -19,48 +19,28 @@
     let allRecipients: User[] = []
     let friends: User[] = [] // Initialize friends as an empty array
 
-    function update_members(user: User) {
+    function updateMembers(user: User) {
         if (user.key === activeChat.creator) {
             Store.addToastNotification(new ToastMessage("", $_("chat.group.removeCreator"), 2))
             members = members
             return
         }
-        let group_members = [...members]
+        let groupMembers = [...members]
 
-        if (group_members.includes(user)) {
+        if (groupMembers.includes(user)) {
             if (members.length < 3) {
                 Store.addToastNotification(new ToastMessage("", $_("chat.group.removeTooSmall"), 2))
                 members = members
                 return
             }
-            group_members.splice(group_members.indexOf(user), 1)
+            groupMembers.splice(groupMembers.indexOf(user), 1)
             RaygunStoreInstance.removeGroupParticipants(activeChat.id, [user.key])
         } else {
-            group_members.push(user)
+            groupMembers.push(user)
             RaygunStoreInstance.addGroupParticipants(activeChat.id, [user.key])
         }
 
-        members = group_members
-    }
-
-    function remove_member(user: User) {
-        if (user.key === activeChat.creator) {
-            Store.addToastNotification(new ToastMessage("", $_("chat.group.removeCreator"), 2))
-            return
-        }
-        if (members.length < 3) {
-            Store.addToastNotification(new ToastMessage("", $_("chat.group.removeTooSmall"), 2))
-            return
-        }
-
-        let group_members = [...members]
-
-        if (group_members.includes(user)) {
-            group_members.splice(group_members.indexOf(user), 1)
-        }
-
-        members = group_members
-        RaygunStoreInstance.removeGroupParticipants(activeChat.id, [user.key])
+        members = groupMembers
     }
 
     function contains_user(list: User[], user: User): boolean {
@@ -114,7 +94,7 @@
                     <Text hook="mini-recipient-name" singleLine size={Size.Small} appearance={Appearance.Alt}>
                         {recipient.name}
                     </Text>
-                    <Button hook="mini-recipient-button" small icon on:click={() => remove_member(recipient)} appearance={Appearance.Alt}>
+                    <Button hook="mini-recipient-button" small icon on:click={() => updateMembers(recipient)} appearance={Appearance.Alt}>
                         <Icon icon={Shape.XMark} alt class="control" />
                     </Button>
                 </div>
@@ -123,7 +103,7 @@
         <Label hook="label-edit-members" text={$_("chat.group.settings.edit")} />
         <div class="recipient-selection-list" data-cy="recipient-selection-list">
             {#each allRecipients as recipient (recipient.key)}
-                <button data-cy="recipient-single" class="recipient" on:click={() => update_members(recipient)}>
+                <button data-cy="recipient-single" class="recipient" on:click={() => updateMembers(recipient)}>
                     <ProfilePicture hook="recipient-single-profile-picture" size={Size.Small} image={recipient.profile.photo.image} status={recipient.profile.status} />
                     <div data-cy="recipient-single-info" class="info">
                         <Text hook="recipient-single-name" singleLine size={Size.Medium}>
