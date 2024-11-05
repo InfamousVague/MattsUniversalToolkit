@@ -125,7 +125,7 @@ class RaygunStore {
                     await r.create_group_conversation(
                         name,
                         recipients.map(r => r.key),
-                        new wasm.GroupSettings()
+                        new wasm.GroupPermissions()
                     ),
                     r
                 ),
@@ -159,7 +159,15 @@ class RaygunStore {
     }
 
     async updateConversationSettings(conversation_id: string, settings: ConversationSettings) {
-        return await this.get(r => r.update_conversation_settings(conversation_id, settings), "Error updating conversation settings")
+        return await this.get(async r => {
+            let conv = await r.get_conversation(conversation_id)
+            // TODO. this needs ui revamp as its now user based and not global
+            r.update_conversation_permissions(conversation_id, conv.permissions())
+        }, "Error updating conversation settings")
+    }
+
+    async updateConversationDescription(conversation_id: string, description: string) {
+        return await this.get(r => r.set_conversation_description(conversation_id, description), "Error updating conversation settings")
     }
 
     /**
@@ -177,7 +185,7 @@ class RaygunStore {
             let convs = await r.list_conversations()
             convs
                 .convs()
-                .filter(c => parseJSValue(c.settings()).type === "direct" && recipient in c.recipients())
+                .filter(c => c.conversation_type() === wasm.ConversationType.Direct && recipient in c.recipients())
                 .forEach(async conv => {
                     await this.get(r => r.delete(conv.id(), undefined), "Error deleting message")
                 })
@@ -800,8 +808,7 @@ class RaygunStore {
      * Converts warp message to ui message
      */
     private async convertWarpConversation(chat: wasm.Conversation, raygun: wasm.RayGunBox): Promise<Chat> {
-        let setting = parseJSValue(chat.settings())
-        let direct = setting.type === "direct"
+        let direct = chat.conversation_type() === wasm.ConversationType.Direct
         let msg = await this.getMessages(raygun, chat.id(), new MessageOptions())
         chat.recipients().forEach(async recipient => {
             let user = await MultipassStoreInstance.identity_from_did(recipient)
@@ -817,10 +824,11 @@ class RaygunStore {
             settings: {
                 displayOwnerBadge: true,
                 readReceipts: true,
+                // TODO. this needs ui revamp as its now user based and not global
                 permissions: {
-                    allowAnyoneToAddUsers: !direct && (setting.values["members_can_add_participants"] as boolean),
+                    allowAnyoneToAddUsers: !direct && true,
                     allowAnyoneToModifyPhoto: false,
-                    allowAnyoneToModifyName: !direct && (setting.values["members_can_change_name"] as boolean),
+                    allowAnyoneToModifyName: !direct && true,
                 },
             },
             creator: chat.creator(),
