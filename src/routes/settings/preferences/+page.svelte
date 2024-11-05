@@ -167,7 +167,7 @@
             return Promise.resolve(false)
         }
         const ACCEPTABLE_FORMATS = ["ttf", "otf", "woff2", "woff"]
-        const fileExtensionMatch = fileData.name.match(/\.([0-9a-z]+)$/i)
+        const fileExtensionMatch = fileData.type.match(/\.([0-9a-z]+)$/i)
         const fileExtension = fileExtensionMatch ? fileExtensionMatch[1].toLowerCase() : null
 
         if (!fileExtension || !ACCEPTABLE_FORMATS.includes(fileExtension)) {
