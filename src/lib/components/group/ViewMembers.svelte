@@ -26,21 +26,22 @@
             members = members
             return
         }
-        if (members.length < 3) {
-            Store.addToastNotification(new ToastMessage("", `A group can not exist with one person`, 2))
-            members = members
-            return
-        }
         let group_members = [...members]
 
         if (group_members.includes(user)) {
+            if (members.length < 3) {
+                Store.addToastNotification(new ToastMessage("", `A group can not exist with one person`, 2))
+                members = members
+                return
+            }
             group_members.splice(group_members.indexOf(user), 1)
+            RaygunStoreInstance.removeGroupParticipants(activeChat.id, [user.key])
         } else {
             group_members.push(user)
+            RaygunStoreInstance.addGroupParticipants(activeChat.id, [user.key])
         }
 
         members = group_members
-        RaygunStoreInstance.addGroupParticipants(activeChat.id, [user.key])
     }
 
     function remove_member(user: User) {
