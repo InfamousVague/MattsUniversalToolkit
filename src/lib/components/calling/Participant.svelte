@@ -50,7 +50,8 @@
     {:else}
         <!-- svelte-ignore a11y-mouse-events-have-key-events -->
         <!-- svelte-ignore a11y-no-static-element-interactions -->
-        <div data-cy="participant-without-video" class="simple" on:mouseover={() => toggleDetails(true)} on:mouseleave={() => toggleDetails(false)}>
+        <!-- svelte-ignore a11y-click-events-have-key-events -->
+        <div data-cy="participant-without-video" class="simple" on:click on:mouseover={() => toggleDetails(true)} on:mouseleave={() => toggleDetails(false)}>
             {#if showDetails}
                 <div class="state centered" in:fade={{ duration: animationDuration }}>
                     <Controls>
@@ -71,7 +72,7 @@
                 hook="participant-profile-picture"
                 id={participant.key}
                 image={participant.profile.photo.image}
-                size={Size.Larger}
+                size={Size.Large}
                 noIndicator
                 highlight={isMuted || isDeafened ? Appearance.Error : isTalking ? Appearance.Success : Appearance.Alt} />
             <Spacer less />
@@ -85,6 +86,9 @@
         width: fit-content;
         height: fit-content;
         position: relative;
+        align-items: center;
+        justify-content: center;
+        display: flex;
 
         .simple {
             display: flex;

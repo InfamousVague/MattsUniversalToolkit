@@ -373,7 +373,17 @@ export class VoiceRTC {
     }
 
     async setVideoElements(localVideoCurrentSrc: HTMLVideoElement) {
+        let current: MediaProvider | null = null
+        if (this.localVideoCurrentSrc) {
+            this.localVideoCurrentSrc.pause()
+            current = this.localVideoCurrentSrc.srcObject
+            this.localVideoCurrentSrc.srcObject = null
+        }
         this.localVideoCurrentSrc = localVideoCurrentSrc
+        if (current != null) {
+            this.localVideoCurrentSrc.srcObject = current
+            this.localVideoCurrentSrc.play()
+        }
         new Promise(resolve => setTimeout(resolve, 500))
     }
 
@@ -443,7 +453,7 @@ export class VoiceRTC {
      * Actually making the call
      */
     async makeCall(call: boolean = true) {
-        if (!this.toCall) {
+        if (!this.toCall && !call) {
             log.error("Calling not setup")
             return
         }
@@ -457,7 +467,10 @@ export class VoiceRTC {
             // Create a new call room
             this.createAndSetRoom()
             if (call) {
-                this.inviteToCall(this.toCall)
+                this.inviteToCall(this.toCall!)
+                const formattedEndTime = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })
+                const text = get(_)("settings.calling.startCallMessage", { values: { value: formattedEndTime } })
+                await RaygunStoreInstance.send(this.channel!, text.split("\n"), [])
             }
             const timeoutWhenCallIsNull = setTimeout(() => {
                 if (this.call === null || this.call.empty) {
