@@ -72,7 +72,7 @@ class TesseractStore {
     removeSeed() {
         const tesseract = get(this.tesseractWritable)
         if (!tesseract?.exist("mnemonic")) return
-        tesseract?._delete("mnemonic")
+        tesseract?.delete("mnemonic")
     }
 
     async initTesseract(from?: wasm.Tesseract) {
