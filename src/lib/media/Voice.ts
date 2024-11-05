@@ -9,6 +9,8 @@ import { _ } from "svelte-i18n"
 import { get, writable, type Writable } from "svelte/store"
 import type { Room } from "trystero"
 import { joinRoom } from "trystero"
+import { NoiseSuppressorWorklet_Name } from "@timephy/rnnoise-wasm"
+import NoiseSuppressorWorklet from "@timephy/rnnoise-wasm/NoiseSuppressorWorklet?worker&url"
 
 const CALL_ACK = "CALL_ACCEPT"
 
@@ -86,45 +88,53 @@ export type StreamMetaHandler = {
 
 function handleStreamMeta(did: string, stream: MediaStream): StreamMetaHandler {
     const audioContext = new window.AudioContext()
-    const mediaStreamSource = audioContext.createMediaStreamSource(stream)
     const analyser = audioContext.createAnalyser()
     analyser.fftSize = AUDIO_WINDOW_SIZE
     analyser.smoothingTimeConstant = 0.1
-    mediaStreamSource.connect(analyser)
     const dataArray = new Uint8Array(analyser.frequencyBinCount)
-    function volume() {
-        analyser.getByteFrequencyData(dataArray)
-        return dataArray.reduce((prev, value) => (prev && prev > value ? prev : value))
-    }
+    let noiseSuppressionNode: AudioWorkletNode
+    let checker: NodeJS.Timeout
 
-    function updateMeta(did: string) {
-        let muted = stream.getAudioTracks().find(track => !track.enabled || track.readyState === "ended") !== undefined
-        let speaking = false
-        let user = Store.getUser(did)
-        let current = get(user)
-        let vol = volume()
-        console.log("incoming volume ", vol)
-        if (!muted && vol > VOLUME_THRESHOLD) {
-            speaking = true
+    audioContext.audioWorklet.addModule(NoiseSuppressorWorklet).then(() => {
+        noiseSuppressionNode = new AudioWorkletNode(audioContext, NoiseSuppressorWorklet_Name)
+        const mediaStreamSource = audioContext.createMediaStreamSource(stream)
+        mediaStreamSource.connect(noiseSuppressionNode).connect(analyser)
+
+        function volume() {
+            analyser.getByteFrequencyData(dataArray)
+            return dataArray.reduce((prev, value) => (prev && prev > value ? prev : value))
         }
-        if (current.media.is_muted !== muted || current.media.is_playing_audio !== speaking) {
-            user.update(u => {
-                return {
+
+        function updateMeta(did: string) {
+            let muted = stream.getAudioTracks().some(track => !track.enabled || track.readyState === "ended")
+            let speaking = false
+            let user = Store.getUser(did)
+            let current = get(user)
+            let vol = volume()
+            console.log("incoming volume ", vol)
+            if (!muted && vol > VOLUME_THRESHOLD) {
+                speaking = true
+            }
+            if (current.media.is_muted !== muted || current.media.is_playing_audio !== speaking) {
+                user.update(u => ({
                     ...u,
                     media: {
                         ...u.media,
                         is_muted: muted,
                         is_playing_audio: speaking,
                     },
-                }
-            })
+                }))
+            }
         }
-    }
-    const checker = setInterval(() => updateMeta(did), 300)
+
+        checker = setInterval(() => updateMeta(did), 300)
+    })
+
     return {
         remove: () => {
             analyser.disconnect()
-            clearInterval(checker)
+            if (noiseSuppressionNode) noiseSuppressionNode.disconnect()
+            if (checker) clearInterval(checker)
         },
     }
 }
