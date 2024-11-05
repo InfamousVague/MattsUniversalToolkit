@@ -79,7 +79,7 @@
         .preview {
             max-width: 180px;
         }
-/* 
+        /* 
 
   This selector is intentionally kept for future use
 
@@ -93,6 +93,5 @@
             color: var(--loading-text-color);
         }
 */
-
     }
 </style>

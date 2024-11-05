@@ -122,7 +122,7 @@
                     </button>
                 {/each}
             {:else}
-                <Text hook="text-no-users" appearance={Appearance.Muted} size={Size.Small}>
+                <Text hook="text-no-users" appearance={Appearance.Error} size={Size.Small}>
                     {$_("chat.group.noMembersAvailable")}
                 </Text>
             {/if}
@@ -136,13 +136,7 @@
         {/if}
 
         <Controls>
-            <Button
-                hook="button-create-group"
-                text={$_("chat.group.create")}
-                fill
-                disabled={nameError || recipients.length === 0 || $friends.length === 0}
-                on:click={onCreate}
-            >
+            <Button hook="button-create-group" text={$_("chat.group.create")} fill disabled={nameError || recipients.length === 0 || $friends.length === 0} on:click={onCreate}>
                 <Icon icon={Shape.ChatPlus} />
             </Button>
         </Controls>

@@ -1,7 +1,7 @@
-import { get, writable, Writable } from "svelte/store"
+import { get, writable, type Writable } from "svelte/store"
 import * as wasm from "warp-wasm"
 import { log } from "$lib/utils/Logger"
-import { failure, success, Result } from "$lib/utils/Result"
+import { failure, success, type Result } from "$lib/utils/Result"
 import { WarpError, handleErrors } from "./HandleWarpErrors"
 import { initWarp } from "./IWarp"
 
