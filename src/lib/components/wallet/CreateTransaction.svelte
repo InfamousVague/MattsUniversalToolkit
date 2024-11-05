@@ -6,8 +6,8 @@
     import { RaygunStoreInstance } from "$lib/wasm/RaygunStore"
     import { get } from "svelte/store"
     import { _ } from "svelte-i18n"
-    import { Select, Text } from "$lib/elements"
-    import { Size } from "$lib/enums"
+    import { Icon, Select, Text } from "$lib/elements"
+    import { Appearance, Shape, Size } from "$lib/enums"
 
     export let onClose
 
@@ -58,22 +58,24 @@
 </script>
 
 <div>
-    <Text size={Size.Large} centered={true} hook="chat-topbar-username" class="min-text" singleLine>Transfer Funds</Text>
+    <div class="title">
+        <Text size={Size.Large} color="#00B894" centered hook="chat-topbar-username" class="min-text" singleLine>Transfer Funds</Text>
+    </div>
     <div class="transfer_type">
         <Button
-            disabled={!transfer.isValid()}
+            appearance={Appearance.Alt}
             on:click={async () => {
                 await sendMessage(transfer.toCmdString())
                 onClose()
-            }}>{$_("payments.send")}</Button>
+            }}><Icon icon={Shape.DollarOut}></Icon>{$_("payments.send")}</Button>
         <Button
-            disabled={!transfer.isValid()}
+            appearance={Appearance.Alt}
             on:click={async () => {
                 await sendMessage(transfer.toCmdString())
                 onClose()
-            }}>{$_("payments.request")}</Button>
+            }}><Icon icon={Shape.DollarIn}></Icon>{$_("payments.request")}</Button>
     </div>
-    <div class="asset_selector">{$_("payments.assetType") + ":"}<Select bind:selected={transfer.asset.kind} options={Object.values(AssetType).map(value => ({ value: value, text: value }))} on:change={onChangeAssetKind} /></div>
+    <div class="asset_selector">{$_("payments.type") + ":"}<Select bind:selected={transfer.asset.kind} options={Object.values(AssetType).map(value => ({ value: value, text: value }))} on:change={onChangeAssetKind} /></div>
     {#if needsAssetId()}
         <div class="payment_amount">{$_("payments.assetId") + ":"}<input bind:value={transfer.asset.id} on:change={onInputAmount} /></div>
     {/if}
@@ -92,17 +94,28 @@
 </div>
 
 <style lang="scss">
-    .transfer_type {
-        display: inline;
+    .title {
+        display: flex;
         width: 100%;
         align-items: center;
+        justify-content: center;
+    }
+    .transfer_type {
+        display: flex;
+        width: 100%;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 10%;
     }
     .payment_amount {
         display: inline-flex;
         gap: var(--gap-less);
     }
-    .send_button {
-        display: inline-flex;
+    .asset_selector {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: var(--gap-less);
         gap: var(--gap-less);
     }
 </style>

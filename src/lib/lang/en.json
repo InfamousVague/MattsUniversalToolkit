@@ -192,6 +192,7 @@
     "payments": {
         "send": "Send",
         "receive": "Receive",
+        "type": "Type",
         "receiving_to": "Receiving to",
         "send_coin": "Send Coin",
         "amount": "Amount",
