@@ -134,13 +134,12 @@
             <Modal hook="modal-relay-add">
                 <div class="relay-add-modal">
                     <Label hook="label-relay-name" text={$_("settings.network.relay.name")} />
-                    <Input 
-                        hook="input-relay-name" 
+                    <Input
+                        hook="input-relay-name"
                         bind:value={nameToAdd}
-                        on:input={() => { 
+                        on:input={() => {
                             nameError = false
-                        }}
-                    ></Input>
+                        }}></Input>
 
                     {#if nameError}
                         <div class="error">{$_("settings.network.relay.name_required")}</div>
@@ -152,14 +151,13 @@
 
                     <Label hook="label-relay-address" text={$_("settings.network.relay.address")} />
 
-                    <Input 
-                        hook="input-relay-address" 
+                    <Input
+                        hook="input-relay-address"
                         bind:value={relayToAdd}
-                        on:input={() => { 
+                        on:input={() => {
                             addressError = false
                         }}
-                        on:enter={add}
-                    ></Input>
+                        on:enter={add}></Input>
 
                     {#if addressError}
                         <div class="error">{$_("settings.network.relay.address_required")}</div>
@@ -185,13 +183,7 @@
                             }}>
                             <Icon icon={Shape.XMark} />
                         </Button>
-                        <Button 
-                            hook="button-relay-modal-save" 
-                            class="save" 
-                            appearance={Appearance.Primary} 
-                            on:click={add} 
-                            text={$_("generic.add")}
-                        >
+                        <Button hook="button-relay-modal-save" class="save" appearance={Appearance.Primary} on:click={add} text={$_("generic.add")}>
                             <Icon icon={Shape.CheckMark} />
                         </Button>
                     </Controls>
