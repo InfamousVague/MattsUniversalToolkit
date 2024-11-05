@@ -7,6 +7,7 @@ export let mock_files: FileInfo[] = [
         type: "file",
         source: "",
         name: "ExampleFile.mp4",
+        displayName: "ExampleFile.mp4",
         icon: Shape.Document,
         isRenaming: OperationState.Initial,
         size: 982199999,
@@ -21,6 +22,7 @@ export let mock_files: FileInfo[] = [
         icon: Shape.Folder,
         isRenaming: OperationState.Initial,
         name: "Downloads",
+        displayName: "Downloads",
         size: 9821999999999,
         items: [
             {
@@ -30,6 +32,7 @@ export let mock_files: FileInfo[] = [
                 icon: Shape.Folder,
                 isRenaming: OperationState.Initial,
                 name: "Panda",
+                displayName: "Panda",
                 size: 789456123,
                 items: [
                     {
@@ -37,6 +40,7 @@ export let mock_files: FileInfo[] = [
                         type: "file",
                         source: "",
                         name: "ExampleFile.mp4",
+                        displayName: "ExampleFile.mp4",
                         icon: Shape.Document,
                         isRenaming: OperationState.Initial,
                         size: 982199999,
@@ -51,6 +55,7 @@ export let mock_files: FileInfo[] = [
                         icon: Shape.Document,
                         isRenaming: OperationState.Initial,
                         name: "ExampleFile.mp4",
+                        displayName: "ExampleFile.mp4",
                         size: 982199999,
                         parentId: "21",
                         items: [
@@ -61,6 +66,7 @@ export let mock_files: FileInfo[] = [
                                 icon: Shape.Document,
                                 isRenaming: OperationState.Initial,
                                 name: "Exame.mp4",
+                                displayName: "Exame.mp4",
                                 size: 982199999,
                                 items: [],
                                 parentId: "555",
@@ -80,6 +86,7 @@ export let mock_files: FileInfo[] = [
                 icon: Shape.Document,
                 isRenaming: OperationState.Initial,
                 name: "Test123.7z",
+                displayName: "Test123.7z",
                 size: 98299,
                 items: [],
                 parentId: "2",
@@ -92,6 +99,7 @@ export let mock_files: FileInfo[] = [
                 icon: Shape.Folder,
                 isRenaming: OperationState.Initial,
                 name: "Temp",
+                displayName: "Temp",
                 size: 98212999,
                 items: [
                     {
@@ -101,6 +109,7 @@ export let mock_files: FileInfo[] = [
                         icon: Shape.Folder,
                         isRenaming: OperationState.Initial,
                         name: "Efoldere.mp4",
+                        displayName: "Efoldere.mp4",
                         size: 982199999,
                         items: [
                             {
@@ -110,6 +119,7 @@ export let mock_files: FileInfo[] = [
                                 icon: Shape.Folder,
                                 isRenaming: OperationState.Initial,
                                 name: "Temp",
+                                displayName: "Temp",
                                 size: 98212999,
                                 items: [
                                     {
@@ -119,6 +129,7 @@ export let mock_files: FileInfo[] = [
                                         isRenaming: OperationState.Initial,
                                         source: "/assets/mock/library.avif",
                                         name: "Wildlife.png",
+                                        displayName: "Wildlife.png",
                                         size: 987654321,
                                         items: [
                                             {
@@ -128,6 +139,7 @@ export let mock_files: FileInfo[] = [
                                                 icon: Shape.Folder,
                                                 isRenaming: OperationState.Initial,
                                                 name: "Temparters",
+                                                displayName: "Temparters",
                                                 size: 98212999,
                                                 items: [
                                                     {
@@ -137,6 +149,7 @@ export let mock_files: FileInfo[] = [
                                                         icon: Shape.Folder,
                                                         isRenaming: OperationState.Initial,
                                                         name: "oofka",
+                                                        displayName: "oofka",
                                                         size: 987654321,
                                                         items: [
                                                             {
@@ -146,6 +159,7 @@ export let mock_files: FileInfo[] = [
                                                                 icon: Shape.Folder,
                                                                 isRenaming: OperationState.Initial,
                                                                 name: "Temper",
+                                                                displayName: "Temper",
                                                                 size: 98212999,
                                                                 items: [
                                                                     {
@@ -155,6 +169,7 @@ export let mock_files: FileInfo[] = [
                                                                         icon: Shape.Image,
                                                                         isRenaming: OperationState.Initial,
                                                                         name: "life.png",
+                                                                        displayName: "life.png",
                                                                         size: 987654321,
                                                                         items: [],
                                                                         parentId: "32",
@@ -191,6 +206,7 @@ export let mock_files: FileInfo[] = [
                         icon: Shape.Document,
                         isRenaming: OperationState.Initial,
                         name: "ExampleFile.mp4",
+                        displayName: "ExampleFile.mp4",
                         size: 982199999,
                         items: [],
                         parentId: "4",
@@ -211,6 +227,7 @@ export let mock_files: FileInfo[] = [
         icon: Shape.Image,
         isRenaming: OperationState.Initial,
         name: "Wildlife.png",
+        displayName: "Wildlife.png",
         size: 987654321,
         items: [],
         parentId: "",
@@ -223,6 +240,7 @@ export let mock_files: FileInfo[] = [
         icon: Shape.Document,
         isRenaming: OperationState.Initial,
         name: "Test123.7z",
+        displayName: "Test123.7z",
         size: 98299,
         items: [],
         parentId: "",
@@ -235,6 +253,7 @@ export let mock_files: FileInfo[] = [
         icon: Shape.Folder,
         isRenaming: OperationState.Initial,
         name: "Temp",
+        displayName: "Temp",
         size: 98212999,
         items: [
             {
@@ -244,6 +263,7 @@ export let mock_files: FileInfo[] = [
                 isRenaming: OperationState.Initial,
                 source: "/assets/mock/library.avif",
                 name: "Wildlife.png",
+                displayName: "Wildlife.png",
                 size: 987654321,
                 items: [],
                 parentId: "64",

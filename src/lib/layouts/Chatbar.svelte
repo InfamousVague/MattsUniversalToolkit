@@ -18,11 +18,9 @@
     import { UIStore } from "$lib/state/ui"
     import { emojiList, emojiRegexMap } from "$lib/components/messaging/emoji/EmojiList"
     import { tempCDN } from "$lib/utils/CommonVariables"
-    import { getValidPaymentRequest } from "$lib/utils/Wallet"
-    import { VoiceRTCMessageType } from "$lib/media/Voice"
     import { MessageEvent } from "warp-wasm"
-    import Text from "$lib/elements/Text.svelte"
     import StoreResolver from "$lib/components/utils/StoreResolver.svelte"
+    import MessageText from "$lib/components/messaging/message/MessageText.svelte"
 
     export let replyTo: MessageType | undefined = undefined
     export let emojiClickHook: (emoji: string) => boolean
@@ -52,7 +50,7 @@
         Store.state.chatMessagesToSend = chatMessages
     }
 
-    async function updateTypingIndecator() {
+    async function updateTypingIndicator() {
         await RaygunStoreInstance.sendEvent(activeChat.id, MessageEvent.Typing)
     }
 
@@ -178,7 +176,7 @@
         rounded
         rich={markdown}
         on:input={_ => {
-            updateTypingIndecator()
+            updateTypingIndicator()
             replaceEmojis($message)
         }}
         on:enter={_ => sendMessage($message)} />
@@ -190,18 +188,7 @@
                 <Label hook="label-reply-to" text={$_("chat.replyTo", { values: { user: resolved.name } })} />
                 <div class="reply-message">
                     <Message id={replyTo.id} remote={false} position={MessagePosition.First} morePadding={replyTo.text.length > 1 || replyTo.attachments.length > 0}>
-                        {#each replyTo.text as line}
-                            {#if getValidPaymentRequest(line) != undefined}
-                                <Button hook="button-payment-request" text={getValidPaymentRequest(line)?.toDisplayString()} on:click={async () => getValidPaymentRequest(line)?.execute()}></Button>
-                            {:else if !line.includes(VoiceRTCMessageType.Calling) && !line.includes(VoiceRTCMessageType.EndingCall) && !line.includes(tempCDN)}
-                                <Text hook="text-chat-message" markdown={line} />
-                            {:else if line.includes(tempCDN)}
-                                <div class="sticker">
-                                    <Text hook="text-chat-message" markdown={line} size={Size.Smallest} />
-                                </div>
-                            {/if}
-                        {/each}
-
+                        <MessageText chat={activeChat.id} remote={replyTo.details.remote} texts={replyTo.text} type={replyTo.type}></MessageText>
                         {#if replyTo.attachments.length > 0}
                             <div class="attachment-container" data-cy="reply-attachment-container">
                                 <Icon icon={Shape.Document} size={Size.Large} />
@@ -282,6 +269,7 @@
                 margin-bottom: var(--padding-less);
                 :global(.text) {
                     display: -webkit-box;
+                    line-clamp: 2;
                     -webkit-line-clamp: 2;
                     -webkit-box-orient: vertical;
                     overflow: hidden;
@@ -303,7 +291,7 @@
                     padding: var(--padding-minimal);
                     border-radius: var(--border-radius-less);
                 }
-                .sticker {
+                :global(.sticker) {
                     width: 45px;
                 }
             }

@@ -17,14 +17,14 @@
     // Function to handle downloading the seed phrase as a txt file
     function downloadPhrase() {
         if (!phrase) return
-        
+
         // Join the phrase array into a single string
         const phraseText = phrase.join(" ")
 
         const blob = new Blob([phraseText], { type: "text/plain" })
 
         const link = document.createElement("a")
-        
+
         link.href = URL.createObjectURL(blob)
         link.download = "seed-phrase.txt" // Filename for the download
         link.click()
@@ -44,14 +44,7 @@
         {/each}
     {/if}
     <Controls>
-        <Button
-            hook="button-download-phrase"
-            class="full-width"
-            text={$_("pages.auth.recovery.download")}
-            appearance={Appearance.Alt}
-            loading={loading}
-            on:click={downloadPhrase}
-        >
+        <Button hook="button-download-phrase" class="full-width" text={$_("pages.auth.recovery.download")} appearance={Appearance.Alt} loading={loading} on:click={downloadPhrase}>
             <Icon icon={Shape.Download} />
         </Button>
         <Button
