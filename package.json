@@ -39,6 +39,7 @@
         "@capacitor/core": "^6.1.2",
         "@capacitor/ios": "^6.1.2",
         "@capacitor/splash-screen": "^6.0.2",
+        "@capacitor/status-bar": "^6.0.1",
         "@dicebear/collection": "^9.0.1",
         "@dicebear/core": "^9.0.1",
         "@dicebear/identicon": "^9.0.1",

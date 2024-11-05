@@ -27,6 +27,7 @@
     import InstallBanner from "$lib/components/ui/InstallBanner.svelte"
     import Market from "$lib/components/market/Market.svelte"
     import { swipe } from "$lib/components/ui/Swipe"
+    import { StatusBar, Style } from "@capacitor/status-bar"
 
     TimeAgo.addDefaultLocale(en)
     let keybinds: Keybind[]
@@ -268,6 +269,9 @@
         await checkIfUserIsLogged($page.route.id)
         await initializeLocale()
         buildStyle()
+        await StatusBar.setStyle({ style: Style.Default })
+        await StatusBar.setOverlaysWebView({ overlay: true })
+        await StatusBar.show()
     })
 </script>
 
@@ -306,5 +310,6 @@
         flex-direction: column;
         flex: 1;
         overflow: hidden;
+        padding-top: env(safe-area-inset-top, 20px);
     }
 </style>
