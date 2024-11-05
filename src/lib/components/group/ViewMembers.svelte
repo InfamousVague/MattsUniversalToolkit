@@ -2,8 +2,7 @@
     import { Appearance, Shape, Size } from "$lib/enums"
     import type { Chat, User } from "$lib/types"
     import ProfilePicture from "../profile/ProfilePicture.svelte"
-    import { Checkbox, Input, Text } from "$lib/elements"
-    import Controls from "$lib/layouts/Controls.svelte"
+    import { Checkbox, Text } from "$lib/elements"
     import Button from "$lib/elements/Button.svelte"
     import Icon from "$lib/elements/Icon.svelte"
     import Label from "$lib/elements/Label.svelte"
@@ -22,7 +21,7 @@
 
     function update_members(user: User) {
         if (user.key === activeChat.creator) {
-            Store.addToastNotification(new ToastMessage("", `You can not remove the group creator`, 2))
+            Store.addToastNotification(new ToastMessage("", $_("chat.group.removeCreator"), 2))
             members = members
             return
         }
@@ -30,7 +29,7 @@
 
         if (group_members.includes(user)) {
             if (members.length < 3) {
-                Store.addToastNotification(new ToastMessage("", `A group can not exist with one person`, 2))
+                Store.addToastNotification(new ToastMessage("", $_("chat.group.removeTooSmall"), 2))
                 members = members
                 return
             }
@@ -46,11 +45,11 @@
 
     function remove_member(user: User) {
         if (user.key === activeChat.creator) {
-            Store.addToastNotification(new ToastMessage("", `You can not remove the group creator`, 2))
+            Store.addToastNotification(new ToastMessage("", $_("chat.group.removeCreator"), 2))
             return
         }
         if (members.length < 3) {
-            Store.addToastNotification(new ToastMessage("", `A group can not exist with one person`, 2))
+            Store.addToastNotification(new ToastMessage("", $_("chat.group.removeTooSmall"), 2))
             return
         }
 
