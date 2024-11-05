@@ -358,7 +358,8 @@
             "everybodyDeniedTheCall": "Everybody Denied the call. Disconnecting...",
             "acceptedCall": "Joined, loading...",
             "connecting": "Connecting...",
-            "noResponse": "No response"
+            "noResponse": "No response",
+            "join": "Join"
         },
         "notifications": {
             "name": "Notifications",
