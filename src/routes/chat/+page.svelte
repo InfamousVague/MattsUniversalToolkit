@@ -38,7 +38,6 @@
     import BrowseFiles from "../files/BrowseFiles.svelte"
     import AttachmentRenderer from "$lib/components/messaging/AttachmentRenderer.svelte"
     import ShareFile from "$lib/components/files/ShareFile.svelte"
-    import { StateEffect } from "@codemirror/state"
     import { ToastMessage } from "$lib/state/ui/toast"
 
     let loading = false
