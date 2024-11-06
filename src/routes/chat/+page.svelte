@@ -130,6 +130,26 @@
         })
     }
 
+    function sanitizePaymentRequest(message: string): string {
+        // Match and extract "kind", "amountPreview", and "toAddress" from the input string
+        const kindMatch = message.match(/"kind":"(.*?)"/)
+        const amountPreviewMatch = message.match(/"amountPreview":"(.*?)"/)
+        const toAddressMatch = message.match(/"toAddress":"(.*?)"/)
+
+        // Extract the values from the match results, defaulting to an empty string if not found
+        const kind = kindMatch ? kindMatch[1] : ""
+        let amountPreview = amountPreviewMatch ? amountPreviewMatch[1] : ""
+        const toAddress = toAddressMatch ? toAddressMatch[1] : ""
+
+        // Remove any extra occurrence of the currency symbol in `amountPreview`
+        if (amountPreview.includes(kind)) {
+            amountPreview = amountPreview.replace(kind, "").trim()
+        }
+
+        // Return the formatted string
+        return `Send ${amountPreview} ${kind} to wallet: ${toAddress}`
+    }
+
     function addFilesToUpload(selected: File[]) {
         let files: [File?, string?][] = []
         for (let file of selected) {
@@ -815,7 +835,7 @@
                                                         {:else if getValidPaymentRequest(line) !== undefined}
                                                             {#if !$rejectedPayments.find(payments => payments.messageId === message.id)}
                                                                 {#if $own_user.key !== message.details.origin}
-                                                                    <Button hook="text-chat-message" class="send_coin" text={$_("payments.sendCoin")} on:click={async () => getValidPaymentRequest(line, message.id)?.execute()}></Button>
+                                                                    <Button hook="text-chat-message" class="send_coin" text={sanitizePaymentRequest(line)} on:click={async () => getValidPaymentRequest(line, message.id)?.execute()}></Button>
                                                                     <Button
                                                                         hook="text-chat-message"
                                                                         text={$_("payments.declinePayment")}
