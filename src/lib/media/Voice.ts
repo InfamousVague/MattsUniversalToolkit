@@ -111,7 +111,6 @@ function handleStreamMeta(did: string, stream: MediaStream): StreamMetaHandler {
             let user = Store.getUser(did)
             let current = get(user)
             let vol = volume()
-            console.log("incoming volume ", vol)
             if (!muted && vol > VOLUME_THRESHOLD) {
                 speaking = true
             }
