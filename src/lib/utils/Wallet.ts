@@ -491,7 +491,7 @@ export class Transfer {
         return `/request ${transfer}`
     }
 
-    torejectString(id: string) {
+    toRejectString(id: string) {
         let transfer = JSON.stringify(this, (k, v) => (k === "amount" && typeof v === "bigint" ? v.toString() : v))
         return `/reject ${id}`
     }
@@ -520,7 +520,9 @@ export function getValidPaymentRequest(msg: string, msgId?: string): Transfer | 
             transfer.amount = parsed.amount
             transfer.toAddress = parsed.toAddress
             transfer.amountPreview = parsed.amountPreview
-        } catch {}
+        } catch (err) {
+            console.log("Parse Failed", err)
+        }
         if (transfer.asset.kind !== AssetType.None && transfer.isValid()) {
             return transfer
         }
@@ -533,7 +535,9 @@ export function getValidPaymentRequest(msg: string, msgId?: string): Transfer | 
             transfer.amount = parsed.amount
             transfer.toAddress = parsed.toAddress
             transfer.amountPreview = parsed.amountPreview
-        } catch {}
+        } catch (err) {
+            console.log("Parse Failed", err)
+        }
         if (transfer.asset.kind !== AssetType.None && transfer.isValid()) {
             return transfer
         }

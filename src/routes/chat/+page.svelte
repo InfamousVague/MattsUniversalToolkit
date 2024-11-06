@@ -1,6 +1,6 @@
 <script lang="ts">
     import { callInProgress, VoiceRTCInstance } from "../../lib/media/Voice"
-    import { Appearance, ChatType, MessageAttachmentKind, MessagePosition, Route, Shape, Size, TooltipPosition } from "$lib/enums"
+    import { Appearance, ChatType, MessageAttachmentKind, MessagePosition, PaymentRequestsEnum, Route, Shape, Size, TooltipPosition } from "$lib/enums"
     import { _ } from "svelte-i18n"
     import { animationDuration } from "$lib/globals/animations"
     import { slide } from "svelte/transition"
@@ -114,7 +114,6 @@
         event.preventDefault()
         let files: [File?, string?][] = []
         dragging_files = 0
-        // upload files
         for (let file of event.dataTransfer?.files!) {
             files.push([file, undefined])
         }
@@ -150,7 +149,7 @@
         })
     }
 
-    function build_context_items(message: MessageType, file?: Attachment) {
+    function buildContextItems(message: MessageType, file?: Attachment) {
         return [
             message.pinned
                 ? {
@@ -283,7 +282,7 @@
     async function sendPaymentMessage(message: MessageType, paymentType: string) {
         let transfer = new Transfer()
         let chat = get(Store.state.activeChat)
-        let rejectTranser = transfer.torejectString(message.id)
+        let rejectTranser = transfer.toRejectString(message.id)
         let txt = rejectTranser.split("\n")
         if (paymentType === "result") {
             let result = await RaygunStoreInstance.send(chat.id, txt, [])
@@ -305,7 +304,7 @@
                 ConversationStore.addPendingMessages(chat.id, res.message, txt)
             })
         }
-        if (paymentType === "reject") {
+        if (paymentType === PaymentRequestsEnum.Reject) {
             let result = await RaygunStoreInstance.send(chat.id, txt, [])
             result.onSuccess(res => {
                 Store.state.paymentTracker.update(payments => {
@@ -318,7 +317,7 @@
                         return payments
                     }
                 })
-                transfer.torejectString(message.id)
+                transfer.toRejectString(message.id)
                 ConversationStore.addPendingMessages(chat.id, res.message, txt)
             })
         }
@@ -791,7 +790,7 @@
                                         </StoreResolver>
                                     {/if}
                                     {#if message.text.length > 0 || message.attachments.length > 0}
-                                        <ContextMenu hook="context-menu-chat-message" items={build_context_items(message)}>
+                                        <ContextMenu hook="context-menu-chat-message" items={buildContextItems(message)}>
                                             <Message
                                                 id={message.id}
                                                 pinned={message.pinned}
@@ -805,29 +804,41 @@
                                                     <Input hook="chat-message-edit-input-{editing_message}" alt bind:value={editing_text} autoFocus rich on:enter={_ => edit_message(message.id, editing_text ? editing_text : "")} />
                                                 {:else}
                                                     {#each message.text as line}
-                                                        {#if line.startsWith("/reject")}
+                                                        {#if line.startsWith(PaymentRequestsEnum.Reject)}
                                                             {#if !checkForActiveRequest(message, line)}
                                                                 {#if $own_user.key !== message.details.origin}
-                                                                    <Text hook="text-chat-message" markdown={"Payment Rejected"} appearance={group.details.remote ? Appearance.Default : Appearance.Alt} />
+                                                                    <Text hook="text-chat-message" markdown={$_("payments.paymentDeclined")} appearance={group.details.remote ? Appearance.Default : Appearance.Alt} />
                                                                 {:else}
-                                                                    <Text hook="text-chat-message" markdown={"You canceled"} appearance={group.details.remote ? Appearance.Default : Appearance.Alt} />
+                                                                    <Text hook="text-chat-message" markdown={$_("payments.youCanceledRequest")} appearance={group.details.remote ? Appearance.Default : Appearance.Alt} />
                                                                 {/if}
                                                             {/if}
                                                         {:else if getValidPaymentRequest(line) !== undefined}
                                                             {#if !$rejectedPayments.find(payments => payments.messageId === message.id)}
                                                                 {#if $own_user.key !== message.details.origin}
                                                                     <Button hook="text-chat-message" class="send_coin" text={$_("payments.sendCoin")} on:click={async () => getValidPaymentRequest(line, message.id)?.execute()}></Button>
-                                                                    <Button hook="text-chat-message" text={$_("payments.declinePayment")} appearance={Appearance.Error} on:click={async () => sendPaymentMessage(message, "reject")}>
+                                                                    <Button
+                                                                        hook="text-chat-message"
+                                                                        text={$_("payments.declinePayment")}
+                                                                        appearance={Appearance.Error}
+                                                                        on:click={async () => sendPaymentMessage(message, PaymentRequestsEnum.Reject)}>
                                                                         <Icon icon={Shape.XMark}></Icon>
                                                                     </Button>
                                                                 {:else if !checkForActiveRequest(message, line)}
                                                                     <Button hook="text-chat-message" class="send_coin" text={$_("payments.sentRequest")}></Button>
-                                                                    <Button hook="text-chat-message" text={$_("payments.cancel_request")} appearance={Appearance.Error} on:click={async () => sendPaymentMessage(message, "reject")}>
+                                                                    <Button
+                                                                        hook="text-chat-message"
+                                                                        text={$_("payments.cancel_request")}
+                                                                        appearance={Appearance.Error}
+                                                                        on:click={async () => sendPaymentMessage(message, PaymentRequestsEnum.Reject)}>
                                                                         <Icon icon={Shape.XMark}></Icon>
                                                                     </Button>
                                                                 {:else}
                                                                     <Button hook="text-chat-message" class="send_coin" text={$_("payments.sentRequest")}></Button>
-                                                                    <Button hook="text-chat-message" text={$_("payments.canceledRequest")} appearance={Appearance.Error} on:click={async () => sendPaymentMessage(message, "reject")}>
+                                                                    <Button
+                                                                        hook="text-chat-message"
+                                                                        text={$_("payments.canceledRequest")}
+                                                                        appearance={Appearance.Error}
+                                                                        on:click={async () => sendPaymentMessage(message, PaymentRequestsEnum.Reject)}>
                                                                         <Icon icon={Shape.XMark}></Icon>
                                                                     </Button>
                                                                 {/if}
@@ -853,7 +864,7 @@
                                                             }}
                                                             messageId={message.id}
                                                             chatID={$activeChat.id}
-                                                            contextBuilder={attachment => build_context_items(message, attachment)}
+                                                            contextBuilder={attachment => buildContextItems(message, attachment)}
                                                             on:share={e => (fileToShare = [e.detail, $activeChat.id])} />
                                                     {/if}
                                                 {/if}
