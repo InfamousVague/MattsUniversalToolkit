@@ -205,7 +205,7 @@
         "decline": "Decline",
         "create": "Create Payment Request",
         "declinePayment": "Decline Payment",
-        "sentRequest": "Sent Request",
+        "sentRequest": "Request has been sent",
         "cancel_request": "Cancel Request",
         "canceledRequest": "Canceled Request",
         "network": "Network",

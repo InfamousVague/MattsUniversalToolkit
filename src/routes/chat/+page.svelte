@@ -824,7 +824,7 @@
                                                                         <Icon icon={Shape.XMark}></Icon>
                                                                     </Button>
                                                                 {:else if !checkForActiveRequest(message, line)}
-                                                                    <Button hook="text-chat-message" class="send_coin" text={$_("payments.sentRequest")}></Button>
+                                                                    <Text hook="text-chat-message" class="send_coin" markdown={$_("payments.sentRequest")}></Text>
                                                                     <Button
                                                                         hook="text-chat-message"
                                                                         text={$_("payments.cancel_request")}
@@ -833,7 +833,7 @@
                                                                         <Icon icon={Shape.XMark}></Icon>
                                                                     </Button>
                                                                 {:else}
-                                                                    <Button hook="text-chat-message" class="send_coin" text={$_("payments.sentRequest")}></Button>
+                                                                    <Text hook="text-chat-message" class="send_coin" markdown={$_("payments.sentRequest")}></Text>
                                                                     <Button
                                                                         hook="text-chat-message"
                                                                         text={$_("payments.canceledRequest")}
