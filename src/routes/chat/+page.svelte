@@ -816,25 +816,25 @@
                                                         {:else if getValidPaymentRequest(line) !== undefined}
                                                             {#if !$rejectedPayments.find(payments => payments.messageId === message.id)}
                                                                 {#if $own_user.key !== message.details.origin}
-                                                                    <Button hook="text-chat-message" class="send_coin" text={$_("payments.send_coin")} on:click={async () => getValidPaymentRequest(line, message.id)?.execute()}></Button>
-                                                                    <Button hook="text-chat-message" text={$_("payments.decline_payment")} appearance={Appearance.Error} on:click={async () => sendPaymentMessage(message, "reject")}>
+                                                                    <Button hook="text-chat-message" class="send_coin" text={$_("payments.sendCoin")} on:click={async () => getValidPaymentRequest(line, message.id)?.execute()}></Button>
+                                                                    <Button hook="text-chat-message" text={$_("payments.declinePayment")} appearance={Appearance.Error} on:click={async () => sendPaymentMessage(message, "reject")}>
                                                                         <Icon icon={Shape.XMark}></Icon>
                                                                     </Button>
                                                                 {:else if !checkForActiveRequest(message, line)}
-                                                                    <Button hook="text-chat-message" class="send_coin" text={$_("payments.sent_request")}></Button>
+                                                                    <Button hook="text-chat-message" class="send_coin" text={$_("payments.sentRequest")}></Button>
                                                                     <Button hook="text-chat-message" text={$_("payments.cancel_request")} appearance={Appearance.Error} on:click={async () => sendPaymentMessage(message, "reject")}>
                                                                         <Icon icon={Shape.XMark}></Icon>
                                                                     </Button>
                                                                 {:else}
-                                                                    <Button hook="text-chat-message" class="send_coin" text={$_("payments.sent_request")}></Button>
-                                                                    <Button hook="text-chat-message" text={$_("payments.canceled_request")} appearance={Appearance.Error} on:click={async () => sendPaymentMessage(message, "reject")}>
+                                                                    <Button hook="text-chat-message" class="send_coin" text={$_("payments.sentRequest")}></Button>
+                                                                    <Button hook="text-chat-message" text={$_("payments.canceledRequest")} appearance={Appearance.Error} on:click={async () => sendPaymentMessage(message, "reject")}>
                                                                         <Icon icon={Shape.XMark}></Icon>
                                                                     </Button>
                                                                 {/if}
                                                             {:else if $own_user.key !== message.details.origin && !checkForActiveRequest(message, line)}
-                                                                <Button hook="text-chat-message" disabled text={$_("payments.you_canceled_request")} appearance={Appearance.Error} />
+                                                                <Button hook="text-chat-message" disabled text={$_("payments.youCanceledRequest")} appearance={Appearance.Error} />
                                                             {:else}
-                                                                <Button hook="text-chat-message" disabled text={$_("payments.payment_declined")} appearance={Appearance.Error} />
+                                                                <Button hook="text-chat-message" disabled text={$_("payments.paymentDeclined")} appearance={Appearance.Error} />
                                                             {/if}
                                                         {:else if !line.includes(tempCDN)}
                                                             <Text hook="text-chat-message" markdown={line} appearance={group.details.remote ? Appearance.Default : Appearance.Alt} />
