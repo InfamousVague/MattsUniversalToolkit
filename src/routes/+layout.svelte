@@ -28,6 +28,7 @@
     import Market from "$lib/components/market/Market.svelte"
     import { swipe } from "$lib/components/ui/Swipe"
     import { StatusBar, Style } from "@capacitor/status-bar"
+    import { Capacitor } from "@capacitor/core"
 
     TimeAgo.addDefaultLocale(en)
     let keybinds: Keybind[]
@@ -41,6 +42,8 @@
     let cssOverride: string = get(UIStore.state.cssOverride)
     let muted: boolean = get(Store.state.devices.muted)
     let deafened: boolean = get(Store.state.devices.deafened)
+    let isIos: boolean = false
+    let isAndroid: boolean = false
 
     function handleKeybindMatch(event: CustomEvent<any>) {
         let keybind: Keybind = event.detail
@@ -266,11 +269,16 @@
     }
 
     onMount(async () => {
+        const platform = Capacitor.getPlatform()
+        isIos = platform === "ios"
+        isAndroid = platform === "android"
+
         await checkIfUserIsLogged($page.route.id)
         await initializeLocale()
         buildStyle()
+        // Apply overlay for iOS, but not for Android to avoid content being hidden behind the status bar.
+        await StatusBar.setOverlaysWebView({ overlay: isIos })
         await StatusBar.setStyle({ style: Style.Default })
-        await StatusBar.setOverlaysWebView({ overlay: true })
         await StatusBar.show()
     })
 </script>
@@ -278,6 +286,8 @@
 {#if isLocaleSet}
     <div
         id="app"
+        class:is-ios-padding={isIos}
+        class:is-android-padding={isAndroid}
         use:swipe
         on:swipeleft={_ => {
             UIStore.closeSidebar()
@@ -311,5 +321,14 @@
         flex: 1;
         overflow: hidden;
         padding-top: env(safe-area-inset-top, 20px);
+    }
+    /* iOS padding to avoid overlap with the status bar */
+    .is-ios-padding {
+        padding-top: env(safe-area-inset-top, 20px);
+    }
+
+    /* Android-specific padding adjustment if needed */
+    .is-android-padding {
+        padding-top: 0;
     }
 </style>
