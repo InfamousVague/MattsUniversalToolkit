@@ -610,8 +610,19 @@ export class VoiceRTC {
             joinRoom(
                 {
                     appId: "uplink",
-                    relayUrls: ["wss://nostr-pub.wellorder.net", "wss://relay.snort.social"],
-                    relayRedundancy: 1,
+                    relayUrls: [
+                        "wss://nostr-pub.wellorder.net",
+                        "wss://relay.snort.social",
+                        "wss://nostr.bitcoiner.social",
+                        "wss://nostr.oxtr.dev",
+                        "wss://relay.nostr.band",
+                        "wss://nostr.mom",
+                        "wss://relay.nostr.bg",
+                        "wss://nostr.zebedee.cloud",
+                        "wss://nostr-relay.digitalmob.ro",
+                        "wss://relay.nostr.info",
+                    ],
+                    relayRedundancy: 3,
                 },
                 this.channel!
             )
@@ -710,7 +721,10 @@ export class VoiceRTC {
         let localStream
         localStream = await navigator.mediaDevices.getUserMedia({
             video: true,
-            audio: true,
+            audio: {
+                echoCancellation: true,
+                noiseSuppression: true,
+            },
         })
         localStream.getVideoTracks().forEach(track => {
             track.enabled = this.callOptions.video.enabled
