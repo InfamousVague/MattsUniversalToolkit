@@ -130,24 +130,24 @@
         })
     }
 
-    function sanitizePaymentRequest(message: string): string {
+    function sanitizePaymentRequest(message: string, sender: string): string {
         // Match and extract "kind", "amountPreview", and "toAddress" from the input string
         const kindMatch = message.match(/"kind":"(.*?)"/)
         const amountPreviewMatch = message.match(/"amountPreview":"(.*?)"/)
-        const toAddressMatch = message.match(/"toAddress":"(.*?)"/)
+        // const toAddressMatch = message.match(/"toAddress":"(.*?)"/)
 
         // Extract the values from the match results, defaulting to an empty string if not found
         const kind = kindMatch ? kindMatch[1] : ""
         let amountPreview = amountPreviewMatch ? amountPreviewMatch[1] : ""
-        const toAddress = toAddressMatch ? toAddressMatch[1] : ""
+        // const toAddress = toAddressMatch ? toAddressMatch[1] : ""
 
         // Remove any extra occurrence of the currency symbol in `amountPreview`
         if (amountPreview.includes(kind)) {
             amountPreview = amountPreview.replace(kind, "").trim()
         }
-
+        amountPreview = amountPreview.replace(/(\.\d*?[1-9])0+$|\.0*$/, "$1")
         // Return the formatted string
-        return `Send ${amountPreview} ${kind} to wallet: ${toAddress}`
+        return `Send ${amountPreview} ${kind} to: ${sender}`
     }
 
     function addFilesToUpload(selected: File[]) {
@@ -835,13 +835,14 @@
                                                         {:else if getValidPaymentRequest(line) !== undefined}
                                                             {#if !$rejectedPayments.find(payments => payments.messageId === message.id)}
                                                                 {#if $own_user.key !== message.details.origin}
-                                                                    <Button hook="text-chat-message" class="send_coin" text={sanitizePaymentRequest(line)} on:click={async () => getValidPaymentRequest(line, message.id)?.execute()}></Button>
                                                                     <Button
                                                                         hook="text-chat-message"
-                                                                        text={$_("payments.declinePayment")}
-                                                                        appearance={Appearance.Error}
-                                                                        on:click={async () => sendPaymentMessage(message, PaymentRequestsEnum.Reject)}>
-                                                                        <Icon icon={Shape.XMark}></Icon>
+                                                                        class="send_coin"
+                                                                        text={sanitizePaymentRequest(line, resolved.name)}
+                                                                        on:click={async () => getValidPaymentRequest(line, message.id)?.execute()}>
+                                                                        <Icon icon={Shape.DollarOut}></Icon></Button>
+                                                                    <Button hook="text-chat-message" text={$_("payments.decline")} appearance={Appearance.Error} on:click={async () => sendPaymentMessage(message, PaymentRequestsEnum.Reject)}>
+                                                                        <Icon icon={Shape.NoSymbol}></Icon>
                                                                     </Button>
                                                                 {:else if !checkForActiveRequest(message, line)}
                                                                     <Text hook="text-chat-message" class="send_coin" markdown={$_("payments.sentRequest")}></Text>
