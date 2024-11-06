@@ -13,7 +13,7 @@
     import type { Chat } from "$lib/types"
     import VolumeMixer from "./VolumeMixer.svelte"
     import { createEventDispatcher, onDestroy, onMount } from "svelte"
-    import { callInProgress, callTimeout, TIME_TO_SHOW_CONNECTING, TIME_TO_SHOW_END_CALL_FEEDBACK, timeCallStarted, usersAcceptedTheCall, usersDeniedTheCall, VoiceRTCInstance } from "$lib/media/Voice"
+    import { callInProgress, callTimeout, makeCallSound, TIME_TO_SHOW_CONNECTING, TIME_TO_SHOW_END_CALL_FEEDBACK, timeCallStarted, usersAcceptedTheCall, usersDeniedTheCall, VoiceRTCInstance } from "$lib/media/Voice"
     import { log } from "$lib/utils/Logger"
     import { playSound, SoundHandler, Sounds } from "../utils/SoundHandler"
     import { MultipassStoreInstance } from "$lib/wasm/MultipassStore"
@@ -41,12 +41,13 @@
     let showAnimation = true
     let message = $_("settings.calling.connecting")
     let timeout: NodeJS.Timeout | undefined
-    let callSound: SoundHandler | undefined = undefined
 
     $: if ($usersAcceptedTheCall.length > 0) {
-        callSound?.stop()
-        callSound = undefined
+        setTimeout(() => {
+            stopMakeCallSound()
+        }, 300)
     }
+
     $: userCache = Store.getUsersLookup(chat.users)
     $: userCallOptions = VoiceRTCInstance.callOptions
     $: remoteStreams = Store.state.activeCallMeta
@@ -102,8 +103,7 @@
     }
 
     $: if ($usersDeniedTheCall.length === chat.users.length - 1 && chat.users.length > 1) {
-        callSound?.stop()
-        callSound = undefined
+        stopMakeCallSound()
     }
 
     let subscribeOne = Store.state.devices.muted.subscribe(state => {
@@ -182,7 +182,15 @@
         updateUserListSplit()
     }
 
+    function stopMakeCallSound() {
+        $makeCallSound?.stop()
+        $makeCallSound = undefined
+    }
+
     onMount(async () => {
+        if ($makeCallSound) {
+            stopMakeCallSound()
+        }
         window.addEventListener("keydown", handleKeyDown)
         window.addEventListener("keyup", handleKeyUp)
         await MultipassStoreInstance.listUsersForACall(chat.users)
@@ -194,11 +202,10 @@
         /// HACK: To make sure the video elements are loaded before we start the call
         if (VoiceRTCInstance.localVideoCurrentSrc && VoiceRTCInstance.remoteVideoCreator) {
             if (VoiceRTCInstance.toCall && VoiceRTCInstance.toCall.find(did => did !== "") !== undefined && $callInProgress === null) {
-                callSound = await playSound(Sounds.OutgoingCall, { loop: true })
+                $makeCallSound = await playSound(Sounds.OutgoingCall, { loop: true })
                 await VoiceRTCInstance.makeCall()
                 timeout = setTimeout(() => {
-                    callSound?.stop()
-                    callSound = undefined
+                    stopMakeCallSound()
                     showAnimation = false
                     message = $_("settings.calling.noResponse")
                     noResponseVisible = true
@@ -246,8 +253,7 @@
         if (hideNoResponseUsersTimeout) {
             clearTimeout(hideNoResponseUsersTimeout)
         }
-        callSound?.stop()
-        callSound = undefined
+        stopMakeCallSound()
     })
 
     function updateUserListSplit() {
