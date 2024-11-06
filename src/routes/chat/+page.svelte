@@ -5,7 +5,7 @@
     import { animationDuration } from "$lib/globals/animations"
     import { slide } from "svelte/transition"
     import { Chatbar, Sidebar, Topbar, Profile } from "$lib/layouts"
-    import { ImageEmbed, ChatPreview, Conversation, Message, MessageGroup, MessageReactions, MessageReplyContainer, ProfilePicture, Modal, ProfilePictureMany, ChatFilter, ContextMenu, EmojiGroup } from "$lib/components"
+    import { ImageEmbed, ChatPreview, Conversation, Message as MessageComponent, MessageGroup, MessageReactions, MessageReplyContainer, ProfilePicture, Modal, ProfilePictureMany, ChatFilter, ContextMenu, EmojiGroup } from "$lib/components"
     import CreateTransaction from "$lib/components/wallet/CreateTransaction.svelte"
     import { Button, FileInput, Icon, Label, Text } from "$lib/elements"
     import CallScreen from "$lib/components/calling/CallScreen.svelte"
@@ -754,11 +754,11 @@
                             {#if group.messages[0].inReplyTo}
                                 <StoreResolver value={group.messages[0].inReplyTo.details.origin} resolver={v => Store.getUser(v)} let:resolved>
                                     <MessageReplyContainer first remote={group.messages[0].details.remote} image={resolved.profile.photo.image}>
-                                        <Message reply remote={group.messages[0].inReplyTo.details.remote}>
+                                        <MessageComponent reply remote={group.messages[0].inReplyTo.details.remote}>
                                             {#each group.messages[0].inReplyTo.text as line}
                                                 <Text markdown={line} muted size={Size.Small} />
                                             {/each}
-                                        </Message>
+                                        </MessageComponent>
                                     </MessageReplyContainer>
                                 </StoreResolver>
                             {/if}
@@ -781,17 +781,17 @@
                                     {#if message.inReplyTo && idx !== 0}
                                         <StoreResolver value={message.inReplyTo.details.origin} resolver={v => Store.getUser(v)} let:resolved>
                                             <MessageReplyContainer remote={message.details.remote} image={resolved.profile.photo.image}>
-                                                <Message reply remote={message.details.remote}>
+                                                <MessageComponent reply remote={message.details.remote}>
                                                     {#each message.inReplyTo.text as line}
                                                         <Text markdown={line} muted size={Size.Small} />
                                                     {/each}
-                                                </Message>
+                                                </MessageComponent>
                                             </MessageReplyContainer>
                                         </StoreResolver>
                                     {/if}
                                     {#if message.text.length > 0 || message.attachments.length > 0}
                                         <ContextMenu hook="context-menu-chat-message" items={buildContextItems(message)}>
-                                            <Message
+                                            <MessageComponent
                                                 id={message.id}
                                                 pinned={message.pinned}
                                                 slot="content"
@@ -868,7 +868,7 @@
                                                             on:share={e => (fileToShare = [e.detail, $activeChat.id])} />
                                                     {/if}
                                                 {/if}
-                                            </Message>
+                                            </MessageComponent>
 
                                             <svelte:fragment slot="items" let:close>
                                                 <EmojiGroup emojis={$emojis} emojiPick={emoji => reactTo(message.id, emoji, true)} close={close} on:openPicker={_ => (reactingTo = message.id)}></EmojiGroup>
