@@ -610,6 +610,8 @@ export class VoiceRTC {
             joinRoom(
                 {
                     appId: "uplink",
+                    relayUrls: ["wss://nostr-pub.wellorder.net", "wss://relay.damus.io", "wss://relay.snort.social"],
+                    relayRedundancy: 1,
                 },
                 this.channel!
             )
