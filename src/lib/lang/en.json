@@ -71,7 +71,9 @@
         "settings": "Call Settings",
         "collapse": "Less Space",
         "expand": "More Space",
-        "fullscreen": "Fullscreen"
+        "fullscreen": "Fullscreen",
+        "page.next": "Next",
+        "page.previous": "Previous"
     },
     "chat": {
         "chat": "Chat",
@@ -101,6 +103,7 @@
             "select": "Select member(s)",
             "create": "Create Group",
             "noMembers": "No members selected",
+            "noMembersAvailable": "No members available",
             "settings": {
                 "name": "Name",
                 "name.placeholder": "Group Name",
@@ -110,7 +113,7 @@
                 "add.description": "Allow anyone to add members to the group",
                 "edit": "Edit Members",
                 "details": "Change Details",
-                "details.description": "Allow anyone to change the name and motd of the group",
+                "details.description": "Allow anyone to change the name and MOTD of the group",
                 "photo": "Change Photo",
                 "photo.description": "Allow anyone to change the group photo"
             }
@@ -178,6 +181,8 @@
         "download": "Download",
         "rename": "Rename",
         "share": "Share",
+        "share.selectChats": "Select Chats",
+        "share.files": "Share Files with Chats",
         "addFiles": "Add to Files",
         "quickActions": "Quick Actions",
         "sync": "Sync",
@@ -343,17 +348,19 @@
             "startCallMessage": "📞 A call started at {value}.",
             "endCallMessage": "📴 The call ended at {formattedEndTime}. Duration: {duration}.",
             "callMissed": "📞 Missed call",
+            "finishCurrentCallBeforeStartingAnother": "Finish current call before starting another",
             "voice": "Voice",
             "video": "Video",
             "decline": "Decline",
             "hasCancelled": "Has cancelled the call.",
             "disconnecting": "Disconnecting...",
-            "userInviteToAGroupCall": "is inviting you to join a group call",
+            "userInviteToAGroupCall": "{user} has started a group call in {group}",
             "noAnswer": "No answer, leaving the call...",
             "everybodyDeniedTheCall": "Everybody Denied the call. Disconnecting...",
             "acceptedCall": "Joined, loading...",
             "connecting": "Connecting...",
-            "noResponse": "No response"
+            "noResponse": "No response",
+            "join": "Join"
         },
         "notifications": {
             "name": "Notifications",

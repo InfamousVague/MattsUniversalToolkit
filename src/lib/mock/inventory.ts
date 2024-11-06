@@ -12,7 +12,14 @@ export let mock_bundle_elemental: Bundle = {
             name: "Water",
         },
     ],
-    profileOverlays: [],
+    overlays: [],
+    image: "",
+    description: "",
+    price: 0,
+    themes: [],
+    fonts: [],
+    titles: [],
+    trinkets: [],
 }
 
 export let mock_frames: Frame[] = [

@@ -1,3 +1,4 @@
+import { playSound, Sounds } from "$lib/components/utils/SoundHandler"
 import { CallDirection } from "$lib/enums"
 import { Store } from "$lib/state/Store"
 import { create_cancellable_handler, type Cancellable } from "$lib/utils/CancellablePromise"
@@ -7,7 +8,7 @@ import Peer, { DataConnection } from "peerjs"
 import { _ } from "svelte-i18n"
 import { get, writable, type Writable } from "svelte/store"
 import type { Room } from "trystero"
-import { joinRoom } from "trystero/ipfs"
+import { joinRoom } from "trystero"
 
 const CALL_ACK = "CALL_ACCEPT"
 
@@ -16,15 +17,17 @@ export const TIME_TO_SHOW_END_CALL_FEEDBACK = 3500
 export const TIME_TO_SHOW_CONNECTING = 30000
 
 let timeOuts: NodeJS.Timeout[] = []
+
 export const usersDeniedTheCall: Writable<string[]> = writable([])
 export const usersAcceptedTheCall: Writable<string[]> = writable([])
+export const connectionOpened = writable(false)
+export const timeCallStarted: Writable<Date | null> = writable(null)
+export const callInProgress: Writable<string | null> = writable(null)
 
 export enum VoiceRTCMessageType {
     UpdateUser = "UPDATE_USER",
     None = "NONE",
 }
-
-export const connectionOpened = writable(false)
 
 export type RemoteStream = {
     user: VoiceRTCUser
@@ -35,6 +38,7 @@ type VoiceRTCOptions = {
     audio: {
         enabled: boolean
         deafened: boolean
+        volume?: number
     }
     video: {
         enabled: boolean
@@ -51,6 +55,7 @@ export type VoiceRTCUser = {
     videoEnabled: boolean
     audioEnabled: boolean
     isDeafened: boolean
+    volume?: number
 }
 
 export function voiceRTCUserToString(user: VoiceRTCUser): string {
@@ -190,6 +195,7 @@ export class CallRoom {
             let stream = await VoiceRTCInstance.getLocalStream()
             log.debug(`Sending local stream ${stream} to ${peer}`)
             room.addStream(stream, peer)
+            playSound(Sounds.Joined)
             if (!this.start) {
                 this.start = new Date()
             }
@@ -201,6 +207,7 @@ export class CallRoom {
                 VoiceRTCInstance.remoteVideoCreator.delete(participant[0])
                 delete this.participants[participant[0]]
             }
+            playSound(Sounds.Disconnect)
             if (this.empty) {
                 VoiceRTCInstance.leaveCall(true)
             }
@@ -213,6 +220,7 @@ export class CallRoom {
                 participant[1].handleRemoteStream(stream)
             }
         })
+        room.onPeerTrack((stream, peer, _meta) => {})
         // room.onPeerTrack((stream, peer, meta) => {})
     }
 
@@ -259,6 +267,7 @@ export class CallRoom {
                 videoEnabled: VoiceRTCInstance.callOptions.video.enabled,
                 audioEnabled: VoiceRTCInstance.callOptions.audio.enabled,
                 isDeafened: VoiceRTCInstance.callOptions.audio.deafened,
+                volume: VoiceRTCInstance.callOptions.audio.volume,
             },
         }
         this.send(data, to)
@@ -320,6 +329,7 @@ export class VoiceRTC {
                         if (videoElement) {
                             log.debug(`Updating video element for user ${did}`)
                             videoElement.srcObject = s[did].stream
+                            videoElement.volume = data.user?.volume ?? 1
                             videoElement.play().catch(error => {
                                 log.error("Error playing the video, for user: ", data.user?.did, error)
                             })
@@ -363,7 +373,17 @@ export class VoiceRTC {
     }
 
     async setVideoElements(localVideoCurrentSrc: HTMLVideoElement) {
+        let current: MediaProvider | null = null
+        if (this.localVideoCurrentSrc) {
+            this.localVideoCurrentSrc.pause()
+            current = this.localVideoCurrentSrc.srcObject
+            this.localVideoCurrentSrc.srcObject = null
+        }
         this.localVideoCurrentSrc = localVideoCurrentSrc
+        if (current != null) {
+            this.localVideoCurrentSrc.srcObject = current
+            this.localVideoCurrentSrc.play()
+        }
         new Promise(resolve => setTimeout(resolve, 500))
     }
 
@@ -393,6 +413,7 @@ export class VoiceRTC {
                     log.info(`Receiving connection on channel: ${conn.metadata.channel} from ${conn.metadata.id}, username: ${conn.metadata.username}`)
                     this.incomingConnections.push(conn)
                     this.incomingCallFrom = [conn.metadata.channel, conn]
+                    timeCallStarted.set(new Date(conn.metadata.timeCallStarted))
                     Store.setPendingCall(Store.getCallingChat(this.channel!)!, CallDirection.Inbound)
                 })
 
@@ -432,7 +453,7 @@ export class VoiceRTC {
      * Actually making the call
      */
     async makeCall(call: boolean = true) {
-        if (!this.toCall) {
+        if (!this.toCall && !call) {
             log.error("Calling not setup")
             return
         }
@@ -446,7 +467,10 @@ export class VoiceRTC {
             // Create a new call room
             this.createAndSetRoom()
             if (call) {
-                this.inviteToCall(this.toCall)
+                this.inviteToCall(this.toCall!)
+                const formattedEndTime = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })
+                const text = get(_)("settings.calling.startCallMessage", { values: { value: formattedEndTime } })
+                await RaygunStoreInstance.send(this.channel!, text.split("\n"), [])
             }
             const timeoutWhenCallIsNull = setTimeout(() => {
                 if (this.call === null || this.call.empty) {
@@ -454,13 +478,16 @@ export class VoiceRTC {
                     callTimeout.set(true)
                     timeOuts.push(
                         setTimeout(() => {
-                            callTimeout.set(false)
-                            this.leaveCall(true)
+                            if (get(usersAcceptedTheCall).length === 0) {
+                                callTimeout.set(false)
+                                this.leaveCall(true)
+                            }
                         }, TIME_TO_SHOW_END_CALL_FEEDBACK)
                     )
                 }
             }, TIME_TO_WAIT_FOR_ANSWER)
             timeOuts.push(timeoutWhenCallIsNull)
+            callInProgress.set(this.channel!)
             Store.setActiveCall(Store.getCallingChat(this.channel!)!, CallDirection.Outbound)
         } catch (error) {
             log.error(`Error making call: ${error}`)
@@ -495,16 +522,19 @@ export class VoiceRTC {
         while (!handled && !accepted && attempts < maxRetries) {
             try {
                 if (!conn) {
+                    let callStartedDate = new Date()
                     log.debug(`Trying to send invitation send out to ${peer} ${conn}`)
                     conn = this.localPeer!.connect(peer, {
                         metadata: {
                             did: get(Store.state.user).key,
                             username: get(Store.state.user).name,
                             channel: this.channel,
+                            timeCallStarted: callStartedDate.toISOString(),
                         },
                     })
                     conn.on("open", () => {
                         connected = true
+                        timeCallStarted.set(callStartedDate)
                     })
                     conn.once("data", d => {
                         if (d === CALL_ACK) {
@@ -532,12 +562,14 @@ export class VoiceRTC {
                         }
                     })
                 }
-                await new Promise(resolve => timeOuts.push(setTimeout(resolve, 5000)))
+                await new Promise(resolve => timeOuts.push(setTimeout(resolve, 3000)))
                 if (connected) {
                     // If connection has been made let it ring for 30 sec.
                     await new Promise(resolve => timeOuts.push(setTimeout(resolve, 30000)))
                     conn.close()
                     break
+                } else {
+                    conn = undefined
                 }
             } catch (error) {
                 attempts += 1
@@ -580,6 +612,7 @@ export class VoiceRTC {
         this.call?.room.leave()
         this.call = null
         this.channel = this.incomingCallFrom[0]
+        callInProgress.set(this.channel!)
         // Tell the other end you accepted the call
         this.incomingCallFrom[1].send(CALL_ACK)
         this.createAndSetRoom()
@@ -595,6 +628,8 @@ export class VoiceRTC {
     }
 
     async leaveCall(sendEndCallMessage = false) {
+        callInProgress.set(null)
+        timeCallStarted.set(null)
         usersDeniedTheCall.set([])
         callTimeout.set(false)
         connectionOpened.set(false)

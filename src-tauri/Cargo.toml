@@ -1,23 +1,23 @@
 [package]
-name = "app"
-version = "0.1.0"
-description = "A Tauri App"
-authors = ["you"]
+name = "uplink"
+version = "2.0.0"
+description = "Privacy First, Modular, P2P Universal Messaging Client - With you at it's core"
+authors = ["Satellite.IM"]
 license = ""
 repository = ""
-default-run = "app"
+default-run = "uplink"
 edition = "2021"
 rust-version = "1.60"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [build-dependencies]
-tauri-build = { version = "1.5.1", features = [] }
+tauri-build = { version = "2", features = [] }
 
 [dependencies]
 serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
-tauri = { version = "1.6.1", features = [ "macos-private-api", "window-unminimize", "window-hide", "window-show", "window-minimize", "window-maximize", "window-close", "window-start-dragging", "window-unmaximize"] }
+tauri = { version = "2", features = [ "macos-private-api"] }
 
 [features]
 # this feature is used for production builds or when `devPath` points to the filesystem and the built-in dev server is disabled.

@@ -1,30 +1,29 @@
 <script lang="ts">
-    import { VoiceRTCInstance, VoiceRTCMessageType } from "../../lib/media/Voice"
+    import { callInProgress, VoiceRTCInstance } from "../../lib/media/Voice"
     import { Appearance, ChatType, MessageAttachmentKind, MessagePosition, Route, Shape, Size, TooltipPosition } from "$lib/enums"
-    import { _, date, time } from "svelte-i18n"
+    import { _ } from "svelte-i18n"
     import { animationDuration } from "$lib/globals/animations"
     import { slide } from "svelte/transition"
     import { Chatbar, Sidebar, Topbar, Profile } from "$lib/layouts"
     import {
-        FileEmbed,
         ImageEmbed,
         ChatPreview,
         Conversation,
-        Message,
+        Message as MessageComponent,
         MessageGroup,
         MessageReactions,
         MessageReplyContainer,
         ProfilePicture,
         Modal,
         ProfilePictureMany,
-        STLViewer,
         ChatFilter,
         ContextMenu,
         EmojiGroup,
+        MessageText,
     } from "$lib/components"
     import { Button, FileInput, Icon, Label, Text } from "$lib/elements"
     import CallScreen from "$lib/components/calling/CallScreen.svelte"
-    import { OperationState, type MessageGroup as MessageGroupType } from "$lib/types"
+    import { MessageType, type MessageGroup as MessageGroupType } from "$lib/types"
     import EncryptedNotice from "$lib/components/messaging/EncryptedNotice.svelte"
     import { Store } from "$lib/state/Store"
     import { derived, get } from "svelte/store"
@@ -34,27 +33,24 @@
     import { ConversationStore, type ConversationMessages } from "$lib/state/conversation"
     import GroupSettings from "$lib/components/group/GroupSettings.svelte"
     import ViewMembers from "$lib/components/group/ViewMembers.svelte"
-    import AudioEmbed from "$lib/components/messaging/embeds/AudioEmbed.svelte"
-    import VideoEmbed from "$lib/components/messaging/embeds/VideoEmbed.svelte"
     import Market from "$lib/components/market/Market.svelte"
     import { RaygunStoreInstance } from "$lib/wasm/RaygunStore"
-    import type { Attachment, FileInfo, Message as MessageType, User } from "$lib/types"
+    import type { Attachment, Message, User } from "$lib/types"
     import Input from "$lib/elements/Input/Input.svelte"
     import PendingMessage from "$lib/components/messaging/message/PendingMessage.svelte"
     import PendingMessageGroup from "$lib/components/messaging/PendingMessageGroup.svelte"
     import FileUploadPreview from "$lib/elements/FileUploadPreview.svelte"
-    import TextDocument from "$lib/components/messaging/embeds/TextDocument.svelte"
     import StoreResolver from "$lib/components/utils/StoreResolver.svelte"
-    import { getValidPaymentRequest } from "$lib/utils/Wallet"
     import { onMount } from "svelte"
     import PinnedMessages from "$lib/components/messaging/PinnedMessages.svelte"
     import { MessageEvent } from "warp-wasm"
     import { debounce, getTimeAgo } from "$lib/utils/Functions"
     import Controls from "$lib/layouts/Controls.svelte"
-    import { tempCDN } from "$lib/utils/CommonVariables"
     import { checkMobile } from "$lib/utils/Mobile"
     import BrowseFiles from "../files/BrowseFiles.svelte"
     import AttachmentRenderer from "$lib/components/messaging/AttachmentRenderer.svelte"
+    import ShareFile from "$lib/components/files/ShareFile.svelte"
+    import { ToastMessage } from "$lib/state/ui/toast"
 
     let loading = false
     let contentAsideOpen = false
@@ -108,9 +104,11 @@
     let editing_text: string | undefined = undefined
     $: emojis = UIStore.getMostUsed()
     $: own_user = Store.state.user
-    let replyTo: MessageType | undefined = undefined
+    let replyTo: Message | undefined = undefined
     let reactingTo: string | undefined
     let fileUpload: FileInput
+
+    let fileToShare: [Attachment, string] | undefined
 
     $: chats = UIStore.state.chats
     $: pendingMessages = derived(ConversationStore.getPendingMessages($activeChat), msg => Object.values(msg))
@@ -164,7 +162,7 @@
         })
     }
 
-    function build_context_items(message: MessageType, file?: Attachment) {
+    function build_context_items(message: Message, file?: Attachment) {
         return [
             message.pinned
                 ? {
@@ -218,11 +216,7 @@
                 : []),
             ...(message.details.origin === $own_user.key
                 ? [
-                      ...(!message.text.some(text => text.includes("giphy.com")) &&
-                      !message.text.some(text => text.includes(tempCDN)) &&
-                      !message.text.some(text => text.includes(get(_)("settings.calling.callMissed"))) &&
-                      !message.text.some(text => text.includes(get(_)("settings.calling.endCallMessage"))) &&
-                      !message.text.some(text => text.includes(get(_)("settings.calling.startCallMessage")))
+                      ...(message.type === MessageType.DEFAULT
                           ? [
                                 {
                                     id: "edit",
@@ -236,9 +230,7 @@
                                 },
                             ]
                           : []),
-                      ...(!message.text.some(text => text.includes(get(_)("settings.calling.callMissed"))) &&
-                      !message.text.some(text => text.includes(get(_)("settings.calling.endCallMessage"))) &&
-                      !message.text.some(text => text.includes(get(_)("settings.calling.startCallMessage")))
+                      ...(message.type === MessageType.DEFAULT
                           ? [
                                 {
                                     id: "delete",
@@ -292,9 +284,6 @@
         })
     }
 
-    async function download_attachment(message: string, attachment: Attachment) {
-        await RaygunStoreInstance.downloadAttachment($conversation!.id, message, attachment.name, attachment.size)
-    }
     let activeCallInProgress = false
     let activeCallDid = ""
 
@@ -322,7 +311,7 @@
         }, 500)
     })
 
-    function getPinned(conversation: ConversationMessages | undefined): MessageType[] {
+    function getPinned(conversation: ConversationMessages | undefined): Message[] {
         if (!conversation) return []
         return conversation!.messages.flatMap(g => g.messages.filter(m => m.pinned))
     }
@@ -336,7 +325,7 @@
 
     function splitUnreads(groups: MessageGroupType[]): [MessageGroupType[], MessageGroupType[]] {
         let splitMessages = (group: MessageGroupType) => {
-            return group.messages.reduce<[MessageType[], MessageType[]]>(
+            return group.messages.reduce<[Message[], Message[]]>(
                 ([read, unreads], message) => {
                     if (message.details.at > $activeChat.last_view_date) {
                         unreads.push(message)
@@ -372,6 +361,10 @@
             },
             [[], []]
         )
+    }
+
+    function notificationThereIsACallInProgress() {
+        Store.addToastNotification(new ToastMessage("", $_("settings.calling.finishCurrentCallBeforeStartingAnother"), 4))
     }
 
     document.addEventListener("click", handleClickOutsideEditInput)
@@ -446,6 +439,23 @@
             on:close={_ => {
                 showMarket = false
             }} />
+    {/if}
+
+    {#if fileToShare}
+        <Modal
+            on:close={_ => {
+                fileToShare = undefined
+            }}>
+            <ShareFile
+                file={{
+                    type: "attachment",
+                    chat: fileToShare[1],
+                    attachment: fileToShare[0],
+                }}
+                on:close={_ => {
+                    fileToShare = undefined
+                }} />
+        </Modal>
     {/if}
 
     {#if dragging_files > 0}
@@ -555,9 +565,14 @@
                         appearance={Appearance.Alt}
                         disabled={$activeChat.users.length === 0}
                         on:click={async _ => {
-                            Store.setActiveCall($activeChat)
-                            await VoiceRTCInstance.startToMakeACall($activeChat.users, $activeChat.id, true)
-                            activeCallInProgress = true
+                            if ($callInProgress !== null) {
+                                notificationThereIsACallInProgress()
+                                return
+                            } else {
+                                Store.setActiveCall($activeChat)
+                                await VoiceRTCInstance.startToMakeACall($activeChat.users, $activeChat.id, true)
+                                activeCallInProgress = true
+                            }
                         }}>
                         <Icon icon={Shape.PhoneCall} />
                     </Button>
@@ -570,9 +585,14 @@
                         disabled={$activeChat.users.length === 0}
                         loading={loading}
                         on:click={async _ => {
-                            await VoiceRTCInstance.startToMakeACall($activeChat.users, $activeChat.id)
-                            activeCallInProgress = true
-                            Store.setActiveCall($activeChat)
+                            if ($callInProgress !== null) {
+                                notificationThereIsACallInProgress()
+                                return
+                            } else {
+                                await VoiceRTCInstance.startToMakeACall($activeChat.users, $activeChat.id)
+                                activeCallInProgress = true
+                                Store.setActiveCall($activeChat)
+                            }
                         }}>
                         <Icon icon={Shape.VideoCamera} />
                     </Button>
@@ -643,6 +663,8 @@
                     {/if}
                 </svelte:fragment>
             </Topbar>
+        {:else}
+            <Topbar />
         {/if}
         {#if activeCallInProgress && activeCallDid === $activeChat.id}
             <CallScreen
@@ -660,6 +682,17 @@
                 {#if conversation}
                     {#each $conversation.messages as group}
                         <StoreResolver value={group.details.origin} resolver={v => Store.getUser(v)} let:resolved>
+                            {#if group.messages[0].inReplyTo}
+                                <StoreResolver value={group.messages[0].inReplyTo.details.origin} resolver={v => Store.getUser(v)} let:resolved>
+                                    <MessageReplyContainer first remote={group.messages[0].details.remote} image={resolved.profile.photo.image}>
+                                        <MessageComponent reply remote={group.messages[0].inReplyTo.details.remote}>
+                                            {#each group.messages[0].inReplyTo.text as line}
+                                                <Text markdown={line} muted size={Size.Small} />
+                                            {/each}
+                                        </MessageComponent>
+                                    </MessageReplyContainer>
+                                </StoreResolver>
+                            {/if}
                             <MessageGroup
                                 profilePictureRequirements={{
                                     notifications: 0,
@@ -676,20 +709,20 @@
                                 username={resolved.name}
                                 subtext={getTimeAgo(group.messages[0].details.at)}>
                                 {#each group.messages as message, idx}
-                                    {#if message.inReplyTo}
+                                    {#if message.inReplyTo && idx !== 0}
                                         <StoreResolver value={message.inReplyTo.details.origin} resolver={v => Store.getUser(v)} let:resolved>
-                                            <MessageReplyContainer remote={message.inReplyTo.details.remote} image={resolved.profile.photo.image}>
-                                                <Message reply remote={message.inReplyTo.details.remote}>
+                                            <MessageReplyContainer remote={message.details.remote} image={resolved.profile.photo.image}>
+                                                <MessageComponent reply remote={message.details.remote}>
                                                     {#each message.inReplyTo.text as line}
                                                         <Text markdown={line} muted size={Size.Small} />
                                                     {/each}
-                                                </Message>
+                                                </MessageComponent>
                                             </MessageReplyContainer>
                                         </StoreResolver>
                                     {/if}
                                     {#if message.text.length > 0 || message.attachments.length > 0}
                                         <ContextMenu hook="context-menu-chat-message" items={build_context_items(message)}>
-                                            <Message
+                                            <MessageComponent
                                                 id={message.id}
                                                 pinned={message.pinned}
                                                 slot="content"
@@ -701,18 +734,7 @@
                                                 {#if editing_message === message.id}
                                                     <Input hook="chat-message-edit-input-{editing_message}" alt bind:value={editing_text} autoFocus rich on:enter={_ => edit_message(message.id, editing_text ? editing_text : "")} />
                                                 {:else}
-                                                    {#each message.text as line}
-                                                        {#if getValidPaymentRequest(line) != undefined}
-                                                            <Button text={getValidPaymentRequest(line)?.toDisplayString()} on:click={async () => getValidPaymentRequest(line)?.execute()}></Button>
-                                                        {:else if !line.includes(tempCDN)}
-                                                            <Text hook="text-chat-message" markdown={line} appearance={group.details.remote ? Appearance.Default : Appearance.Alt} />
-                                                        {:else if line.includes(tempCDN)}
-                                                            <div class="sticker">
-                                                                <Text hook="text-chat-message" markdown={line} size={Size.Smallest} appearance={group.details.remote ? Appearance.Default : Appearance.Alt} />
-                                                            </div>
-                                                        {/if}
-                                                    {/each}
-
+                                                    <MessageText chat={$activeChat.id} texts={message.text} remote={group.details.remote} type={message.type} />
                                                     {#if message.attachments.length > 0}
                                                         <AttachmentRenderer
                                                             attachments={message.attachments}
@@ -721,10 +743,11 @@
                                                             }}
                                                             messageId={message.id}
                                                             chatID={$activeChat.id}
-                                                            contextBuilder={attachment => build_context_items(message, attachment)} />
+                                                            contextBuilder={attachment => build_context_items(message, attachment)}
+                                                            on:share={e => (fileToShare = [e.detail, $activeChat.id])} />
                                                     {/if}
                                                 {/if}
-                                            </Message>
+                                            </MessageComponent>
                                             <svelte:fragment slot="items" let:close>
                                                 <EmojiGroup emojis={$emojis} emojiPick={emoji => reactTo(message.id, emoji, true)} close={close} on:openPicker={_ => (reactingTo = message.id)}></EmojiGroup>
                                             </svelte:fragment>
@@ -1018,9 +1041,5 @@
                 max-width: 100%;
             }
         }
-    }
-
-    .sticker {
-        width: var(--sticker-width-rendered);
     }
 </style>

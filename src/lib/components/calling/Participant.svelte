@@ -7,6 +7,7 @@
     import { mock_users } from "$lib/mock/users"
     import Controls from "$lib/layouts/Controls.svelte"
     import { Icon, Button, Text } from "$lib/elements"
+    import Spacer from "$lib/elements/Spacer.svelte"
 
     export let participant: User = defaultUser
     export let hasVideo: boolean = false
@@ -49,7 +50,8 @@
     {:else}
         <!-- svelte-ignore a11y-mouse-events-have-key-events -->
         <!-- svelte-ignore a11y-no-static-element-interactions -->
-        <div data-cy="participant-without-video" class="simple" on:mouseover={() => toggleDetails(true)} on:mouseleave={() => toggleDetails(false)}>
+        <!-- svelte-ignore a11y-click-events-have-key-events -->
+        <div data-cy="participant-without-video" class="simple" on:click on:mouseover={() => toggleDetails(true)} on:mouseleave={() => toggleDetails(false)}>
             {#if showDetails}
                 <div class="state centered" in:fade={{ duration: animationDuration }}>
                     <Controls>
@@ -70,9 +72,11 @@
                 hook="participant-profile-picture"
                 id={participant.key}
                 image={participant.profile.photo.image}
-                size={Size.Larger}
+                size={Size.Large}
                 noIndicator
                 highlight={isMuted || isDeafened ? Appearance.Error : isTalking ? Appearance.Success : Appearance.Alt} />
+            <Spacer less />
+            <Text singleLine size={Size.Smaller}>{participant.name}</Text>
         </div>
     {/if}
 </div>
@@ -82,6 +86,19 @@
         width: fit-content;
         height: fit-content;
         position: relative;
+        align-items: center;
+        justify-content: center;
+        display: flex;
+
+        .simple {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            &:hover {
+                cursor: pointer;
+            }
+        }
 
         video {
             width: 300px;
@@ -118,14 +135,6 @@
                 border-radius: var(--border-radius-less);
                 backdrop-filter: blur(var(--blur-radius));
                 -webkit-backdrop-filter: blur(var(--blur-radius));
-            }
-        }
-
-        .simple {
-            border-radius: 50%;
-            position: relative;
-            &:hover {
-                cursor: pointer;
             }
         }
 

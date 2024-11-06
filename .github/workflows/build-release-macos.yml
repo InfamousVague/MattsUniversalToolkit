@@ -1,19 +1,19 @@
 name: Build MacOS Release
+
 on:
-    push:
-        branches:
-            - main
-    workflow_dispatch:
+  push:
+    tags:
+      - "*"
 
 jobs:
     build-macos-release:
         permissions: write-all
         runs-on: macos-latest
         steps:
-            - uses: actions/checkout@v4.2.0
+            - uses: actions/checkout@v4.2.2
 
             - name: setup node
-              uses: actions/setup-node@v4.0.4
+              uses: actions/setup-node@v4.1.0
               with:
                   node-version: lts/*
 
@@ -23,7 +23,7 @@ jobs:
             - name: install frontend dependencies
               run: npm install
 
-            - uses: tauri-apps/tauri-action@v0
+            - uses: tauri-apps/tauri-action@v0.5.15
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   APPLE_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
@@ -34,8 +34,14 @@ jobs:
                   APPLE_TEAM_ID: ${{ secrets.MACOS_NOTARIZATION_TEAM_ID }}
 
             - name: Upload signed macOS Installer
-              uses: actions/upload-artifact@v4.4.0
+              uses: actions/upload-artifact@v4.4.3
               with:
                   name: build-macos-official
                   path: src-tauri/target/release/bundle/dmg/*.dmg
                   retention-days: 5
+
+            - name: Github Release MacOS
+              uses: softprops/action-gh-release@v2
+              with:
+                  files: |
+                      src-tauri/target/release/bundle/dmg/*.dmg

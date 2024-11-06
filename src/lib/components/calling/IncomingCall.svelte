@@ -6,7 +6,7 @@
     import ProfilePicture from "../profile/ProfilePicture.svelte"
     import { playSound, SoundHandler, Sounds } from "../utils/SoundHandler"
     import { Store } from "$lib/state/Store"
-    import { connectionOpened, VoiceRTCInstance } from "$lib/media/Voice"
+    import { callInProgress, connectionOpened, VoiceRTCInstance } from "$lib/media/Voice"
     import { goto } from "$app/navigation"
     import { writable } from "svelte/store"
     import { onDestroy, onMount } from "svelte"
@@ -35,7 +35,7 @@
     Store.state.pendingCall.subscribe(async _ => {
         if (VoiceRTCInstance.incomingCallFrom && !VoiceRTCInstance.toCall && $connectionOpened) {
             if (callSound === null || callSound === undefined) {
-                callSound = await playSound(Sounds.IncomingCall)
+                callSound = await playSound(Sounds.IncomingCall, { loop: true })
             }
             pending = true
             let chat = UIStore.getChat(VoiceRTCInstance.incomingCallFrom[1].metadata.channel)
@@ -77,40 +77,47 @@
     }
 </script>
 
-{#if pending}
-    <div id="incoming-call">
+{#if pending && (VoiceRTCInstance.incomingCallFrom === null || (VoiceRTCInstance.incomingCallFrom && $callInProgress !== VoiceRTCInstance.incomingCallFrom[1]?.metadata.channel))}
+    <div id="incoming-call" data-cy="incoming-call-modal">
         <div class="body">
             <div class="content" style={cancelledCall ? "border: var(--border-width) solid var(--warning-color);" : "border: var(--border-width) solid var(--success-color);"}>
                 {#if cancelledCall}
                     <ProfilePicture id={$user.key} hook="friend-profile-picture" size={Size.Large} image={$user.profile.photo.image} status={$user.profile.status} />
-                    <Text>{$user.name}</Text>
-                    <Text muted size={Size.Large}>{$_("settings.calling.hasCancelled")}</Text>
-                    <Text muted size={Size.Large}>{$_("settings.calling.disconnecting")}</Text>
+                    <Text hook="text-canceled-call-username">{$user.name}</Text>
+                    <Text hook="text-has-canceled" muted size={Size.Large}>{$_("settings.calling.hasCancelled")}</Text>
+                    <Text hook="text-disconnecting" muted size={Size.Large}>{$_("settings.calling.disconnecting")}</Text>
                     <Spacer less={true} />
                 {:else}
                     {#if $callChat.kind === ChatType.DirectMessage}
                         <ProfilePicture id={$user.key} hook="friend-profile-picture" size={Size.Large} image={$user.profile.photo.image} status={$user.profile.status} />
-                        <Text>{$user.name}</Text>
+                        <Text hook="incoming-call-username">{$user.name}</Text>
                         {#if $user.profile.status_message !== ""}
-                            <Text muted>{$user.profile.status_message}</Text>
+                            <Text hook="incoming-call-status-message" muted>{$user.profile.status_message}</Text>
                         {/if}
                     {:else}
-                        <ProfilePicture id={$user.key} hook="friend-profile-picture" size={Size.Large} image={$user.profile.photo.image} status={$user.profile.status} />
-                        <Text>{$user.name}</Text>
-                        <Text>{$_("settings.calling.userInviteToAGroupCall")}</Text>
+                        <ProfilePicture id={$user.key} hook="friend-profile-picture" size={Size.Medium} image={$user.profile.photo.image} status={$user.profile.status} />
+                        <div class="text-container">
+                            <Text hook="text-inviting-to-a-call">
+                                {@html $_("settings.calling.userInviteToAGroupCall", {
+                                    values: {
+                                        user: `<span class="bold-text" style="font-weight: bold">${$user.name}</span>`,
+                                        group: `<span class="bold-text" style="font-weight: bold">${$callChat.name}</span>`,
+                                    },
+                                })}
+                            </Text>
+                        </div>
                         <ProfilePictureMany users={$users} />
-                        <Text>{$callChat.name}</Text>
                     {/if}
                     <Spacer less={true} />
                     <Controls>
-                        <Button appearance={Appearance.Success} text={$_("settings.calling.voice")} on:click={_ => answerCall(true)}>
+                        <Button hook="button-accept-voice" appearance={Appearance.Success} text={$_("settings.calling.voice")} on:click={_ => answerCall(true)}>
                             <Icon icon={Shape.PhoneCall} />
                         </Button>
-                        <Button appearance={Appearance.Success} text={$_("settings.calling.video")} on:click={_ => answerCall(false)}>
+                        <Button hook="button-accept-video" appearance={Appearance.Success} text={$_("settings.calling.video")} on:click={_ => answerCall(false)}>
                             <Icon icon={Shape.VideoCamera} />
                         </Button>
                     </Controls>
-                    <Button appearance={Appearance.Error} text={$_("settings.calling.decline")} on:click={endCall}>
+                    <Button hook="button-decline" appearance={Appearance.Error} text={$_("settings.calling.decline")} on:click={endCall}>
                         <Icon icon={Shape.PhoneXMark} />
                     </Button>
                 {/if}
@@ -127,7 +134,6 @@
         gap: var(--gap);
         width: 100%;
         flex: 1;
-
         .body {
             position: absolute;
             z-index: 1000;
@@ -152,6 +158,11 @@
                 justify-content: center;
                 align-items: center;
                 border: var(--border-width) solid var(--success-color);
+
+                .text-container {
+                    max-width: 80%;
+                    padding-left: 25px;
+                }
             }
         }
     }
