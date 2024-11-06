@@ -25,6 +25,7 @@
         Send = "send",
         Receive = "receive",
         QRScanner = "send",
+        SendFunds = "SendFunds",
     }
 
     let currentView: ViewMode = ViewMode.None
@@ -113,6 +114,7 @@
 
     function startQRScanner() {
         currentView = ViewMode.QRScanner
+        showQRScanner = true
     }
 
     function handleQRCodeScanned(event: { detail: string }) {
@@ -168,6 +170,8 @@
         }
     }
     let showQR = false
+    let showQRScanner = false
+
     function openQRCode() {
         console.log(showQR)
         showQR = !showQR
@@ -232,25 +236,30 @@
     {/if}
 
     {#if currentView === ViewMode.QRScanner}
-        <div class="address_container">
-            <Label text={$_("payments.enter_address")} />
-            <div class="send_address">
-                <Input />
-                <Button appearance={Appearance.Primary} hook="button" on:click={openQRCode} icon><Icon icon={Shape.QRCode} /></Button>
-            </div>
-        </div>
+        <Label text={$_("payments.enter_address")} />
+        <Input />
+
+        <Label text={$_("generic.or")} />
+
+        <QRScanner on:qrCodeScanned={handleQRCodeScanned} />
+
         <!-- QR Code Scanner -->
         {#if showQR}
             <QRCodeDisplay selectedCurrency={selectedCurrency} />
-            <QRScanner on:scanned={handleQRCodeScanned} />
         {/if}
 
-        <div class="send">
-            <Label text={$_("payments.amount")} />
-            <Input />
-            <Label text={$_("payments.add_note")} />
-            <Input />
-            <Button appearance={Appearance.Primary} hook="button" on:click={sendTransaction} text="Create Transaction"></Button>
+        <Button appearance={Appearance.Alt} on:click={() => (currentView = ViewMode.SendFunds)} text="Send Funds"></Button>
+    {/if}
+
+    {#if currentView === ViewMode.SendFunds}
+        <div class="send-funds">
+            <Label text="Send <user/address> Funds" />
+
+            <Input placeholder="Amount" />
+
+            <Input placeholder="Note" />
+
+            <Button appearance={Appearance.Primary} text="Complete Transaction" on:click={() => {}} />
         </div>
     {/if}
 
@@ -290,6 +299,19 @@
             :global(.button) {
                 width: 100%;
             }
+        }
+        .send-funds {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: var(--background-alt);
+            border-radius: var(--border-radius);
+            border: var(--border-width) solid var(--border-color);
+            gap: var(--gap);
+            padding: var(--padding);
+            display: inline-flex;
+            flex-direction: column;
         }
         .send_address {
             display: inline-flex;
