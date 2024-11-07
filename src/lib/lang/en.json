@@ -212,7 +212,7 @@
         "canceledRequest": "Canceled Request",
         "network": "Network",
         "paymentDeclined": "Payment Declined",
-        "youCanceledRequest": "You Canceled Request",
+        "youCanceledRequest": "You Declined Payment Request",
         "declinedPayment": "{user} Denied Payment",
         "assetType": "Asset type",
         "assetName": "Asset name",
