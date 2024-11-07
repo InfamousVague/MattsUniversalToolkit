@@ -13,6 +13,8 @@ export type LogItem = {
     timestamp: number
     level: LogLevel
     message: string
+    file?: string
+    line?: number
     other?: any[]
 }
 
@@ -30,24 +32,43 @@ export class Logger {
         this.log = []
     }
 
+    private getLogLocation(depth: number = 4): { file: string; line: number } | null {
+        const error = new Error()
+        const stack = error.stack?.split("\n")
+
+        if (stack && stack.length > depth) {
+            const line = stack[depth].trim()
+            const match = line.match(/(?:\()?(.*):(\d+):\d+\)?$/)
+            if (match) {
+                return { file: match[1], line: parseInt(match[2]) }
+            }
+        }
+        return null
+    }
+
     write(level: LogLevel, message: string, ...other: any[]) {
         let settings = get(this.settings)
         if (Object.values(LogLevel).indexOf(level) < Object.values(LogLevel).indexOf(settings.level)) return
+
+        const location = this.getLogLocation(4)
         this.log.push({
             timestamp: Date.now(),
             level,
             message,
+            file: location?.file,
+            line: location?.line,
             other,
         })
 
         if (settings.relay_to_js_console) {
+            const locationInfo = location ? ` (${location.file}:${location.line})` : ""
             switch (level) {
                 case LogLevel.Error: {
-                    console.error(`[${level.toString()}] (${new Date().toLocaleTimeString()}): ${message}`, ...other)
+                    console.error(`[${level.toString()}] (${new Date().toLocaleTimeString()}): ${message}${locationInfo}`, ...other)
                     break
                 }
                 case LogLevel.Warning: {
-                    console.warn(`[${level.toString()}] (${new Date().toLocaleTimeString()}): ${message}`, ...other)
+                    console.warn(`[${level.toString()}] (${new Date().toLocaleTimeString()}): ${message}${locationInfo}`, ...other)
                     break
                 }
                 case LogLevel.Info: {
