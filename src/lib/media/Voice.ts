@@ -116,26 +116,24 @@ function handleStreamMeta(did: string, stream: MediaStream): StreamMetaHandler {
             }))
         }
         const options = {
-            noiseCaptureDuration: 3000,
-            minNoiseLevel: 0.4,
-            maxNoiseLevel: 0.6,
+            fftSize: 1024,
+            bufferLen: 1024,
+            noiseCaptureDuration: 1000,
+            minNoiseLevel: 0.3,
+            maxNoiseLevel: 0.7,
+            avgNoiseMultiplier: 1.2,
             onVoiceStart: () => {
                 if (voiceStopTimeout) {
                     clearTimeout(voiceStopTimeout)
                     voiceStopTimeout = null
                 }
-                if (VoiceRTCInstance.localVideoCurrentSrc) {
-                    VoiceRTCInstance.localVideoCurrentSrc.volume = 1
-                }
+
                 log.debug("Voice detected.")
                 speaking = true
                 updateMeta(did)
             },
             onVoiceStop: () => {
                 voiceStopTimeout = setTimeout(() => {
-                    if (VoiceRTCInstance.localVideoCurrentSrc) {
-                        VoiceRTCInstance.localVideoCurrentSrc.volume = 0
-                    }
                     log.debug("Voice not detected.")
                     speaking = false
                     updateMeta(did)
