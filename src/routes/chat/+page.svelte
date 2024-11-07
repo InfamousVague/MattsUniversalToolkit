@@ -652,18 +652,6 @@
                     </Button>
                     {#if $activeChat.kind === ChatType.Group}
                         <Button
-                            hook="button-chat-group-participants"
-                            tooltip={$_("chat.show-participants")}
-                            tooltipPosition={TooltipPosition.BOTTOM}
-                            icon
-                            appearance={showUsers ? Appearance.Primary : Appearance.Alt}
-                            loading={loading}
-                            on:click={_ => {
-                                showUsers = true
-                            }}>
-                            <Icon icon={Shape.Users} alt={showUsers} />
-                        </Button>
-                        <Button
                             hook="button-chat-group-settings"
                             tooltip={$_("chat.group-settings")}
                             tooltipPosition={TooltipPosition.BOTTOM}
