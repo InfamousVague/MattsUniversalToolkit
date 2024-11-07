@@ -396,7 +396,11 @@
                     <div class="participants-list {$highlightUser || Math.floor(i / 2) !== $page ? 'hidden' : ''}">
                         {#each users as user}
                             {#if user === get(Store.state.user).key}
-                                <div class="video-container {isFullScreen ? 'fullscreen' : ''}" style={!userCallOptions.video.enabled ? "display: none" : ""} role="none" on:click={_ => setHighlightUser(user)}>
+                                <div
+                                    class="video-container {$userCache[user].media.is_playing_audio ? 'talking' : ''} {isFullScreen ? 'fullscreen' : ''}"
+                                    style={!userCallOptions.video.enabled ? "display: none" : ""}
+                                    role="none"
+                                    on:click={_ => setHighlightUser(user)}>
                                     <video data-cy="local-user-video" id="local-user-video" bind:this={$localVideoCurrentSrc} style="display: {userCallOptions.video.enabled ? 'block' : 'none'}" muted autoplay>
                                         <track kind="captions" src="" />
                                     </video>
@@ -437,7 +441,7 @@
                                 {/if}
                             {:else if $userCache[user] && $userCache[user].key !== get(Store.state.user).key && $remoteStreams[user]}
                                 <div
-                                    class="video-container {$userCache[get(Store.state.user).key].media.is_playing_audio ? 'talking' : ''} {isFullScreen ? 'fullscreen' : ''}"
+                                    class="video-container {$userCache[user].media.is_playing_audio ? 'talking' : ''} {isFullScreen ? 'fullscreen' : ''}"
                                     style={!$remoteStreams[user].user.videoEnabled ? "display: none" : ""}
                                     role="none"
                                     on:click={_ => setHighlightUser(user)}>

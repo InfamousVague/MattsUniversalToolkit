@@ -9,6 +9,8 @@ import { _ } from "svelte-i18n"
 import { get, writable, type Writable } from "svelte/store"
 import type { Room } from "trystero"
 import { joinRoom } from "trystero"
+import { NoiseSuppressorWorklet_Name } from "@timephy/rnnoise-wasm"
+import NoiseSuppressorWorklet from "@timephy/rnnoise-wasm/NoiseSuppressorWorklet?worker&url"
 
 const CALL_ACK = "CALL_ACCEPT"
 
@@ -81,6 +83,62 @@ export type CallUpdater = {
     delete: (user: string) => void
 }
 
+export type StreamMetaHandler = {
+    remove(): void
+}
+
+function handleStreamMeta(did: string, stream: MediaStream): StreamMetaHandler {
+    const audioContext = new window.AudioContext()
+    const analyser = audioContext.createAnalyser()
+    analyser.fftSize = AUDIO_WINDOW_SIZE
+    analyser.smoothingTimeConstant = 0.1
+    const dataArray = new Uint8Array(analyser.frequencyBinCount)
+    let noiseSuppressionNode: AudioWorkletNode
+    let checker: NodeJS.Timeout
+
+    audioContext.audioWorklet.addModule(NoiseSuppressorWorklet).then(() => {
+        noiseSuppressionNode = new AudioWorkletNode(audioContext, NoiseSuppressorWorklet_Name)
+        const mediaStreamSource = audioContext.createMediaStreamSource(stream)
+        mediaStreamSource.connect(noiseSuppressionNode).connect(analyser)
+
+        function volume() {
+            analyser.getByteFrequencyData(dataArray)
+            return dataArray.reduce((prev, value) => (prev && prev > value ? prev : value))
+        }
+
+        function updateMeta(did: string) {
+            let muted = stream.getAudioTracks().some(track => !track.enabled || track.readyState === "ended")
+            let speaking = false
+            let user = Store.getUser(did)
+            let current = get(user)
+            let vol = volume()
+            if (!muted && vol > VOLUME_THRESHOLD) {
+                speaking = true
+            }
+            if (current.media.is_muted !== muted || current.media.is_playing_audio !== speaking) {
+                user.update(u => ({
+                    ...u,
+                    media: {
+                        ...u.media,
+                        is_muted: muted,
+                        is_playing_audio: speaking,
+                    },
+                }))
+            }
+        }
+
+        checker = setInterval(() => updateMeta(did), 300)
+    })
+
+    return {
+        remove: () => {
+            analyser.disconnect()
+            if (noiseSuppressionNode) noiseSuppressionNode.disconnect()
+            if (checker) clearInterval(checker)
+        },
+    }
+}
+
 export class Participant {
     did: string
     remotePeerId: string
@@ -93,7 +151,7 @@ export class Participant {
     }
 
     stream?: MediaStream
-    streamHandler?: [ReturnType<typeof setInterval>, AnalyserNode]
+    streamHandler?: StreamMetaHandler
     remove?: (user: string) => void
 
     constructor(id: string, peer: string) {
@@ -115,57 +173,18 @@ export class Participant {
         return this.remoteVoiceUser
     }
 
-    private async handleStreamMeta(stream: MediaStream) {
-        if (this.streamHandler) {
-            this.streamHandler[1].disconnect()
-            clearInterval(this.streamHandler[0] as any) // IDE is complaining for some reason
-        }
-        const audioContext = new window.AudioContext()
-        const mediaStreamSource = audioContext.createMediaStreamSource(stream)
-        const analyser = audioContext.createAnalyser()
-        analyser.fftSize = AUDIO_WINDOW_SIZE
-        mediaStreamSource.connect(analyser)
-        const dataArray = new Uint8Array(analyser.frequencyBinCount)
-        function volume() {
-            analyser.getByteFrequencyData(dataArray)
-            return dataArray.reduce((sum, value) => sum + value, 0) / dataArray.length
-        }
-
-        function updateMeta(did: string) {
-            let muted = stream.getTracks().find(track => !track.enabled || track.readyState === "ended") !== undefined
-            let speaking = false
-            let user = Store.getUser(did)
-            let current = get(user)
-            if (!muted && volume() < VOLUME_THRESHOLD) {
-                speaking = true
-            }
-            if (current.media.is_muted !== muted || current.media.is_playing_audio !== speaking) {
-                user.update(u => {
-                    return {
-                        ...u,
-                        media: {
-                            ...u.media,
-                            is_muted: muted,
-                            is_playing_audio: speaking,
-                        },
-                    }
-                })
-            }
-        }
-        const checker = setInterval(() => updateMeta(this.did), 3000)
-        this.streamHandler = [checker, analyser]
-    }
-
     async handleRemoteStream(stream: MediaStream) {
-        this.handleStreamMeta(stream)
+        if (this.streamHandler) {
+            this.streamHandler.remove()
+        }
+        this.streamHandler = handleStreamMeta(this.did, stream)
         this.stream = stream
     }
 
     close() {
         this.stream?.getTracks().forEach(track => track.stop())
         if (this.streamHandler) {
-            this.streamHandler[1].disconnect()
-            clearInterval(this.streamHandler[0] as any) // IDE is complaining for some reason
+            this.streamHandler.remove()
         }
         VoiceRTCInstance.remoteVideoCreator.delete(this.did)
     }
@@ -279,8 +298,8 @@ export class CallRoom {
     }
 }
 
-const AUDIO_WINDOW_SIZE = 256
-const VOLUME_THRESHOLD = 20
+const AUDIO_WINDOW_SIZE = 512
+const VOLUME_THRESHOLD = 0
 
 export const callTimeout = writable(false)
 
@@ -290,6 +309,7 @@ export class VoiceRTC {
     localPeer: Peer | null = null
     toCall: string[] | null = null
     localStream: MediaStream | null = null
+    localStreamHandler?: StreamMetaHandler
     localVideoCurrentSrc: HTMLVideoElement | null = null
     remoteVideoCreator: CallUpdater
 
@@ -591,6 +611,8 @@ export class VoiceRTC {
             joinRoom(
                 {
                     appId: "uplink",
+                    relayUrls: ["wss://nostr-pub.wellorder.net", "wss://relay.snort.social", "wss://nostr.oxtr.dev", "wss://relay.nostr.band", "wss://nostr.mom", "wss://nostr-relay.digitalmob.ro"],
+                    relayRedundancy: 3,
                 },
                 this.channel!
             )
@@ -671,6 +693,10 @@ export class VoiceRTC {
                 }
             }
             this.localStream = await this.createLocalStream()
+            if (this.localStreamHandler) {
+                this.localStreamHandler.remove()
+            }
+            this.localStreamHandler = handleStreamMeta(get(Store.state.user).key, this.localStream)
             if (this.localVideoCurrentSrc) {
                 this.localVideoCurrentSrc.srcObject = this.localStream
                 await this.localVideoCurrentSrc.play()
@@ -685,7 +711,10 @@ export class VoiceRTC {
         let localStream
         localStream = await navigator.mediaDevices.getUserMedia({
             video: true,
-            audio: true,
+            audio: {
+                echoCancellation: true,
+                noiseSuppression: true,
+            },
         })
         localStream.getVideoTracks().forEach(track => {
             track.enabled = this.callOptions.video.enabled
@@ -747,6 +776,9 @@ export class VoiceRTC {
         }
         if (this.localStream) this.localStream.getTracks().forEach(track => track.stop())
         this.localStream = null
+        if (this.localStreamHandler) {
+            this.localStreamHandler.remove()
+        }
 
         this.call?.room.leave()
         this.call = null
