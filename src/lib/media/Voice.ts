@@ -11,6 +11,7 @@ import type { Room } from "trystero"
 import { joinRoom } from "trystero"
 import { NoiseSuppressorWorklet_Name } from "@timephy/rnnoise-wasm"
 import NoiseSuppressorWorklet from "@timephy/rnnoise-wasm/NoiseSuppressorWorklet?worker&url"
+import vad from "voice-activity-detection"
 
 const CALL_ACK = "CALL_ACCEPT"
 
@@ -93,47 +94,60 @@ function handleStreamMeta(did: string, stream: MediaStream): StreamMetaHandler {
     analyser.smoothingTimeConstant = 0.1
     const dataArray = new Uint8Array(analyser.frequencyBinCount)
     let noiseSuppressionNode: AudioWorkletNode
-    let checker: NodeJS.Timeout
+    let voiceStopTimeout: NodeJS.Timeout | null = null
+    let speaking = false
+    let gainNode = audioContext.createGain()
+    gainNode.gain.value = 1
 
     audioContext.audioWorklet.addModule(NoiseSuppressorWorklet).then(() => {
         noiseSuppressionNode = new AudioWorkletNode(audioContext, NoiseSuppressorWorklet_Name)
         const mediaStreamSource = audioContext.createMediaStreamSource(stream)
         mediaStreamSource.connect(noiseSuppressionNode).connect(analyser)
-
-        function volume() {
-            analyser.getByteFrequencyData(dataArray)
-            return dataArray.reduce((prev, value) => (prev && prev > value ? prev : value))
-        }
+        mediaStreamSource.connect(gainNode).connect(audioContext.destination)
 
         function updateMeta(did: string) {
             let muted = stream.getAudioTracks().some(track => !track.enabled || track.readyState === "ended")
-            let speaking = false
             let user = Store.getUser(did)
-            let current = get(user)
-            let vol = volume()
-            if (!muted && vol > VOLUME_THRESHOLD) {
-                speaking = true
-            }
-            if (current.media.is_muted !== muted || current.media.is_playing_audio !== speaking) {
-                user.update(u => ({
-                    ...u,
-                    media: {
-                        ...u.media,
-                        is_muted: muted,
-                        is_playing_audio: speaking,
-                    },
-                }))
-            }
-        }
 
-        checker = setInterval(() => updateMeta(did), 300)
+            user.update(u => ({
+                ...u,
+                media: {
+                    ...u.media,
+                    is_muted: muted,
+                    is_playing_audio: speaking,
+                },
+            }))
+        }
+        const options = {
+            noiseCaptureDuration: 3000,
+            minNoiseLevel: 0.4,
+            maxNoiseLevel: 0.6,
+            onVoiceStart: () => {
+                gainNode.gain.value = 1
+                if (voiceStopTimeout) {
+                    clearTimeout(voiceStopTimeout)
+                    voiceStopTimeout = null
+                }
+                log.debug("Voice detected.")
+                speaking = true
+                updateMeta(did)
+            },
+            onVoiceStop: () => {
+                voiceStopTimeout = setTimeout(() => {
+                    gainNode.gain.value = 0
+                    log.debug("Voice not detected.")
+                    speaking = false
+                    updateMeta(did)
+                }, 500)
+            },
+        }
+        vad(audioContext, stream, options)
     })
 
     return {
         remove: () => {
             analyser.disconnect()
             if (noiseSuppressionNode) noiseSuppressionNode.disconnect()
-            if (checker) clearInterval(checker)
         },
     }
 }
