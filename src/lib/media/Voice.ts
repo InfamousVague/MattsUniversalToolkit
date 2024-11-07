@@ -96,14 +96,11 @@ function handleStreamMeta(did: string, stream: MediaStream): StreamMetaHandler {
     let noiseSuppressionNode: AudioWorkletNode
     let voiceStopTimeout: NodeJS.Timeout | null = null
     let speaking = false
-    let gainNode = audioContext.createGain()
-    gainNode.gain.value = 1
 
     audioContext.audioWorklet.addModule(NoiseSuppressorWorklet).then(() => {
         noiseSuppressionNode = new AudioWorkletNode(audioContext, NoiseSuppressorWorklet_Name)
         const mediaStreamSource = audioContext.createMediaStreamSource(stream)
         mediaStreamSource.connect(noiseSuppressionNode).connect(analyser)
-        mediaStreamSource.connect(gainNode).connect(audioContext.destination)
 
         function updateMeta(did: string) {
             let muted = stream.getAudioTracks().some(track => !track.enabled || track.readyState === "ended")
@@ -123,10 +120,12 @@ function handleStreamMeta(did: string, stream: MediaStream): StreamMetaHandler {
             minNoiseLevel: 0.4,
             maxNoiseLevel: 0.6,
             onVoiceStart: () => {
-                gainNode.gain.value = 1
                 if (voiceStopTimeout) {
                     clearTimeout(voiceStopTimeout)
                     voiceStopTimeout = null
+                }
+                if (VoiceRTCInstance.localVideoCurrentSrc) {
+                    VoiceRTCInstance.localVideoCurrentSrc.volume = 1
                 }
                 log.debug("Voice detected.")
                 speaking = true
@@ -134,7 +133,9 @@ function handleStreamMeta(did: string, stream: MediaStream): StreamMetaHandler {
             },
             onVoiceStop: () => {
                 voiceStopTimeout = setTimeout(() => {
-                    gainNode.gain.value = 0
+                    if (VoiceRTCInstance.localVideoCurrentSrc) {
+                        VoiceRTCInstance.localVideoCurrentSrc.volume = 0
+                    }
                     log.debug("Voice not detected.")
                     speaking = false
                     updateMeta(did)
@@ -724,10 +725,7 @@ export class VoiceRTC {
         let localStream
         localStream = await navigator.mediaDevices.getUserMedia({
             video: true,
-            audio: {
-                echoCancellation: true,
-                noiseSuppression: true,
-            },
+            audio: true,
         })
         localStream.getVideoTracks().forEach(track => {
             track.enabled = this.callOptions.video.enabled
