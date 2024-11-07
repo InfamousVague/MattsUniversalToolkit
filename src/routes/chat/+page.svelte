@@ -147,7 +147,7 @@
         }
         amountPreview = amountPreview.replace(/(\.\d*?[1-9])0+$|\.0*$/, "$1")
         // Return the formatted string
-        return `Send ${amountPreview} ${kind} to: ${sender}`
+        return `Send ${amountPreview} ${kind}`
     }
 
     function addFilesToUpload(selected: File[]) {
@@ -827,7 +827,10 @@
                                                         {#if line.startsWith(PaymentRequestsEnum.Reject)}
                                                             {#if !checkForActiveRequest(message, line)}
                                                                 {#if $own_user.key !== message.details.origin}
-                                                                    <Text hook="text-chat-message" markdown={$_("payments.paymentDeclined")} appearance={group.details.remote ? Appearance.Default : Appearance.Alt} />
+                                                                    <Text
+                                                                        hook="text-chat-message"
+                                                                        markdown={$_("payments.declinedPayment", { values: { user: resolved.name } })}
+                                                                        appearance={group.details.remote ? Appearance.Default : Appearance.Alt} />
                                                                 {:else}
                                                                     <Text hook="text-chat-message" markdown={$_("payments.youCanceledRequest")} appearance={group.details.remote ? Appearance.Default : Appearance.Alt} />
                                                                 {/if}
@@ -835,15 +838,21 @@
                                                         {:else if getValidPaymentRequest(line) !== undefined}
                                                             {#if !$rejectedPayments.find(payments => payments.messageId === message.id)}
                                                                 {#if $own_user.key !== message.details.origin}
-                                                                    <Button
-                                                                        hook="text-chat-message"
-                                                                        class="send_coin"
-                                                                        text={sanitizePaymentRequest(line, resolved.name)}
-                                                                        on:click={async () => getValidPaymentRequest(line, message.id)?.execute()}>
-                                                                        <Icon icon={Shape.DollarOut}></Icon></Button>
-                                                                    <Button hook="text-chat-message" text={$_("payments.decline")} appearance={Appearance.Error} on:click={async () => sendPaymentMessage(message, PaymentRequestsEnum.Reject)}>
-                                                                        <Icon icon={Shape.NoSymbol}></Icon>
-                                                                    </Button>
+                                                                    <div class="send_coin">
+                                                                        <Button
+                                                                            hook="text-chat-message"
+                                                                            class="send_coin"
+                                                                            text={sanitizePaymentRequest(line, resolved.name)}
+                                                                            on:click={async () => getValidPaymentRequest(line, message.id)?.execute()}>
+                                                                            <Icon icon={Shape.DollarOut}></Icon></Button>
+                                                                        <Button
+                                                                            hook="text-chat-message"
+                                                                            text={$_("payments.decline")}
+                                                                            appearance={Appearance.Error}
+                                                                            on:click={async () => sendPaymentMessage(message, PaymentRequestsEnum.Reject)}>
+                                                                            <Icon icon={Shape.NoSymbol}></Icon>
+                                                                        </Button>
+                                                                    </div>
                                                                 {:else if !checkForActiveRequest(message, line)}
                                                                     <Text hook="text-chat-message" class="send_coin" markdown={$_("payments.sentRequest")}></Text>
                                                                     <Button
@@ -863,7 +872,7 @@
                                                                         <Icon icon={Shape.XMark}></Icon>
                                                                     </Button>
                                                                 {/if}
-                                                            {:else if $own_user.key !== message.details.origin && !checkForActiveRequest(message, line)}
+                                                            {:else if $own_user.key === message.details.origin && !checkForActiveRequest(message, line)}
                                                                 <Button hook="text-chat-message" disabled text={$_("payments.youCanceledRequest")} appearance={Appearance.Error} />
                                                             {:else}
                                                                 <Button hook="text-chat-message" disabled text={$_("payments.paymentDeclined")} appearance={Appearance.Error} />

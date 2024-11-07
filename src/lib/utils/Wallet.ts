@@ -511,8 +511,9 @@ export class Transfer {
 export function getValidPaymentRequest(msg: string, msgId?: string): Transfer | undefined {
     let requestCmd = "/request"
     let rejectCmd = "/reject"
+
     if (msg.startsWith(requestCmd)) {
-        let json = msg.substring(requestCmd.length, msg.length)
+        let json = msg.substring(requestCmd.length, msg.length).trim()
         let transfer = new Transfer()
         try {
             let parsed = JSON.parse(json, (k, v) => (k === "amount" && typeof v === "string" ? BigInt(v) : v))
@@ -527,21 +528,30 @@ export function getValidPaymentRequest(msg: string, msgId?: string): Transfer | 
             return transfer
         }
     } else if (msg.startsWith(rejectCmd)) {
-        let json = msg.substring(rejectCmd.length, msg.length)
+        let json = msg.substring(rejectCmd.length, msg.length).trim()
         let transfer = new Transfer()
-        try {
-            let parsed = JSON.parse(json, (k, v) => (k === "amount" && typeof v === "string" ? BigInt(v) : v))
-            transfer.asset = parsed.asset
-            transfer.amount = parsed.amount
-            transfer.toAddress = parsed.toAddress
-            transfer.amountPreview = parsed.amountPreview
-        } catch (err) {
-            console.log("Parse Failed", err)
+
+        if (json.startsWith("{")) {
+            try {
+                let parsed = JSON.parse(json, (k, v) => (k === "amount" && typeof v === "string" ? BigInt(v) : v))
+                transfer.asset = parsed.asset
+                transfer.amount = parsed.amount
+                transfer.toAddress = parsed.toAddress
+                transfer.amountPreview = parsed.amountPreview
+            } catch (err) {
+                console.log("Parse Failed", err)
+            }
+        } else {
+            console.log("Reject message is not JSON, possibly an ID or UUID:", json)
+            return undefined
         }
+
         if (transfer.asset.kind !== AssetType.None && transfer.isValid()) {
             return transfer
         }
     }
+
+    return undefined
 }
 
 export function shortenAddr(str: string, numChars: number): string {

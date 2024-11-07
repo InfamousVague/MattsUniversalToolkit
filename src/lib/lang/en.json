@@ -148,6 +148,8 @@
         "none": "No messages sent yet.",
         "attachment": "New attachment",
         "coin_requested": "{username} has requested {amount}",
+        "coin_declined": "{username} has declined payment",
+        "coin_canceled": "You canceled coin request",
         "request_sent": "You sent a request for {amount}"
     },
     "friends": {
@@ -211,6 +213,7 @@
         "network": "Network",
         "paymentDeclined": "Payment Declined",
         "youCanceledRequest": "You Canceled Request",
+        "declinedPayment": "{user} Denied Payment",
         "assetType": "Asset type",
         "assetName": "Asset name",
         "assetId": "Asset Id",
