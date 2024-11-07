@@ -116,6 +116,8 @@
                 "photo": "Change Photo",
                 "photo.description": "Allows user to change the group photo"
             },
+            "removeCreator": "You can not remove the group creator",
+            "removeTooSmall": "A group can not exist with one person",
             "selectedUser": "Selected User",
             "kick": "Kick User",
             "kick.description": "Remove user from the group. (Can be added back later)",

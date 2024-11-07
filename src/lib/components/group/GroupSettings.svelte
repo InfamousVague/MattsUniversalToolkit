@@ -107,11 +107,11 @@
     function remove_member() {
         if (!selectedUser) return
         if (activeChat.users.length < 3) {
-            Store.addToastNotification(new ToastMessage("", `A group can not exist with one person`, 2))
+            Store.addToastNotification(new ToastMessage("", $_("chat.group.removeTooSmall"), 2))
             return
         }
         if (selectedUser === activeChat.creator) {
-            Store.addToastNotification(new ToastMessage("", `You can not remove the group creator`, 2))
+            Store.addToastNotification(new ToastMessage("", $_("chat.group.removeCreator"), 2))
             return
         }
         RaygunStoreInstance.removeGroupParticipants(activeChat.id, [selectedUser])
