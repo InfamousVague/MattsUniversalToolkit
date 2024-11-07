@@ -27,10 +27,10 @@
     import InstallBanner from "$lib/components/ui/InstallBanner.svelte"
     import Market from "$lib/components/market/Market.svelte"
     import { swipe } from "$lib/components/ui/Swipe"
-    import { StatusBar, Style } from "@capacitor/status-bar"
-    import { Capacitor } from "@capacitor/core"
+    import { detectPlatform } from "$lib/utils/DetectPlatform"
 
     TimeAgo.addDefaultLocale(en)
+    const platform = detectPlatform()
     let keybinds: Keybind[]
     let devmode: boolean = get(SettingsStore.state).devmode
     let color: string = get(UIStore.state.color)
@@ -44,6 +44,8 @@
     let deafened: boolean = get(Store.state.devices.deafened)
     let isIos: boolean = false
     let isAndroid: boolean = false
+    isIos = platform === "iOS"
+    isAndroid = platform === "Android"
 
     function handleKeybindMatch(event: CustomEvent<any>) {
         let keybind: Keybind = event.detail
@@ -233,8 +235,6 @@
     Store.state.devices.muted.subscribe(state => (muted = state))
     Store.state.devices.deafened.subscribe(state => (deafened = state))
 
-    console.log("Arriving here on +layout")
-
     window.addEventListener(
         "click",
         () => {
@@ -269,17 +269,9 @@
     }
 
     onMount(async () => {
-        const platform = Capacitor.getPlatform()
-        isIos = platform === "ios"
-        isAndroid = platform === "android"
-
         await checkIfUserIsLogged($page.route.id)
         await initializeLocale()
         buildStyle()
-        // Apply overlay for iOS, but not for Android to avoid content being hidden behind the status bar.
-        await StatusBar.setOverlaysWebView({ overlay: isIos })
-        await StatusBar.setStyle({ style: Style.Default })
-        await StatusBar.show()
     })
 </script>
 
@@ -320,7 +312,6 @@
         flex-direction: column;
         flex: 1;
         overflow: hidden;
-        padding-top: env(safe-area-inset-top, 20px);
     }
     /* iOS padding to avoid overlap with the status bar */
     .is-ios-padding {
