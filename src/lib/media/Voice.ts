@@ -140,7 +140,6 @@ function handleStreamMeta(did: string, stream: MediaStream): StreamMetaHandler {
             avgNoiseMultiplier: 1.2,
             onVoiceStart: () => {
                 if (voiceStopTimeout) {
-                    voiceStopTimeout.refresh()
                     clearTimeout(voiceStopTimeout)
                     voiceStopTimeout = null
                 }
