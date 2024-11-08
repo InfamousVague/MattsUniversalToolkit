@@ -43,6 +43,7 @@
 
     let propertiesChangedList = {
         groupName: false,
+        description: false,
         pictureChanged: false,
         membersPermission: false,
     }
@@ -56,6 +57,7 @@
         $groupChatToBeChanged = structuredClone(activeChat)
         propertiesChangedList = {
             groupName: false,
+            description: false,
             pictureChanged: false,
             membersPermission: false,
         }
@@ -66,11 +68,15 @@
         if (propertiesChangedList.groupName) {
             RaygunStoreInstance.updateConversationName($groupChatToBeChanged.id, $groupChatToBeChanged.name)
         }
+        if (propertiesChangedList.description) {
+            RaygunStoreInstance.updateConversationDescription($groupChatToBeChanged.id, $groupChatToBeChanged.motd)
+        }
         if (propertiesChangedList.membersPermission) {
             RaygunStoreInstance.setGroupPermissions($groupChatToBeChanged.id, $groupChatToBeChanged.settings.permissions)
         }
         propertiesChangedList = {
             groupName: false,
+            description: false,
             pictureChanged: false,
             membersPermission: false,
         }
@@ -146,7 +152,14 @@
             propertiesChangedList.groupName = $groupChatToBeChanged.name !== activeChat.name
         }} />
     <Label hook="group-settings-description-label" text={$_("chat.group.settings.description")} />
-    <Input hook="group-settings-description-input" disabled={!canRename} value={$_("chat.group.settings.description.placeholder")} />
+    <Input
+        hook="group-settings-description-input"
+        bind:value={$groupChatToBeChanged.motd}
+        disabled={!canRename}
+        placeholder={$_("chat.group.settings.description.placeholder")}
+        on:input={_ => {
+            propertiesChangedList.description = $groupChatToBeChanged.motd !== activeChat.motd
+        }} />
     <div class="group-user-settings">
         <Label hook="group-settings-generic-label" text={$_("chat.group.members")} />
         <div class="group-users">
@@ -189,7 +202,7 @@
                     <Text size={Size.Smaller}>{$_("chat.group.kick")}</Text>
                     <Text muted size={Size.Smallest}>{$_("chat.group.kick.description")}</Text>
                 </div>
-                <Button disabled={!canAdd || user.key === activeChat.creator} appearance={Appearance.Error} on:click={remove_member}>
+                <Button disabled={!isAdmin} appearance={Appearance.Error} on:click={remove_member}>
                     <Text size={Size.Smallest}>{$_("chat.group.kick")}</Text>
                 </Button>
             </div>

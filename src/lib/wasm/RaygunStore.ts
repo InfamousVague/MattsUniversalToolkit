@@ -637,7 +637,6 @@ class RaygunStore {
                         break
                     }
                     case "conversation_permissions_updated": {
-                        console.log("evnt perm ", event.values)
                         let conversation_id: string = event.values["conversation_id"]
                         let permissions: {
                             [did: string]: wasm.GroupPermission[]
@@ -654,6 +653,14 @@ class RaygunStore {
                             if (c.kind === ChatType.Group) {
                                 c.settings.permissions = permissions
                             }
+                        })
+                        break
+                    }
+                    case "conversation_description_changed": {
+                        let conversation_id: string = event.values["conversation_id"]
+                        let description: string = event.values["description"]
+                        UIStore.mutateChat(conversation_id, c => {
+                            c.motd = description
                         })
                         break
                     }
