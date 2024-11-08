@@ -20,6 +20,7 @@
     export let hook: string = ""
     export let hideTextOnMobile: boolean = false
     export let color: string = ""
+    export let border: string = ""
     export let badge: number = 0
     export let soundSource: Sounds | undefined = Sounds.Press
 
@@ -58,7 +59,7 @@
     class="button {fill ? 'fill' : ''} {hideTextOnMobile ? 'hidden-text' : ''} {appearance} {rotateOnHover ? 'rotate_on_hover' : ''} {outline ? 'outlined' : ''} {icon ? 'icon' : ''} {tooltip
         ? 'tooltip ' + (buttonElement ? tooltipPositionClass(buttonElement) : '')
         : ''} {small ? 'small' : ''} {clazz || ''}"
-    style={color.length ? `background-color: ${color}` : ""}
+    style="{color.length ? `background-color: ${color}` : ''} {border.length ? `border-color: ${border}` : ''}"
     data-cy={hook}
     data-tooltip={tooltip}
     disabled={disabled || loading}

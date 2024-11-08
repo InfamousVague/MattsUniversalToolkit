@@ -52,6 +52,7 @@
     import AttachmentRenderer from "$lib/components/messaging/AttachmentRenderer.svelte"
     import ShareFile from "$lib/components/files/ShareFile.svelte"
     import { ToastMessage } from "$lib/state/ui/toast"
+    import AddMembers from "$lib/components/group/AddMembers.svelte"
 
     let loading = false
     let contentAsideOpen = false
@@ -94,6 +95,7 @@
     let previewProfile: User | null
     let newGroup: boolean = false
     let showUsers: boolean = false
+    let showInviteUsers: boolean = false
     let showMarket: boolean = false
     let withPinned: string | undefined = undefined
     let groupSettings: boolean = false
@@ -430,8 +432,22 @@
             <GroupSettings
                 activeChat={$activeChat}
                 on:create={_ => (groupSettings = false)}
+                on:addUsers={_ => {
+                    showInviteUsers = true
+                    groupSettings = false
+                    unasavedChangesOnGroupSettings = false
+                }}
                 on:unasavedChanges={value => (unasavedChangesOnGroupSettings = value.detail)}
                 on:close={_ => ((groupSettings = false), (unasavedChangesOnGroupSettings = false))} />
+        </Modal>
+    {/if}
+
+    {#if showInviteUsers}
+        <Modal
+            on:close={_ => {
+                showInviteUsers = false
+            }}>
+            <AddMembers activeChat={$activeChat} on:close={_ => (showInviteUsers = false)} />
         </Modal>
     {/if}
 
@@ -440,7 +456,7 @@
             on:close={_ => {
                 showUsers = false
             }}>
-            <ViewMembers adminControls activeChat={$activeChat} members={Object.values($users)} on:create={_ => (showUsers = false)} />
+            <ViewMembers members={Object.values($users)} on:create={_ => (showUsers = false)} />
         </Modal>
     {/if}
 
@@ -635,18 +651,6 @@
                         <Icon icon={Shape.Pin} />
                     </Button>
                     {#if $activeChat.kind === ChatType.Group}
-                        <Button
-                            hook="button-chat-group-participants"
-                            tooltip={$_("chat.show-participants")}
-                            tooltipPosition={TooltipPosition.BOTTOM}
-                            icon
-                            appearance={showUsers ? Appearance.Primary : Appearance.Alt}
-                            loading={loading}
-                            on:click={_ => {
-                                showUsers = true
-                            }}>
-                            <Icon icon={Shape.Users} alt={showUsers} />
-                        </Button>
                         <Button
                             hook="button-chat-group-settings"
                             tooltip={$_("chat.group-settings")}
