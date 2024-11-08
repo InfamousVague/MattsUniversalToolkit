@@ -107,7 +107,6 @@ function handleStreamMeta(did: string, stream: MediaStream): StreamMetaHandler {
     const analyser = audioContext.createAnalyser()
     analyser.fftSize = AUDIO_WINDOW_SIZE
     analyser.smoothingTimeConstant = 0.1
-    const dataArray = new Uint8Array(analyser.frequencyBinCount)
     let noiseSuppressionNode: AudioWorkletNode
     let voiceStopTimeout: NodeJS.Timeout | null = null
     let speaking = false
@@ -132,12 +131,6 @@ function handleStreamMeta(did: string, stream: MediaStream): StreamMetaHandler {
         }
 
         const options = {
-            fftSize: 1024,
-            bufferLen: 1024,
-            noiseCaptureDuration: 1000,
-            minNoiseLevel: 0.3,
-            maxNoiseLevel: 0.7,
-            avgNoiseMultiplier: 1.2,
             onVoiceStart: () => {
                 if (voiceStopTimeout) {
                     clearTimeout(voiceStopTimeout)
@@ -154,7 +147,7 @@ function handleStreamMeta(did: string, stream: MediaStream): StreamMetaHandler {
                     log.debug(`Voice Stopped from ${get(user).name}.`)
                     speaking = false
                     updateMeta(did)
-                }, 300)
+                }, 200)
             },
         }
         vad(audioContext, stream, options)
@@ -670,7 +663,6 @@ export class VoiceRTC {
             const socket = new WebSocket(currentRelayUrl)
 
             socket.onerror = error => {
-                log.warn(`WebSocket Error for this relay ${currentRelayUrl}, error: ${error}`)
                 remainingRelays = remainingRelays.filter(relay => relay !== currentRelayUrl)
                 socket.close()
                 relaysAvailable.set(remainingRelays)
