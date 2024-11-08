@@ -387,6 +387,12 @@ class MultipassStore {
                 let friendsAny: Array<any> = await multipass.list_friends()
                 let friendsUsers: Array<string> = []
                 for (let i = 0; i < friendsAny.length; i++) {
+                    let userInCache = Store.getUsersLookup(friendsAny[i])
+
+                    if (userInCache) {
+                        continue
+                    }
+
                     let friendUser = await this.identity_from_did(friendsAny[i])
                     if (friendUser) {
                         friendsUsers.push(friendUser.key)

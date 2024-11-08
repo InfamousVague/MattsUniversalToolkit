@@ -143,17 +143,18 @@ function handleStreamMeta(did: string, stream: MediaStream): StreamMetaHandler {
                     clearTimeout(voiceStopTimeout)
                     voiceStopTimeout = null
                 }
-
-                log.debug("Voice detected.")
+                let user = Store.getUser(did)
+                log.debug(`Voice detected from ${get(user).name}.`)
                 speaking = true
                 updateMeta(did)
             },
             onVoiceStop: () => {
                 voiceStopTimeout = setTimeout(() => {
-                    log.debug("Voice not detected.")
+                    let user = Store.getUser(did)
+                    log.debug(`Voice Stopped from ${get(user).name}.`)
                     speaking = false
                     updateMeta(did)
-                }, 1000)
+                }, 300)
             },
         }
         vad(audioContext, stream, options)
