@@ -129,6 +129,7 @@ function handleStreamMeta(did: string, stream: MediaStream): StreamMetaHandler {
                 },
             }))
         }
+
         const options = {
             fftSize: 1024,
             bufferLen: 1024,
@@ -138,6 +139,7 @@ function handleStreamMeta(did: string, stream: MediaStream): StreamMetaHandler {
             avgNoiseMultiplier: 1.2,
             onVoiceStart: () => {
                 if (voiceStopTimeout) {
+                    voiceStopTimeout.refresh()
                     clearTimeout(voiceStopTimeout)
                     voiceStopTimeout = null
                 }
@@ -151,7 +153,7 @@ function handleStreamMeta(did: string, stream: MediaStream): StreamMetaHandler {
                     log.debug("Voice not detected.")
                     speaking = false
                     updateMeta(did)
-                }, 500)
+                }, 1000)
             },
         }
         vad(audioContext, stream, options)
@@ -634,6 +636,30 @@ export class VoiceRTC {
         return accepted
     }
 
+    /**
+     * Tests the connectivity of relay servers for initiating calls.
+     *
+     * This method iterates over a list of relay URLs specified in `relaysToTest` and attempts to establish a WebSocket
+     * connection with each one. It performs the following actions for each relay:
+     *
+     * - **On Successful Connection (`socket.onopen`):**
+     *   - Adds the relay URL to the `relaysWithSuccessfulConnection` array.
+     *   - Sends a "ping" message over the WebSocket connection.
+     *
+     * - **On Connection Error (`socket.onerror`):**
+     *   - Logs a warning message with the relay URL and error details.
+     *   - Removes the relay from the `remainingRelays` array.
+     *   - Closes the WebSocket connection.
+     *   - Updates the `relaysAvailable` store with the updated list of remaining relays.
+     *
+     * After testing all relays, it logs the list of relays with successful connections for debugging purposes.
+     *
+     * **Side Effects:**
+     * - Updates the `relaysAvailable` store by removing relays that failed to connect.
+     * - Logs warnings and debug information to assist with monitoring and troubleshooting.
+     *
+     * @private
+     */
     private testGoodRelaysForCall() {
         let remainingRelays: string[] = get(relaysAvailable)
         let relaysWithSuccessfulConnection: string[] = []
