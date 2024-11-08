@@ -5,7 +5,7 @@ import { create_cancellable_handler, type Cancellable } from "$lib/utils/Cancell
 import { log } from "$lib/utils/Logger"
 import { RaygunStoreInstance } from "$lib/wasm/RaygunStore"
 import Peer, { DataConnection } from "peerjs"
-import { _ } from "svelte-i18n"
+import { _, t } from "svelte-i18n"
 import { get, writable, type Writable } from "svelte/store"
 import type { Room } from "trystero"
 import { joinRoom } from "trystero"
@@ -26,6 +26,20 @@ export const usersAcceptedTheCall: Writable<string[]> = writable([])
 export const connectionOpened = writable(false)
 export const timeCallStarted: Writable<Date | null> = writable(null)
 export const callInProgress: Writable<string | null> = writable(null)
+
+const relaysToTest = [
+    "wss://nostr-pub.wellorder.net",
+    "wss://brb.io",
+    "wss://relay.snort.social",
+    "wss://relay.damus.io",
+    "wss://nostr.mom",
+    "wss://relay.nostr.band",
+    "wss://nostr.oxtr.dev",
+    "wss://nostr.fmt.wiz.biz",
+    "wss://nostr-relay.digitalmob.ro",
+    "wss://nostr.openchain.fr",
+]
+const relaysAvailable: Writable<string[]> = writable(relaysToTest)
 
 export enum VoiceRTCMessageType {
     UpdateUser = "UPDATE_USER",
@@ -232,6 +246,9 @@ export class CallRoom {
                 this.start = new Date()
             }
         })
+        room.onPeerTrack((stream, peer, _meta) => {
+            log.debug(`Receiving track from ${peer}`)
+        })
         room.onPeerLeave(peer => {
             log.debug(`Peer ${peer} left the room`)
             let participant = Object.entries(this.participants).find(p => p[1].remotePeerId === peer)
@@ -421,6 +438,7 @@ export class VoiceRTC {
     }
 
     private async setupLocalPeer(reset?: boolean) {
+        this.testGoodRelaysForCall()
         if ((reset && this.localPeer) || this.localPeer?.disconnected || this.localPeer?.destroyed) {
             this.localPeer.destroy()
             this.localPeer = null
@@ -616,14 +634,41 @@ export class VoiceRTC {
         return accepted
     }
 
+    private testGoodRelaysForCall() {
+        let remainingRelays: string[] = get(relaysAvailable)
+        let relaysWithSuccessfulConnection: string[] = []
+        for (let i = 0; i < relaysToTest.length; i++) {
+            let currentRelayUrl = relaysToTest[i]
+
+            const socket = new WebSocket(currentRelayUrl)
+
+            socket.onerror = error => {
+                log.warn(`WebSocket Error for this relay ${currentRelayUrl}, error: ${error}`)
+                remainingRelays = remainingRelays.filter(relay => relay !== currentRelayUrl)
+                socket.close()
+                relaysAvailable.set(remainingRelays)
+            }
+
+            socket.onopen = () => {
+                relaysWithSuccessfulConnection.push(currentRelayUrl)
+                socket.send("ping")
+            }
+        }
+        log.debug(`Relays connected: ${relaysWithSuccessfulConnection}`)
+    }
+
     private createAndSetRoom() {
         log.debug(`Creating/Joining room in channel ${this.channel}`)
+        log.info("Remaining relay urls to create room: ", get(relaysAvailable))
+
         Store.updateMuted(true)
+
         this.call = new CallRoom(
             joinRoom(
                 {
                     appId: "uplink",
-                    relayRedundancy: 4,
+                    relayUrls: get(relaysAvailable),
+                    relayRedundancy: 2,
                 },
                 this.channel!
             )
