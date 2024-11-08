@@ -102,7 +102,7 @@ export type StreamMetaHandler = {
     remove(): void
 }
 
-function handleStreamMeta(did: string, stream: MediaStream): StreamMetaHandler {
+async function handleStreamMeta(did: string, stream: MediaStream): Promise<StreamMetaHandler> {
     const audioContext = new window.AudioContext()
     const analyser = audioContext.createAnalyser()
     analyser.fftSize = AUDIO_WINDOW_SIZE
@@ -111,52 +111,58 @@ function handleStreamMeta(did: string, stream: MediaStream): StreamMetaHandler {
     let voiceStopTimeout: NodeJS.Timeout | null = null
     let speaking = false
 
-    audioContext.audioWorklet.addModule(NoiseSuppressorWorklet).then(() => {
-        noiseSuppressionNode = new AudioWorkletNode(audioContext, NoiseSuppressorWorklet_Name)
-        const mediaStreamSource = audioContext.createMediaStreamSource(stream)
-        mediaStreamSource.connect(noiseSuppressionNode).connect(analyser)
+    await audioContext.audioWorklet.addModule(NoiseSuppressorWorklet)
 
-        function updateMeta(did: string) {
-            let muted = stream.getAudioTracks().some(track => !track.enabled || track.readyState === "ended")
+    noiseSuppressionNode = new AudioWorkletNode(audioContext, NoiseSuppressorWorklet_Name)
+    const mediaStreamSource = audioContext.createMediaStreamSource(stream)
+    mediaStreamSource.connect(noiseSuppressionNode).connect(analyser)
+
+    function updateMeta(did: string) {
+        let muted = stream.getAudioTracks().some(track => !track.enabled || track.readyState === "ended")
+        let user = Store.getUser(did)
+
+        user.update(u => ({
+            ...u,
+            media: {
+                ...u.media,
+                is_muted: muted,
+                is_playing_audio: speaking,
+            },
+        }))
+    }
+
+    const options = {
+        onVoiceStart: () => {
+            VoiceRTCInstance.localVideoCurrentSrc!.volume = 1
+            if (voiceStopTimeout) {
+                clearTimeout(voiceStopTimeout)
+                voiceStopTimeout = null
+            }
             let user = Store.getUser(did)
+            log.debug(`Voice detected from ${get(user).name}.`)
+            speaking = true
 
-            user.update(u => ({
-                ...u,
-                media: {
-                    ...u.media,
-                    is_muted: muted,
-                    is_playing_audio: speaking,
-                },
-            }))
-        }
-
-        const options = {
-            onVoiceStart: () => {
-                if (voiceStopTimeout) {
-                    clearTimeout(voiceStopTimeout)
-                    voiceStopTimeout = null
-                }
+            updateMeta(did)
+        },
+        onVoiceStop: () => {
+            voiceStopTimeout = setTimeout(() => {
+                VoiceRTCInstance.localVideoCurrentSrc!.volume = 0
                 let user = Store.getUser(did)
-                log.debug(`Voice detected from ${get(user).name}.`)
-                speaking = true
+                log.debug(`Voice Stopped from ${get(user).name}.`)
+                speaking = false
                 updateMeta(did)
-            },
-            onVoiceStop: () => {
-                voiceStopTimeout = setTimeout(() => {
-                    let user = Store.getUser(did)
-                    log.debug(`Voice Stopped from ${get(user).name}.`)
-                    speaking = false
-                    updateMeta(did)
-                }, 200)
-            },
-        }
-        vad(audioContext, stream, options)
-    })
+            }, 200)
+        },
+    }
+    const voiceDetector = vad(audioContext, stream, options)
+    voiceDetector.connect()
 
     return {
         remove: () => {
             analyser.disconnect()
             if (noiseSuppressionNode) noiseSuppressionNode.disconnect()
+            voiceDetector.disconnect()
+            voiceDetector.destroy()
         },
     }
 }
@@ -199,7 +205,7 @@ export class Participant {
         if (this.streamHandler) {
             this.streamHandler.remove()
         }
-        this.streamHandler = handleStreamMeta(this.did, stream)
+        this.streamHandler = await handleStreamMeta(this.did, stream)
         this.stream = stream
     }
 
@@ -771,7 +777,7 @@ export class VoiceRTC {
             if (this.localStreamHandler) {
                 this.localStreamHandler.remove()
             }
-            this.localStreamHandler = handleStreamMeta(get(Store.state.user).key, this.localStream)
+            this.localStreamHandler = await handleStreamMeta(get(Store.state.user).key, this.localStream)
             if (this.localVideoCurrentSrc) {
                 this.localVideoCurrentSrc.srcObject = this.localStream
                 await this.localVideoCurrentSrc.play()
