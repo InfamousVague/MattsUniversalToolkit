@@ -1,4 +1,4 @@
-import { playSound, Sounds } from "$lib/components/utils/SoundHandler"
+import { playSound, SoundHandler, Sounds } from "$lib/components/utils/SoundHandler"
 import { CallDirection } from "$lib/enums"
 import { Store } from "$lib/state/Store"
 import { create_cancellable_handler, type Cancellable } from "$lib/utils/CancellablePromise"
@@ -26,6 +26,7 @@ export const usersAcceptedTheCall: Writable<string[]> = writable([])
 export const connectionOpened = writable(false)
 export const timeCallStarted: Writable<Date | null> = writable(null)
 export const callInProgress: Writable<string | null> = writable(null)
+export const makeCallSound = writable<SoundHandler | undefined>(undefined)
 
 const relaysToTest = [
     "wss://nostr-pub.wellorder.net",
