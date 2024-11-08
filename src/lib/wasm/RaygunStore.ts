@@ -158,11 +158,45 @@ class RaygunStore {
         }, "Error updating conversation name")
     }
 
-    async updateConversationSettings(conversation_id: string, settings: ConversationSettings) {
+    async setGroupPermissions(conversation_id: string, permissions: { [user: string]: wasm.GroupPermission[] }) {
+        return await this.get(async r => {
+            let groupPerm = new wasm.GroupPermissions()
+            Object.entries(permissions).forEach(([user, perms]: [string, wasm.GroupPermission[]]) => {
+                groupPerm.set_permissions(user, perms)
+            })
+            r.update_conversation_permissions(conversation_id, groupPerm)
+            let chat = await r.get_conversation(conversation_id)
+            let result: {
+                [did: string]: GroupPermission[]
+            } = {}
+            chat.recipients().forEach(did => {
+                permissions[did] = chat.permissions().get_permissions(did) || []
+            })
+            return result
+        }, "Error updating conversation settings")
+    }
+    /**
+     * Set the permission for given user
+     * @returns The new permission set for the given user
+     */
+    async setPermissionFor(conversation_id: string, user: string, permission: wasm.GroupPermission, remove?: boolean) {
         return await this.get(async r => {
             let conv = await r.get_conversation(conversation_id)
-            // TODO. this needs ui revamp as its now user based and not global
-            r.update_conversation_permissions(conversation_id, conv.permissions())
+            let groupPerm = conv.permissions()
+            let permissions = groupPerm.get_permissions(user) || []
+            if (remove) {
+                if (permissions) {
+                    permissions.splice(permissions.indexOf(permission), 1)
+                }
+            } else {
+                if (!permissions.includes(permission)) {
+                    permissions.push(permission)
+                }
+            }
+            groupPerm.set_permissions(user, permissions)
+            r.update_conversation_permissions(conversation_id, groupPerm)
+            let result: wasm.GroupPermission[] = (await r.get_conversation(conversation_id)).permissions().get_permissions(user) || []
+            return result
         }, "Error updating conversation settings")
     }
 
@@ -602,17 +636,31 @@ class RaygunStore {
                         // Handle EventCancelled. Not needed atm
                         break
                     }
-                    case "conversation_settings_updated": {
+                    case "conversation_permissions_updated": {
                         let conversation_id: string = event.values["conversation_id"]
-                        let settings = event.values["settings"] as ConversationSettings
+                        let permissions: {
+                            [did: string]: wasm.GroupPermission[]
+                        } = {}
+                        let chat = await raygun.get_conversation(conversation_id)
+                        chat.recipients().forEach(did => {
+                            permissions[did] = chat.permissions().get_permissions(did) || []
+                        })
+                        // For remote this is empty??? bug?
+                        // For now just fetch the permissions from raygun again
+                        // let added = event.values["added"] as [string, GroupPermission][]
+                        // let removed = event.values["removed"] as [string, GroupPermission][]
                         UIStore.mutateChat(conversation_id, c => {
-                            c.kind = "direct" in settings ? ChatType.DirectMessage : ChatType.Group
                             if (c.kind === ChatType.Group) {
-                                let groupSettings = settings as any
-                                let group = groupSettings["group"]
-                                c.settings.permissions.allowAnyoneToAddUsers = group["members_can_add_participants"] as boolean
-                                c.settings.permissions.allowAnyoneToModifyName = group["members_can_change_name"] as boolean
+                                c.settings.permissions = permissions
                             }
+                        })
+                        break
+                    }
+                    case "conversation_description_changed": {
+                        let conversation_id: string = event.values["conversation_id"]
+                        let description: string = event.values["description"]
+                        UIStore.mutateChat(conversation_id, c => {
+                            c.motd = description
                         })
                         break
                     }
@@ -816,6 +864,12 @@ class RaygunStore {
                 Store.updateUser(user)
             }
         })
+        let permissions: {
+            [did: string]: wasm.GroupPermission[]
+        } = {}
+        chat.recipients().forEach(did => {
+            permissions[did] = chat.permissions().get_permissions(did) || []
+        })
         return {
             ...defaultChat,
             id: chat.id(),
@@ -824,12 +878,7 @@ class RaygunStore {
             settings: {
                 displayOwnerBadge: true,
                 readReceipts: true,
-                // TODO. this needs ui revamp as its now user based and not global
-                permissions: {
-                    allowAnyoneToAddUsers: !direct && true,
-                    allowAnyoneToModifyPhoto: false,
-                    allowAnyoneToModifyName: !direct && true,
-                },
+                permissions: permissions,
             },
             creator: chat.creator(),
             users: chat.recipients(),
@@ -839,4 +888,6 @@ class RaygunStore {
     }
 }
 
+export type GroupPermission = wasm.GroupPermission
+export const GroupPermission = wasm.GroupPermission
 export const RaygunStoreInstance = new RaygunStore(WarpStore.warp.raygun)
