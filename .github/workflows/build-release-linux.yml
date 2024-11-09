@@ -4,7 +4,10 @@ on:
   push:
     tags:
       - "*"
-
+      
+permissions:
+  contents: write
+  
 jobs:
   build-linux-release:
     runs-on: ubuntu-latest
