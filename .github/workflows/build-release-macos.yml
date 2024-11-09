@@ -33,7 +33,7 @@ jobs:
           APPLE_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PWD }}
           APPLE_SIGNING_IDENTITY: ${{ secrets.MACOS_CERTIFICATE_NAME }}
-          APPLE_ID: ${{ secrets.MACOS_NOTARIZATION_APPLE_ID }}
+          APPLE_ID: "sara@satellite.im"
           APPLE_PASSWORD: ${{ secrets.MACOS_NOTARIZATION_PWD }}
           APPLE_TEAM_ID: ${{ secrets.MACOS_NOTARIZATION_TEAM_ID }}
 
