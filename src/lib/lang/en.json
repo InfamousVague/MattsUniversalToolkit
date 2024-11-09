@@ -308,6 +308,8 @@
                 "label": "Log Out",
                 "description": "Log out of the current account and return to the unlock page."
             },
+            "delete_title": "Delete Account",
+            "delete_subtitle": "Click here to delete your account",
             "change_profile_photo": "Change profile photo",
             "reveal_phrase": {
                 "label": "Reveal recovery phrase",

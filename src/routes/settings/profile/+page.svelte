@@ -100,6 +100,54 @@
         isValidUsernameToUpdate = false
     }
 
+    // Function to delete an IndexedDB database
+function deleteIndexedDB(dbName) {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.deleteDatabase(dbName);
+        
+        request.onsuccess = function () {
+            console.log(`Database '${dbName}' deleted successfully`);
+            resolve();
+        };
+        
+        request.onerror = function () {
+            console.error(`Failed to delete database '${dbName}'`, request.error);
+            reject(request.error);
+        };
+        
+        request.onblocked = function () {
+            console.warn(`Database deletion for '${dbName}' is blocked. Close other tabs that use it and try again.`);
+        };
+    });
+}
+
+// Function to clear all IndexedDB data, localStorage, sessionStorage, and cookies
+async function clearAllData() {
+    // Clear all IndexedDB databases
+    const dbNames = await indexedDB.databases();
+    for (let dbInfo of dbNames) {
+        await deleteIndexedDB(dbInfo.name);
+    }
+    console.log("All IndexedDB data cleared.");
+    
+    // Clear localStorage and sessionStorage
+    localStorage.clear();
+    sessionStorage.clear();
+    console.log("localStorage and sessionStorage cleared.");
+    
+    // Clear cookies
+    document.cookie.split(';').forEach(function(cookie) {
+        const cookieName = cookie.split('=')[0].trim();
+        document.cookie = cookieName + '=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
+    });
+    console.log("Cookies cleared.");
+    
+    // Redirect to '/auth' and reload the page
+    window.location.href = '/auth'; // Redirect to '/auth'
+    location.reload(); // Reload the page
+}
+
+
     $: auth = AuthStore.state
     $: saveSeedPhrase = $auth.saveSeedPhrase
     $: showSeed = seedPhrase ? SeedState.Hidden : SeedState.Missing
@@ -566,6 +614,19 @@
                         text={$_("settings.profile.log_out.label")}
                         on:click={_ => {
                             logOut()
+                        }}>
+                        <Icon icon={Shape.Lock} />
+                    </Button>
+                </SettingSection>
+            </div>
+                <div class="section">
+                <SettingSection hook="section-delete-account" name={$_("settings.profile.delete_title")} description={$_("settings.profile.delete_subtitle")}>
+                    <Button
+                        hook="button-delete-account"
+                        appearance={Appearance.Alt}
+                        text={$_("settings.profile.delete_title")}
+                        on:click={_ => {
+                            clearAllData()
                         }}>
                         <Icon icon={Shape.Lock} />
                     </Button>
