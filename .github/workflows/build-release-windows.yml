@@ -69,17 +69,17 @@ jobs:
       - name: Signing using Signtool
         run: |
           signtool.exe sign /sha1 ${{ secrets.SM_CODE_SIGNING_CERT_SHA1_HASH }} /tr http://timestamp.digicert.com /td SHA256 /fd SHA256 "./src-tauri/target/release/bundle/msi/*.msi"
-
+      
       - name: Delete Cert File
         run: Remove-Item -Force certificate.p12
 
       - name: Rename MSI File
         run: |
-          # Find and rename the .msi file to include the release version
-          MSI_FILE=$(find src-tauri/target/release/bundle/msi -name "*.msi" | head -n 1)
-          NEW_MSI_FILE="src-tauri/target/release/bundle/msi/Uplink_${{ env.RELEASE_VERSION }}.msi"
-          mv "$MSI_FILE" "$NEW_MSI_FILE"
-
+          # Use PowerShell syntax to find and rename the .msi file
+          $MSI_FILE = Get-ChildItem "src-tauri/target/release/bundle/msi" -Filter "*.msi" | Select-Object -First 1
+          $NEW_MSI_FILE = "src-tauri/target/release/bundle/msi/Uplink_${{ env.RELEASE_VERSION }}.msi"
+          Move-Item -Path $MSI_FILE.FullName -Destination $NEW_MSI_FILE
+          
       - name: Upload Signed Windows Installer
         uses: actions/upload-artifact@v4.4.3
         with:
