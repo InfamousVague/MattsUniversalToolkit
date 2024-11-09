@@ -33,9 +33,6 @@ jobs:
       - name: Install Frontend Dependencies
         run: npm install
 
-      - name: Update Download Links with New Version
-        run: node updateVersion.js
-
       - name: Build Web Assets 🔨
         run: npm run build
 
