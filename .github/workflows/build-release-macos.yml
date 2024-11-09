@@ -6,42 +6,53 @@ on:
       - "*"
 
 jobs:
-    build-macos-release:
-        permissions: write-all
-        runs-on: macos-latest
-        steps:
-            - uses: actions/checkout@v4.2.2
+  build-macos-release:
+    permissions: write-all
+    runs-on: macos-latest
+    env:
+      RELEASE_VERSION: ${{ github.ref_name }}  # Set the release version from the tag
 
-            - name: setup node
-              uses: actions/setup-node@v4.1.0
-              with:
-                  node-version: lts/*
+    steps:
+      - uses: actions/checkout@v4.2.2
 
-            - name: install Rust stable
-              uses: dtolnay/rust-toolchain@stable
+      - name: Setup Node
+        uses: actions/setup-node@v4.1.0
+        with:
+          node-version: lts/*
 
-            - name: install frontend dependencies
-              run: npm install
+      - name: Install Rust Stable
+        uses: dtolnay/rust-toolchain@stable
 
-            - uses: tauri-apps/tauri-action@v0.5.15
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-                  APPLE_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
-                  APPLE_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PWD }}
-                  APPLE_SIGNING_IDENTITY: ${{ secrets.MACOS_CERTIFICATE_NAME }}
-                  APPLE_ID: ${{ secrets.MACOS_NOTARIZATION_APPLE_ID }}
-                  APPLE_PASSWORD: ${{ secrets.MACOS_NOTARIZATION_PWD }}
-                  APPLE_TEAM_ID: ${{ secrets.MACOS_NOTARIZATION_TEAM_ID }}
+      - name: Install Frontend Dependencies
+        run: npm install
 
-            - name: Upload signed macOS Installer
-              uses: actions/upload-artifact@v4.4.3
-              with:
-                  name: build-macos-official
-                  path: src-tauri/target/release/bundle/dmg/*.dmg
-                  retention-days: 5
+      - name: Build Tauri App
+        uses: tauri-apps/tauri-action@v0.5.15
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APPLE_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PWD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.MACOS_CERTIFICATE_NAME }}
+          APPLE_ID: ${{ secrets.MACOS_NOTARIZATION_APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.MACOS_NOTARIZATION_PWD }}
+          APPLE_TEAM_ID: ${{ secrets.MACOS_NOTARIZATION_TEAM_ID }}
 
-            - name: Github Release MacOS
-              uses: softprops/action-gh-release@v2
-              with:
-                  files: |
-                      src-tauri/target/release/bundle/dmg/*.dmg
+      - name: Rename and Prepare macOS DMG
+        run: |
+          # Find and rename the .dmg file to include the release version
+          DMG_FILE=$(find src-tauri/target/release/bundle/dmg -name "*.dmg" | head -n 1)
+          NEW_DMG_FILE="src-tauri/target/release/bundle/dmg/Uplink_${{ env.RELEASE_VERSION }}.dmg"
+          mv "$DMG_FILE" "$NEW_DMG_FILE"
+
+      - name: Upload signed macOS Installer
+        uses: actions/upload-artifact@v4.4.3
+        with:
+          name: build-macos-official
+          path: src-tauri/target/release/bundle/dmg/Uplink_${{ env.RELEASE_VERSION }}.dmg
+          retention-days: 5
+
+      - name: GitHub Release MacOS
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            src-tauri/target/release/bundle/dmg/Uplink_${{ env.RELEASE_VERSION }}.dmg
