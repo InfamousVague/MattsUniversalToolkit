@@ -558,7 +558,6 @@
                     </Checkbox>
                 </div>
             {/if}
-            
             <div class="section">
             <SettingSection hook="section-support" name={$_("settings.profile.support.label")} description={$_("settings.profile.support.description")}>
              <a href="mailto:support@satellite.com">
