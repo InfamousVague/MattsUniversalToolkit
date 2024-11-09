@@ -313,6 +313,11 @@
                 "label": "Log Out",
                 "description": "Log out of the current account and return to the unlock page."
             },
+            "support": {
+                "label": "Support",
+                "description": "Contact us for support.",
+                "button": "Email us"
+            },
             "change_profile_photo": "Change profile photo",
             "reveal_phrase": {
                 "label": "Reveal recovery phrase",

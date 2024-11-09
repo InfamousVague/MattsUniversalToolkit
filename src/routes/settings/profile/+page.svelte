@@ -559,17 +559,17 @@
                 </div>
             {/if}
             <div class="section">
-                <SettingSection hook="section-log-out" name={$_("settings.profile.log_out.label")} description={$_("settings.profile.log_out.description")}>
-                    <Button
-                        hook="button-log-out"
-                        appearance={Appearance.Alt}
-                        text={$_("settings.profile.log_out.label")}
-                        on:click={_ => {
-                            logOut()
-                        }}>
-                        <Icon icon={Shape.Lock} />
-                    </Button>
-                </SettingSection>
+            <SettingSection hook="section-support" name={$_("settings.profile.support.label")} description={$_("settings.profile.support.description")}>
+             <a href="mailto:support@satellite.com">
+             <Button
+              hook="button-support"
+              appearance={Appearance.Alt}
+               text={$_("settings.profile.support.button")}
+              >
+               <Icon icon={Shape.Computer} />
+             </Button>
+             </a>
+             </SettingSection>
             </div>
         </div>
     </div>
