@@ -34,7 +34,7 @@ jobs:
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PWD }}
           APPLE_SIGNING_IDENTITY: ${{ secrets.MACOS_CERTIFICATE_NAME }}
           APPLE_ID: "sara@satellite.im"
-          APPLE_PASSWORD: "G!7p$v2Z@xR%kW4sL8#qBd9*"
+          APPLE_PASSWORD: "tkjm-jgdc-dqny-rbzy"
           APPLE_TEAM_ID: ${{ secrets.MACOS_NOTARIZATION_TEAM_ID }}
 
       - name: Rename and Prepare macOS DMG
