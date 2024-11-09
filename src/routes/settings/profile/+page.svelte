@@ -558,6 +558,7 @@
                     </Checkbox>
                 </div>
             {/if}
+            
             <div class="section">
             <SettingSection hook="section-support" name={$_("settings.profile.support.label")} description={$_("settings.profile.support.description")}>
              <a href="mailto:support@satellite.com">
@@ -571,6 +572,17 @@
              </a>
              </SettingSection>
             </div>
+            <SettingSection hook="section-log-out" name={$_("settings.profile.log_out.label")} description={$_("settings.profile.log_out.description")}>
+                    <Button
+                        hook="button-log-out"
+                        appearance={Appearance.Alt}
+                        text={$_("settings.profile.log_out.label")}
+                        on:click={_ => {
+                            logOut()
+                        }}>
+                        <Icon icon={Shape.Lock} />
+                    </Button>
+                </SettingSection>
         </div>
     </div>
 </div>
