@@ -1,6 +1,9 @@
 import fs from 'fs'
 import path from 'path'
 
+// Retrieve the directory name from the current file path
+const __dirname = path.dirname(new URL(import.meta.url).pathname)
+
 const VERSION = process.env.RELEASE_VERSION
 
 if (!VERSION) {

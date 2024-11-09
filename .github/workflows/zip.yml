@@ -34,22 +34,26 @@ jobs:
       - name: Run build script
         run: npm run build
 
-      # Step 5: Create a single ZIP file in target/release and rename it with the version
+      # Step 5: Set version based on the tag
+      - name: Set version
+        id: set_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+
+      # Step 6: Create a single ZIP file in target/release and rename it with the version
       - name: Zip the build with version
         run: |
-          VERSION=${GITHUB_REF#refs/tags/}  # Extract version from tag name
           mkdir -p target/release
           zip -r target/release/Uplink_${VERSION}.zip ./build  # Name the ZIP file with version
 
-      # Step 6: Upload the ZIP file as an artifact
+      # Step 7: Upload the ZIP file as an artifact
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: build-zip
-          path: target/release/Uplink_${GITHUB_REF#refs/tags/}.zip
+          path: target/release/Uplink_${VERSION}.zip
 
-      # Step 7: Copy file to release
+      # Step 8: Copy file to release
       - name: Copy file to release
         uses: softprops/action-gh-release@v2
         with:
-          files: target/release/Uplink_${GITHUB_REF#refs/tags/}.zip
+          files: target/release/Uplink_${VERSION}.zip
