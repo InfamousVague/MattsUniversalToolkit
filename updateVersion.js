@@ -1,5 +1,5 @@
-const fs = require('fs')
-const path = require('path')
+import fs from 'fs'
+import path from 'path'
 
 const VERSION = process.env.RELEASE_VERSION
 
@@ -17,6 +17,6 @@ let content = fs.readFileSync(filePath, 'utf-8')
 // Update URLs in DOWNLOAD_LINKS
 content = content.replace(/\/v\d+\.\d+\.\d+\//g, `/v${VERSION}/`)
 
-fs.writeFileSync(filePath, content);
+fs.writeFileSync(filePath, content)
 
 console.log(`Updated DOWNLOAD_LINKS version to v${VERSION}`)
