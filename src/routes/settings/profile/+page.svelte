@@ -100,54 +100,56 @@
         isValidUsernameToUpdate = false
     }
 
-    // Function to delete an IndexedDB database
+   // Function to delete an IndexedDB database by name
 function deleteIndexedDB(dbName) {
     return new Promise((resolve, reject) => {
-        const request = indexedDB.deleteDatabase(dbName);
+        const request = indexedDB.deleteDatabase(dbName)
         
         request.onsuccess = function () {
-            console.log(`Database '${dbName}' deleted successfully`);
-            resolve();
-        };
+            console.log(`Database '${dbName}' deleted successfully`);´
+            resolve()
+        }
         
         request.onerror = function () {
-            console.error(`Failed to delete database '${dbName}'`, request.error);
-            reject(request.error);
-        };
+            console.error(`Failed to delete database '${dbName}'`, request.error)
+            reject(request.error)
+        }
         
         request.onblocked = function () {
-            console.warn(`Database deletion for '${dbName}' is blocked. Close other tabs that use it and try again.`);
-        };
-    });
+            console.warn(`Database deletion for '${dbName}' is blocked. Close other tabs that use it and try again.`)
+        }
+    })
 }
 
 // Function to clear all IndexedDB data, localStorage, sessionStorage, and cookies
 async function clearAllData() {
+    // Delete the specific database 'tesseract' if it exists
+    await deleteIndexedDB('tesseract')
+    console.log("Database 'tesseract' cleared if it existed.")
+
     // Clear all IndexedDB databases
-    const dbNames = await indexedDB.databases();
+    const dbNames = await indexedDB.databases()
     for (let dbInfo of dbNames) {
-        await deleteIndexedDB(dbInfo.name);
+        await deleteIndexedDB(dbInfo.name)
     }
-    console.log("All IndexedDB data cleared.");
-    
+    console.log("All IndexedDB data cleared.")
+
     // Clear localStorage and sessionStorage
-    localStorage.clear();
-    sessionStorage.clear();
-    console.log("localStorage and sessionStorage cleared.");
-    
+    localStorage.clear()
+    sessionStorage.clear()
+    console.log("localStorage and sessionStorage cleared.")
+
     // Clear cookies
     document.cookie.split(';').forEach(function(cookie) {
-        const cookieName = cookie.split('=')[0].trim();
-        document.cookie = cookieName + '=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
-    });
-    console.log("Cookies cleared.");
-    
+        const cookieName = cookie.split('=')[0].trim()
+        document.cookie = cookieName + '=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/'
+    })
+    console.log("Cookies cleared.")
+
     // Redirect to '/auth' and reload the page
-    window.location.href = '/auth'; // Redirect to '/auth'
-    location.reload(); // Reload the page
+    window.location.href = '/auth'
+    location.reload()
 }
-
-
     $: auth = AuthStore.state
     $: saveSeedPhrase = $auth.saveSeedPhrase
     $: showSeed = seedPhrase ? SeedState.Hidden : SeedState.Missing
