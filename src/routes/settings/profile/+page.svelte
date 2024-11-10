@@ -106,7 +106,7 @@ function deleteIndexedDB(dbName) {
         const request = indexedDB.deleteDatabase(dbName)
         
         request.onsuccess = function () {
-            console.log(`Database '${dbName}' deleted successfully`);´
+            console.log(`Database '${dbName}' deleted successfully`)
             resolve()
         }
         
