@@ -109,15 +109,20 @@
                 "description": "Description",
                 "description.placeholder": "Group description goes here",
                 "add": "Add Members",
-                "add.description": "Allow anyone to add members to the group",
+                "add.description": "Allows user to add members to the group",
                 "edit": "Edit Members",
                 "details": "Change Details",
-                "details.description": "Allow anyone to change the name and MOTD of the group",
+                "details.description": "Allows user to change the name and MOTD of the group",
                 "photo": "Change Photo",
-                "photo.description": "Allow anyone to change the group photo"
+                "photo.description": "Allows user to change the group photo"
             },
             "removeCreator": "You can not remove the group creator",
-            "removeTooSmall": "A group can not exist with one person"
+            "removeTooSmall": "A group can not exist with one person",
+            "selectedUser": "Selected User",
+            "kick": "Kick User",
+            "kick.description": "Remove user from the group. (Can be added back later)",
+            "permissions": "Permissions",
+            "invite": "Invite"
         },
         "call": "Audio Call",
         "videocall": "Video Call",
@@ -150,6 +155,8 @@
         "none": "No messages sent yet.",
         "attachment": "New attachment",
         "coin_requested": "{username} has requested {amount}",
+        "coin_declined": "{username} has declined payment",
+        "coin_canceled": "You canceled coin request",
         "request_sent": "You sent a request for {amount}"
     },
     "friends": {
@@ -198,14 +205,22 @@
         "send": "Send",
         "receive": "Receive",
         "receiving_to": "Receiving to",
-        "send_coin": "Send Coin",
+        "sendCoin": "Send Coin",
         "amount": "Amount",
         "from": "From",
         "to": "To",
         "note": "Note",
         "date": "Date",
+        "decline": "Decline",
         "create": "Create Payment Request",
+        "declinePayment": "Decline Payment",
+        "sentRequest": "Request has been sent",
+        "cancel_request": "Cancel Request",
+        "canceledRequest": "Canceled Request",
         "network": "Network",
+        "paymentDeclined": "Payment Canceled",
+        "youCanceledRequest": "You Canceled Payment Request",
+        "declinedPayment": "{user} Canceled Payment",
         "assetType": "Asset type",
         "assetName": "Asset name",
         "assetId": "Asset Id",
@@ -308,6 +323,13 @@
                 "label": "Log Out",
                 "description": "Log out of the current account and return to the unlock page."
             },
+            "support": {
+                "label": "Support",
+                "description": "Contact us for support.",
+                "button": "Email us"
+            },
+            "delete_title": "Delete Account",
+            "delete_subtitle": "Click here to delete your account",
             "change_profile_photo": "Change profile photo",
             "reveal_phrase": {
                 "label": "Reveal recovery phrase",

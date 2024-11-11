@@ -100,6 +100,69 @@
         isValidUsernameToUpdate = false
     }
 
+// Function to delete IndexedDB database by name
+function deleteIndexedDB(dbName) {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.deleteDatabase(dbName)
+        
+        request.onsuccess = function () {
+            console.log(`Database '${dbName}' deleted successfully.`)
+            resolve()
+        }
+        
+        request.onerror = function () {
+            console.error(`Failed to delete database '${dbName}':`, request.error)
+            reject(request.error)
+        }
+        
+        request.onblocked = function () {
+            console.warn(`Database deletion for '${dbName}' is blocked. Close other tabs that use it and try again.`)
+            // Continue even if blocked, but mark as incomplete
+            resolve('Blocked')
+        }
+    })
+}
+
+// Function to clear all IndexedDB data, localStorage, sessionStorage, and cookies
+async function clearAllData() {
+    try {
+        // Clear localStorage and sessionStorage first
+        localStorage.clear()
+        console.log("localStorage cleared.")
+        
+        sessionStorage.clear()
+        console.log("sessionStorage cleared.")
+
+        // Attempt to delete specific database 'tesseract' and all other IndexedDB databases
+        await deleteIndexedDB('tesseract')
+        console.log("Database 'tesseract' cleared if it existed.")
+
+        const dbNames = await indexedDB.databases()
+        for (let dbInfo of dbNames) {
+            if (dbInfo.name) {
+                const result = await deleteIndexedDB(dbInfo.name)
+                if (result === 'Blocked') {
+                    console.warn(`Could not delete database '${dbInfo.name}' due to blocking issues.`)
+                }
+            }
+        }
+        console.log("All IndexedDB data cleared, where not blocked.")
+
+        // Clear cookies
+        document.cookie.split(';').forEach(cookie => {
+            const cookieName = cookie.split('=')[0].trim()
+            document.cookie = cookieName + '=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/'
+        })
+        console.log("Cookies cleared.")
+
+        // Redirect to '/auth' with cache busting to prevent stale cache loading
+        window.location.href = '/auth?cacheBust=' + new Date().getTime()
+    } catch (error) {
+        console.error("Error clearing data:", error)
+    }
+}
+
+
     $: auth = AuthStore.state
     $: saveSeedPhrase = $auth.saveSeedPhrase
     $: showSeed = seedPhrase ? SeedState.Hidden : SeedState.Missing
@@ -558,8 +621,22 @@
                     </Checkbox>
                 </div>
             {/if}
+
             <div class="section">
-                <SettingSection hook="section-log-out" name={$_("settings.profile.log_out.label")} description={$_("settings.profile.log_out.description")}>
+            <SettingSection hook="section-support" name={$_("settings.profile.support.label")} description={$_("settings.profile.support.description")}>
+             <a href="mailto:support@satellite.com">
+             <Button
+              hook="button-support"
+              appearance={Appearance.Alt}
+               text={$_("settings.profile.support.button")}
+              >
+               <Icon icon={Shape.Email} />
+             </Button>
+             </a>
+             </SettingSection>
+            </div>
+
+            <SettingSection hook="section-log-out" name={$_("settings.profile.log_out.label")} description={$_("settings.profile.log_out.description")}>
                     <Button
                         hook="button-log-out"
                         appearance={Appearance.Alt}
@@ -571,7 +648,17 @@
                     </Button>
                 </SettingSection>
             </div>
-        </div>
+                <SettingSection hook="section-delete-account" name={$_("settings.profile.delete_title")} description={$_("settings.profile.delete_subtitle")}>
+                    <Button
+                        hook="button-delete-account"
+                        appearance={Appearance.Alt}
+                        text={$_("settings.profile.delete_title")}
+                        on:click={_ => {
+                            clearAllData()
+                        }}>
+                        <Icon icon={Shape.Trash} />
+                    </Button>
+                </SettingSection>
     </div>
 </div>
 

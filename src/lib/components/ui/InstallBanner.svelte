@@ -5,7 +5,26 @@
     import Label from "$lib/elements/Label.svelte"
     import { Appearance, Shape } from "$lib/enums"
     import Controls from "$lib/layouts/Controls.svelte"
-    import { detectPlatform, Platform } from "$lib/utils/DetectPlatform"
+
+    enum Platform {
+        Windows = "Windows",
+        MacOS = "MacOS",
+        Android = "Android",
+       /* iOS = "iOS", */
+        Linux = "Linux",
+        Other = "Other",
+    }
+
+    function detectPlatform(): Platform {
+        const userAgent = navigator.userAgent.toLowerCase()
+
+        if (userAgent.includes("windows")) return Platform.Windows
+        if (userAgent.includes("mac")) return Platform.MacOS
+        if (userAgent.includes("android")) return Platform.Android
+        if (/iphone|ipad|ipod/.test(userAgent)) return Platform.iOS
+        if (userAgent.includes("linux")) return Platform.Linux
+        return Platform.Other
+    }
 
     function isElectron(): boolean {
         return typeof window !== "undefined" && window.process?.versions?.electron !== undefined
@@ -47,11 +66,11 @@
             icon: Shape.Android,
             download: DOWNLOAD_LINKS.Android,
         },
-        [Platform.iOS]: {
+      /*  [Platform.iOS]: {
             text: "iPhone",
             icon: Shape.Apple,
             download: DOWNLOAD_LINKS.iOS,
-        },
+        }, */
         [Platform.Linux]: {
             text: "Linux",
             icon: Shape.Code,
