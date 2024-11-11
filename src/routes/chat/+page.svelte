@@ -1,30 +1,15 @@
 <script lang="ts">
     import { callInProgress, VoiceRTCInstance } from "../../lib/media/Voice"
-    import { Appearance, ChatType, MessageAttachmentKind, MessagePosition, Route, Shape, Size, TooltipPosition } from "$lib/enums"
+    import { Appearance, ChatType, MessageAttachmentKind, MessagePosition, PaymentRequestsEnum, Route, Shape, Size, TooltipPosition } from "$lib/enums"
     import { _ } from "svelte-i18n"
     import { animationDuration } from "$lib/globals/animations"
     import { slide } from "svelte/transition"
     import { Chatbar, Sidebar, Topbar, Profile } from "$lib/layouts"
-    import {
-        ImageEmbed,
-        ChatPreview,
-        Conversation,
-        Message as MessageComponent,
-        MessageGroup,
-        MessageReactions,
-        MessageReplyContainer,
-        ProfilePicture,
-        Modal,
-        ProfilePictureMany,
-        ChatFilter,
-        ContextMenu,
-        EmojiGroup,
-        MessageText,
-    } from "$lib/components"
+    import { ImageEmbed, ChatPreview, Conversation, Message as MessageComponent, MessageGroup, MessageReactions, MessageReplyContainer, ProfilePicture, Modal, ProfilePictureMany, ChatFilter, ContextMenu, EmojiGroup } from "$lib/components"
     import CreateTransaction from "$lib/components/wallet/CreateTransaction.svelte"
     import { Button, FileInput, Icon, Label, Text } from "$lib/elements"
     import CallScreen from "$lib/components/calling/CallScreen.svelte"
-    import { MessageType, type MessageGroup as MessageGroupType } from "$lib/types"
+    import { type MessageGroup as MessageGroupType } from "$lib/types"
     import EncryptedNotice from "$lib/components/messaging/EncryptedNotice.svelte"
     import { Store } from "$lib/state/Store"
     import { derived, get } from "svelte/store"
@@ -36,17 +21,19 @@
     import ViewMembers from "$lib/components/group/ViewMembers.svelte"
     import Market from "$lib/components/market/Market.svelte"
     import { RaygunStoreInstance } from "$lib/wasm/RaygunStore"
-    import type { Attachment, Message, User } from "$lib/types"
+    import type { Attachment, FileInfo, Message as MessageType, User } from "$lib/types"
     import Input from "$lib/elements/Input/Input.svelte"
     import PendingMessage from "$lib/components/messaging/message/PendingMessage.svelte"
     import PendingMessageGroup from "$lib/components/messaging/PendingMessageGroup.svelte"
     import FileUploadPreview from "$lib/elements/FileUploadPreview.svelte"
     import StoreResolver from "$lib/components/utils/StoreResolver.svelte"
+    import { getValidPaymentRequest, Transfer } from "$lib/utils/Wallet"
     import { onMount } from "svelte"
     import PinnedMessages from "$lib/components/messaging/PinnedMessages.svelte"
     import { MessageEvent } from "warp-wasm"
     import { debounce, getTimeAgo } from "$lib/utils/Functions"
     import Controls from "$lib/layouts/Controls.svelte"
+    import { tempCDN } from "$lib/utils/CommonVariables"
     import { checkMobile } from "$lib/utils/Mobile"
     import BrowseFiles from "../files/BrowseFiles.svelte"
     import AttachmentRenderer from "$lib/components/messaging/AttachmentRenderer.svelte"
@@ -107,7 +94,7 @@
     let editing_text: string | undefined = undefined
     $: emojis = UIStore.getMostUsed()
     $: own_user = Store.state.user
-    let replyTo: Message | undefined = undefined
+    let replyTo: MessageType | undefined = undefined
     let reactingTo: string | undefined
     let fileUpload: FileInput
 
@@ -129,7 +116,6 @@
         event.preventDefault()
         let files: [File?, string?][] = []
         dragging_files = 0
-        // upload files
         for (let file of event.dataTransfer?.files!) {
             files.push([file, undefined])
         }
@@ -144,6 +130,26 @@
                 },
             }
         })
+    }
+
+    function sanitizePaymentRequest(message: string, sender: string): string {
+        // Match and extract "kind", "amountPreview", and "toAddress" from the input string
+        const kindMatch = message.match(/"kind":"(.*?)"/)
+        const amountPreviewMatch = message.match(/"amountPreview":"(.*?)"/)
+        // const toAddressMatch = message.match(/"toAddress":"(.*?)"/)
+
+        // Extract the values from the match results, defaulting to an empty string if not found
+        const kind = kindMatch ? kindMatch[1] : ""
+        let amountPreview = amountPreviewMatch ? amountPreviewMatch[1] : ""
+        // const toAddress = toAddressMatch ? toAddressMatch[1] : ""
+
+        // Remove any extra occurrence of the currency symbol in `amountPreview`
+        if (amountPreview.includes(kind)) {
+            amountPreview = amountPreview.replace(kind, "").trim()
+        }
+        amountPreview = amountPreview.replace(/(\.\d*?[1-9])0+$|\.0*$/, "$1")
+        // Return the formatted string
+        return `Send ${amountPreview} ${kind}`
     }
 
     function addFilesToUpload(selected: File[]) {
@@ -165,7 +171,7 @@
         })
     }
 
-    function build_context_items(message: Message, file?: Attachment) {
+    function buildContextItems(message: MessageType, file?: Attachment) {
         return [
             message.pinned
                 ? {
@@ -219,7 +225,11 @@
                 : []),
             ...(message.details.origin === $own_user.key
                 ? [
-                      ...(message.type === MessageType.DEFAULT
+                      ...(!message.text.some(text => text.includes("giphy.com")) &&
+                      !message.text.some(text => text.includes(tempCDN)) &&
+                      !message.text.some(text => text.includes(get(_)("settings.calling.callMissed"))) &&
+                      !message.text.some(text => text.includes(get(_)("settings.calling.endCallMessage"))) &&
+                      !message.text.some(text => text.includes(get(_)("settings.calling.startCallMessage")))
                           ? [
                                 {
                                     id: "edit",
@@ -233,7 +243,9 @@
                                 },
                             ]
                           : []),
-                      ...(message.type === MessageType.DEFAULT
+                      ...(!message.text.some(text => text.includes(get(_)("settings.calling.callMissed"))) &&
+                      !message.text.some(text => text.includes(get(_)("settings.calling.endCallMessage"))) &&
+                      !message.text.some(text => text.includes(get(_)("settings.calling.startCallMessage")))
                           ? [
                                 {
                                     id: "delete",
@@ -287,6 +299,52 @@
         })
     }
 
+    $: rejectedPayments = Store.state.paymentTracker
+
+    async function sendPaymentMessage(message: MessageType, paymentType: string) {
+        let transfer = new Transfer()
+        let chat = get(Store.state.activeChat)
+        let rejectTranser = transfer.toRejectString(message.id)
+        let txt = rejectTranser.split("\n")
+        if (paymentType === "result") {
+            let result = await RaygunStoreInstance.send(chat.id, txt, [])
+            result.onSuccess(res => {
+                if (getValidPaymentRequest(message.text[0])) {
+                    getValidPaymentRequest(message.text[0])?.execute()
+                }
+                Store.state.paymentTracker.update(payments => {
+                    const alreadyRejected = payments.some(payment => payment.messageId === message.id)
+
+                    if (!alreadyRejected) {
+                        return [...payments, { messageId: message.id, senderId: message.details.origin, rejectedPayment: false }]
+                    } else {
+                        console.log(`MessageId ${message.id} is already in the rejected payments list`)
+                        return payments
+                    }
+                })
+                transfer.toCmdString()
+                ConversationStore.addPendingMessages(chat.id, res.message, txt)
+            })
+        }
+        if (paymentType === PaymentRequestsEnum.Reject) {
+            let result = await RaygunStoreInstance.send(chat.id, txt, [])
+            result.onSuccess(res => {
+                Store.state.paymentTracker.update(payments => {
+                    const alreadyRejected = payments.some(payment => payment.messageId === message.id)
+
+                    if (!alreadyRejected) {
+                        return [...payments, { messageId: message.id, senderId: message.details.origin, rejectedPayment: true }]
+                    } else {
+                        console.log(`MessageId ${message.id} is already in the rejected payments list`)
+                        return payments
+                    }
+                })
+                transfer.toRejectString(message.id)
+                ConversationStore.addPendingMessages(chat.id, res.message, txt)
+            })
+        }
+    }
+
     let activeCallInProgress = false
     let activeCallDid = ""
 
@@ -314,7 +372,28 @@
         }, 500)
     })
 
-    function getPinned(conversation: ConversationMessages | undefined): Message[] {
+    function checkForActiveRequest(message: MessageType, messageLine: string) {
+        const idMatch = messageLine.match(/^\/reject\s([a-f0-9-]{36})$/)
+        if (idMatch) {
+            const messageId = idMatch[1]
+
+            let wasAdded = false
+            Store.state.paymentTracker.update(payments => {
+                const alreadyRejected = payments.some(payment => payment.messageId === messageId)
+
+                if (!alreadyRejected) {
+                    wasAdded = true
+                    return [...payments, { messageId, senderId: message.details.origin, rejectedPayment: false }]
+                }
+                return payments
+            })
+
+            return wasAdded
+        }
+        return false
+    }
+
+    function getPinned(conversation: ConversationMessages | undefined): MessageType[] {
         if (!conversation) return []
         return conversation!.messages.flatMap(g => g.messages.filter(m => m.pinned))
     }
@@ -328,7 +407,7 @@
 
     function splitUnreads(groups: MessageGroupType[]): [MessageGroupType[], MessageGroupType[]] {
         let splitMessages = (group: MessageGroupType) => {
-            return group.messages.reduce<[Message[], Message[]]>(
+            return group.messages.reduce<[MessageType[], MessageType[]]>(
                 ([read, unreads], message) => {
                     if (message.details.at > $activeChat.last_view_date) {
                         unreads.push(message)
@@ -735,7 +814,7 @@
                                         </StoreResolver>
                                     {/if}
                                     {#if message.text.length > 0 || message.attachments.length > 0}
-                                        <ContextMenu hook="context-menu-chat-message" items={build_context_items(message)}>
+                                        <ContextMenu hook="context-menu-chat-message" items={buildContextItems(message)}>
                                             <MessageComponent
                                                 id={message.id}
                                                 pinned={message.pinned}
@@ -748,7 +827,69 @@
                                                 {#if editing_message === message.id}
                                                     <Input hook="chat-message-edit-input-{editing_message}" alt bind:value={editing_text} autoFocus rich on:enter={_ => edit_message(message.id, editing_text ? editing_text : "")} />
                                                 {:else}
-                                                    <MessageText chat={$activeChat.id} texts={message.text} remote={group.details.remote} type={message.type} />
+                                                    {#each message.text as line}
+                                                        {#if line.startsWith(PaymentRequestsEnum.Reject)}
+                                                            {#if !checkForActiveRequest(message, line)}
+                                                                {#if $own_user.key !== message.details.origin}
+                                                                    <Text
+                                                                        hook="text-chat-message"
+                                                                        markdown={$_("payments.declinedPayment", { values: { user: resolved.name } })}
+                                                                        appearance={group.details.remote ? Appearance.Default : Appearance.Alt} />
+                                                                {:else}
+                                                                    <Text hook="text-chat-message" markdown={$_("payments.youCanceledRequest")} appearance={group.details.remote ? Appearance.Default : Appearance.Alt} />
+                                                                {/if}
+                                                            {/if}
+                                                        {:else if getValidPaymentRequest(line) !== undefined}
+                                                            {#if !$rejectedPayments.find(payments => payments.messageId === message.id)}
+                                                                {#if $own_user.key !== message.details.origin}
+                                                                    <div class="send_coin">
+                                                                        <Button
+                                                                            hook="text-chat-message"
+                                                                            class="send_coin"
+                                                                            text={sanitizePaymentRequest(line, resolved.name)}
+                                                                            on:click={async () => getValidPaymentRequest(line, message.id)?.execute()}>
+                                                                            <Icon icon={Shape.DollarOut}></Icon></Button>
+                                                                        <Button
+                                                                            hook="text-chat-message"
+                                                                            text={$_("payments.decline")}
+                                                                            appearance={Appearance.Error}
+                                                                            on:click={async () => sendPaymentMessage(message, PaymentRequestsEnum.Reject)}>
+                                                                            <Icon icon={Shape.NoSymbol}></Icon>
+                                                                        </Button>
+                                                                    </div>
+                                                                {:else if !checkForActiveRequest(message, line)}
+                                                                    <Text hook="text-chat-message" class="send_coin" markdown={$_("payments.sentRequest")}></Text>
+                                                                    <Button
+                                                                        hook="text-chat-message"
+                                                                        text={$_("payments.cancel_request")}
+                                                                        appearance={Appearance.Error}
+                                                                        on:click={async () => sendPaymentMessage(message, PaymentRequestsEnum.Reject)}>
+                                                                        <Icon icon={Shape.XMark}></Icon>
+                                                                    </Button>
+                                                                {:else}
+                                                                    <Text hook="text-chat-message" class="send_coin" markdown={$_("payments.sentRequest")}></Text>
+                                                                    <Button
+                                                                        hook="text-chat-message"
+                                                                        text={$_("payments.canceledRequest")}
+                                                                        appearance={Appearance.Error}
+                                                                        on:click={async () => sendPaymentMessage(message, PaymentRequestsEnum.Reject)}>
+                                                                        <Icon icon={Shape.XMark}></Icon>
+                                                                    </Button>
+                                                                {/if}
+                                                            {:else if $own_user.key === message.details.origin && !checkForActiveRequest(message, line)}
+                                                                <Button hook="text-chat-message" disabled text={$_("payments.youCanceledRequest")} appearance={Appearance.Error} />
+                                                            {:else}
+                                                                <Button hook="text-chat-message" disabled text={$_("payments.paymentDeclined")} appearance={Appearance.Error} />
+                                                            {/if}
+                                                        {:else if !line.includes(tempCDN)}
+                                                            <Text hook="text-chat-message" markdown={line} appearance={group.details.remote ? Appearance.Default : Appearance.Alt} />
+                                                        {:else}
+                                                            <div class="sticker">
+                                                                <Text hook="text-chat-message" markdown={line} size={Size.Smallest} appearance={group.details.remote ? Appearance.Default : Appearance.Alt} />
+                                                            </div>
+                                                        {/if}
+                                                    {/each}
+
                                                     {#if message.attachments.length > 0}
                                                         <AttachmentRenderer
                                                             attachments={message.attachments}
@@ -757,16 +898,18 @@
                                                             }}
                                                             messageId={message.id}
                                                             chatID={$activeChat.id}
-                                                            contextBuilder={attachment => build_context_items(message, attachment)}
+                                                            contextBuilder={attachment => buildContextItems(message, attachment)}
                                                             on:share={e => (fileToShare = [e.detail, $activeChat.id])} />
                                                     {/if}
                                                 {/if}
                                             </MessageComponent>
+
                                             <svelte:fragment slot="items" let:close>
                                                 <EmojiGroup emojis={$emojis} emojiPick={emoji => reactTo(message.id, emoji, true)} close={close} on:openPicker={_ => (reactingTo = message.id)}></EmojiGroup>
                                             </svelte:fragment>
                                         </ContextMenu>
                                     {/if}
+
                                     {#if Object.keys(message.reactions).length > 0}
                                         <MessageReactions remote={group.details.remote} reactions={Object.values(message.reactions)} onClick={emoji => reactTo(message.id, emoji, true)} />
                                     {/if}
@@ -1055,5 +1198,9 @@
                 max-width: 100%;
             }
         }
+    }
+
+    .sticker {
+        width: var(--sticker-width-rendered);
     }
 </style>
