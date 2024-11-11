@@ -172,11 +172,13 @@ class MultipassStore {
         return failure(WarpError.MULTIPASS_NOT_FOUND)
     }
 
-    async fetchAllFriendsAndRequests() {
+    async fetchAllFriendsAndRequests(listFriends: boolean = true) {
         await this.listIncomingFriendRequests()
         await this.listOutgoingFriendRequests()
         await this.listBlockedFriends()
-        await this.listFriends()
+        if (listFriends) {
+            await this.listFriends()
+        }
     }
 
     /**
@@ -387,12 +389,6 @@ class MultipassStore {
                 let friendsAny: Array<any> = await multipass.list_friends()
                 let friendsUsers: Array<string> = []
                 for (let i = 0; i < friendsAny.length; i++) {
-                    let userInCache = Store.getUsersLookup(friendsAny[i])
-
-                    if (userInCache) {
-                        continue
-                    }
-
                     let friendUser = await this.identity_from_did(friendsAny[i])
                     if (friendUser) {
                         friendsUsers.push(friendUser.key)

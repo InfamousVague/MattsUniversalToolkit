@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { callScreenVisible } from "$lib/media/Voice"
     import { Store } from "$lib/state/Store"
     import { UIStore } from "$lib/state/ui"
     import { MultipassStoreInstance } from "$lib/wasm/MultipassStore"
@@ -12,7 +13,7 @@
     async function poll() {
         // add processes here.
         updateTypingIndicators()
-        await MultipassStoreInstance.fetchAllFriendsAndRequests()
+        await MultipassStoreInstance.fetchAllFriendsAndRequests(!get(callScreenVisible))
 
         // Increase the interval exponentially until it reaches the provided rate
         if (currentInterval < rate) {

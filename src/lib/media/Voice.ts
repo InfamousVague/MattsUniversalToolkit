@@ -27,6 +27,7 @@ export const connectionOpened = writable(false)
 export const timeCallStarted: Writable<Date | null> = writable(null)
 export const callInProgress: Writable<string | null> = writable(null)
 export const makeCallSound = writable<SoundHandler | undefined>(undefined)
+export const callScreenVisible = writable(false)
 
 const relaysToTest = [
     "wss://nostr-pub.wellorder.net",
@@ -732,6 +733,7 @@ export class VoiceRTC {
     }
 
     async leaveCall(sendEndCallMessage = false) {
+        callScreenVisible.set(false)
         callInProgress.set(null)
         timeCallStarted.set(null)
         usersDeniedTheCall.set([])
