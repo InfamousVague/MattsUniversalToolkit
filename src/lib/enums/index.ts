@@ -20,6 +20,11 @@ export enum Color {
     RESET = "&r",
 }
 
+export enum PaymentRequestsEnum {
+    Reject = "/reject",
+    Request = "/request",
+}
+
 export enum Format {
     BOLD = "&l",
     STRIKETHROUGH = "&m",
