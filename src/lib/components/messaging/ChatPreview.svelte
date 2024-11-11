@@ -1,6 +1,6 @@
 <script lang="ts">
     import TimeAgo from "javascript-time-ago"
-    import { Appearance, ChatType, Route, Shape, Size, Status } from "$lib/enums"
+    import { Appearance, ChatType, PaymentRequestsEnum, Route, Shape, Size, Status } from "$lib/enums"
     import type { Chat } from "$lib/types"
     import { Text, Loader, Button, Icon } from "$lib/elements"
     import { ProfilePicture } from "$lib/components"
@@ -48,7 +48,7 @@
             return $_("message_previews.attachment")
         }
 
-        if (chat.last_message_preview.startsWith("/request")) {
+        if (chat.last_message_preview.startsWith(PaymentRequestsEnum.Request)) {
             try {
                 const sendingUserId = ConversationStore.getMessage(chat.id, chat.last_message_id)?.details.origin
                 const sendingUserDetails = get(Store.getUser(sendingUserId!))
@@ -57,6 +57,18 @@
                 return sendingUserId !== ownId.key
                     ? $_("message_previews.coin_requested", { values: { username: sendingUserDetails.name, amount: amountPreview } })
                     : $_("message_previews.request_sent", { values: { amount: amountPreview } })
+            } catch (error) {
+                return "Invalid message format"
+            }
+        } else if (chat.last_message_preview.startsWith(PaymentRequestsEnum.Reject)) {
+            try {
+                const sendingUserId = ConversationStore.getMessage(chat.id, chat.last_message_id)?.details.origin
+                const sendingUserDetails = get(Store.getUser(sendingUserId!))
+                if (get(Store.getUser(sendingUserId!)).key !== ownId.key) {
+                    return $_("message_previews.coin_declined", { values: { username: sendingUserDetails.name } })
+                } else {
+                    return $_("message_previews.coin_canceled")
+                }
             } catch (error) {
                 return "Invalid message format"
             }
