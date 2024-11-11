@@ -630,7 +630,7 @@ async function clearAllData() {
               appearance={Appearance.Alt}
                text={$_("settings.profile.support.button")}
               >
-               <Icon icon={Shape.Computer} />
+               <Icon icon={Shape.Email} />
              </Button>
              </a>
              </SettingSection>
