@@ -100,56 +100,69 @@
         isValidUsernameToUpdate = false
     }
 
-   // Function to delete an IndexedDB database by name
+// Function to delete IndexedDB database by name
 function deleteIndexedDB(dbName) {
     return new Promise((resolve, reject) => {
         const request = indexedDB.deleteDatabase(dbName)
         
         request.onsuccess = function () {
-            console.log(`Database '${dbName}' deleted successfully`)
+            console.log(`Database '${dbName}' deleted successfully.`)
             resolve()
         }
         
         request.onerror = function () {
-            console.error(`Failed to delete database '${dbName}'`, request.error)
+            console.error(`Failed to delete database '${dbName}':`, request.error)
             reject(request.error)
         }
         
         request.onblocked = function () {
             console.warn(`Database deletion for '${dbName}' is blocked. Close other tabs that use it and try again.`)
+            // Continue even if blocked, but mark as incomplete
+            resolve('Blocked')
         }
     })
 }
 
 // Function to clear all IndexedDB data, localStorage, sessionStorage, and cookies
 async function clearAllData() {
-    // Delete the specific database 'tesseract' if it exists
-    await deleteIndexedDB('tesseract')
-    console.log("Database 'tesseract' cleared if it existed.")
+    try {
+        // Clear localStorage and sessionStorage first
+        localStorage.clear()
+        console.log("localStorage cleared.")
+        
+        sessionStorage.clear()
+        console.log("sessionStorage cleared.")
 
-    // Clear all IndexedDB databases
-    const dbNames = await indexedDB.databases()
-    for (let dbInfo of dbNames) {
-        await deleteIndexedDB(dbInfo.name)
+        // Attempt to delete specific database 'tesseract' and all other IndexedDB databases
+        await deleteIndexedDB('tesseract')
+        console.log("Database 'tesseract' cleared if it existed.")
+
+        const dbNames = await indexedDB.databases()
+        for (let dbInfo of dbNames) {
+            if (dbInfo.name) {
+                const result = await deleteIndexedDB(dbInfo.name)
+                if (result === 'Blocked') {
+                    console.warn(`Could not delete database '${dbInfo.name}' due to blocking issues.`)
+                }
+            }
+        }
+        console.log("All IndexedDB data cleared, where not blocked.")
+
+        // Clear cookies
+        document.cookie.split(';').forEach(cookie => {
+            const cookieName = cookie.split('=')[0].trim()
+            document.cookie = cookieName + '=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/'
+        })
+        console.log("Cookies cleared.")
+
+        // Redirect to '/auth' with cache busting to prevent stale cache loading
+        window.location.href = '/auth?cacheBust=' + new Date().getTime()
+    } catch (error) {
+        console.error("Error clearing data:", error)
     }
-    console.log("All IndexedDB data cleared.")
-
-    // Clear localStorage and sessionStorage
-    localStorage.clear()
-    sessionStorage.clear()
-    console.log("localStorage and sessionStorage cleared.")
-
-    // Clear cookies
-    document.cookie.split(';').forEach(function(cookie) {
-        const cookieName = cookie.split('=')[0].trim()
-        document.cookie = cookieName + '=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/'
-    })
-    console.log("Cookies cleared.")
-
-    // Redirect to '/auth' and reload the page
-    window.location.href = '/auth'
-    location.reload()
 }
+
+
     $: auth = AuthStore.state
     $: saveSeedPhrase = $auth.saveSeedPhrase
     $: showSeed = seedPhrase ? SeedState.Hidden : SeedState.Missing
