@@ -1,0 +1,59 @@
+name: Build and Zip
+
+on:
+  push:
+    tags:
+      - "*"
+
+permissions:
+  contents: write
+  
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Check out the repository
+      - name: Check out code
+        uses: actions/checkout@v4.2.2
+
+      # Step 2: Set up Node.js
+      - name: Set up Node.js
+        uses: actions/setup-node@v4.1.0
+        with:
+          node-version: '20'
+
+      # Step 3: Install dependencies
+      - name: Install dependencies
+        run: npm install
+
+      # Step 4: Build the project
+      - name: Run build script
+        run: npm run build
+
+      # Step 5: Set version based on the tag
+      - name: Set version
+        id: set_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+
+      # Step 6: Create a single ZIP file in target/release and rename it with the version
+      - name: Zip the build with version
+        run: |
+          mkdir -p target/release
+          zip -r "target/release/Uplink_${{ env.VERSION }}.zip" ./build  # Use ${{ env.VERSION }}
+
+      # Step 7: Upload the ZIP file as an artifact
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-zip
+          path: target/release/Uplink_${{ env.VERSION }}.zip  # Use ${{ env.VERSION }}
+
+      # Step 8: Copy file to release
+      - name: Copy file to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: target/release/Uplink_${{ env.VERSION }}.zip  # Use ${{ env.VERSION }}

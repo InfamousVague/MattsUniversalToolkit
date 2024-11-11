@@ -1,3 +1,4 @@
+import { playSound, SoundHandler, Sounds } from "$lib/components/utils/SoundHandler"
 import { CallDirection } from "$lib/enums"
 import { Store } from "$lib/state/Store"
 import { create_cancellable_handler, type Cancellable } from "$lib/utils/CancellablePromise"
@@ -7,7 +8,9 @@ import Peer, { DataConnection } from "peerjs"
 import { _ } from "svelte-i18n"
 import { get, writable, type Writable } from "svelte/store"
 import type { Room } from "trystero"
-import { joinRoom } from "trystero/ipfs"
+import { joinRoom } from "trystero"
+import { NoiseSuppressorWorklet_Name } from "@timephy/rnnoise-wasm"
+import NoiseSuppressorWorklet from "@timephy/rnnoise-wasm/NoiseSuppressorWorklet?worker&url"
 
 const CALL_ACK = "CALL_ACCEPT"
 
@@ -21,6 +24,8 @@ export const usersDeniedTheCall: Writable<string[]> = writable([])
 export const usersAcceptedTheCall: Writable<string[]> = writable([])
 export const connectionOpened = writable(false)
 export const timeCallStarted: Writable<Date | null> = writable(null)
+export const callInProgress: Writable<string | null> = writable(null)
+export const makeCallSound = writable<SoundHandler | undefined>(undefined)
 
 export enum VoiceRTCMessageType {
     UpdateUser = "UPDATE_USER",
@@ -78,6 +83,62 @@ export type CallUpdater = {
     delete: (user: string) => void
 }
 
+export type StreamMetaHandler = {
+    remove(): void
+}
+
+function handleStreamMeta(did: string, stream: MediaStream): StreamMetaHandler {
+    const audioContext = new window.AudioContext()
+    const analyser = audioContext.createAnalyser()
+    analyser.fftSize = AUDIO_WINDOW_SIZE
+    analyser.smoothingTimeConstant = 0.1
+    const dataArray = new Uint8Array(analyser.frequencyBinCount)
+    let noiseSuppressionNode: AudioWorkletNode
+    let checker: NodeJS.Timeout
+
+    audioContext.audioWorklet.addModule(NoiseSuppressorWorklet).then(() => {
+        noiseSuppressionNode = new AudioWorkletNode(audioContext, NoiseSuppressorWorklet_Name)
+        const mediaStreamSource = audioContext.createMediaStreamSource(stream)
+        mediaStreamSource.connect(noiseSuppressionNode).connect(analyser)
+
+        function volume() {
+            analyser.getByteFrequencyData(dataArray)
+            return dataArray.reduce((prev, value) => (prev && prev > value ? prev : value))
+        }
+
+        function updateMeta(did: string) {
+            let muted = stream.getAudioTracks().some(track => !track.enabled || track.readyState === "ended")
+            let speaking = false
+            let user = Store.getUser(did)
+            let current = get(user)
+            let vol = volume()
+            if (!muted && vol > VOLUME_THRESHOLD) {
+                speaking = true
+            }
+            if (current.media.is_muted !== muted || current.media.is_playing_audio !== speaking) {
+                user.update(u => ({
+                    ...u,
+                    media: {
+                        ...u.media,
+                        is_muted: muted,
+                        is_playing_audio: speaking,
+                    },
+                }))
+            }
+        }
+
+        checker = setInterval(() => updateMeta(did), 300)
+    })
+
+    return {
+        remove: () => {
+            analyser.disconnect()
+            if (noiseSuppressionNode) noiseSuppressionNode.disconnect()
+            if (checker) clearInterval(checker)
+        },
+    }
+}
+
 export class Participant {
     did: string
     remotePeerId: string
@@ -90,7 +151,7 @@ export class Participant {
     }
 
     stream?: MediaStream
-    streamHandler?: [ReturnType<typeof setInterval>, AnalyserNode]
+    streamHandler?: StreamMetaHandler
     remove?: (user: string) => void
 
     constructor(id: string, peer: string) {
@@ -112,57 +173,18 @@ export class Participant {
         return this.remoteVoiceUser
     }
 
-    private async handleStreamMeta(stream: MediaStream) {
-        if (this.streamHandler) {
-            this.streamHandler[1].disconnect()
-            clearInterval(this.streamHandler[0] as any) // IDE is complaining for some reason
-        }
-        const audioContext = new window.AudioContext()
-        const mediaStreamSource = audioContext.createMediaStreamSource(stream)
-        const analyser = audioContext.createAnalyser()
-        analyser.fftSize = AUDIO_WINDOW_SIZE
-        mediaStreamSource.connect(analyser)
-        const dataArray = new Uint8Array(analyser.frequencyBinCount)
-        function volume() {
-            analyser.getByteFrequencyData(dataArray)
-            return dataArray.reduce((sum, value) => sum + value, 0) / dataArray.length
-        }
-
-        function updateMeta(did: string) {
-            let muted = stream.getTracks().find(track => !track.enabled || track.readyState === "ended") !== undefined
-            let speaking = false
-            let user = Store.getUser(did)
-            let current = get(user)
-            if (!muted && volume() < VOLUME_THRESHOLD) {
-                speaking = true
-            }
-            if (current.media.is_muted !== muted || current.media.is_playing_audio !== speaking) {
-                user.update(u => {
-                    return {
-                        ...u,
-                        media: {
-                            ...u.media,
-                            is_muted: muted,
-                            is_playing_audio: speaking,
-                        },
-                    }
-                })
-            }
-        }
-        const checker = setInterval(() => updateMeta(this.did), 3000)
-        this.streamHandler = [checker, analyser]
-    }
-
     async handleRemoteStream(stream: MediaStream) {
-        this.handleStreamMeta(stream)
+        if (this.streamHandler) {
+            this.streamHandler.remove()
+        }
+        this.streamHandler = handleStreamMeta(this.did, stream)
         this.stream = stream
     }
 
     close() {
         this.stream?.getTracks().forEach(track => track.stop())
         if (this.streamHandler) {
-            this.streamHandler[1].disconnect()
-            clearInterval(this.streamHandler[0] as any) // IDE is complaining for some reason
+            this.streamHandler.remove()
         }
         VoiceRTCInstance.remoteVideoCreator.delete(this.did)
     }
@@ -193,6 +215,7 @@ export class CallRoom {
             let stream = await VoiceRTCInstance.getLocalStream()
             log.debug(`Sending local stream ${stream} to ${peer}`)
             room.addStream(stream, peer)
+            playSound(Sounds.Joined)
             if (!this.start) {
                 this.start = new Date()
             }
@@ -204,6 +227,7 @@ export class CallRoom {
                 VoiceRTCInstance.remoteVideoCreator.delete(participant[0])
                 delete this.participants[participant[0]]
             }
+            playSound(Sounds.Disconnect)
             if (this.empty) {
                 VoiceRTCInstance.leaveCall(true)
             }
@@ -274,8 +298,8 @@ export class CallRoom {
     }
 }
 
-const AUDIO_WINDOW_SIZE = 256
-const VOLUME_THRESHOLD = 20
+const AUDIO_WINDOW_SIZE = 512
+const VOLUME_THRESHOLD = 0
 
 export const callTimeout = writable(false)
 
@@ -285,6 +309,7 @@ export class VoiceRTC {
     localPeer: Peer | null = null
     toCall: string[] | null = null
     localStream: MediaStream | null = null
+    localStreamHandler?: StreamMetaHandler
     localVideoCurrentSrc: HTMLVideoElement | null = null
     remoteVideoCreator: CallUpdater
 
@@ -369,7 +394,17 @@ export class VoiceRTC {
     }
 
     async setVideoElements(localVideoCurrentSrc: HTMLVideoElement) {
+        let current: MediaProvider | null = null
+        if (this.localVideoCurrentSrc) {
+            this.localVideoCurrentSrc.pause()
+            current = this.localVideoCurrentSrc.srcObject
+            this.localVideoCurrentSrc.srcObject = null
+        }
         this.localVideoCurrentSrc = localVideoCurrentSrc
+        if (current != null) {
+            this.localVideoCurrentSrc.srcObject = current
+            this.localVideoCurrentSrc.play()
+        }
         new Promise(resolve => setTimeout(resolve, 500))
     }
 
@@ -439,7 +474,7 @@ export class VoiceRTC {
      * Actually making the call
      */
     async makeCall(call: boolean = true) {
-        if (!this.toCall) {
+        if (!this.toCall && !call) {
             log.error("Calling not setup")
             return
         }
@@ -453,7 +488,10 @@ export class VoiceRTC {
             // Create a new call room
             this.createAndSetRoom()
             if (call) {
-                this.inviteToCall(this.toCall)
+                this.inviteToCall(this.toCall!)
+                const formattedEndTime = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })
+                const text = get(_)("settings.calling.startCallMessage", { values: { value: formattedEndTime } })
+                await RaygunStoreInstance.send(this.channel!, text.split("\n"), [])
             }
             const timeoutWhenCallIsNull = setTimeout(() => {
                 if (this.call === null || this.call.empty) {
@@ -461,13 +499,16 @@ export class VoiceRTC {
                     callTimeout.set(true)
                     timeOuts.push(
                         setTimeout(() => {
-                            callTimeout.set(false)
-                            this.leaveCall(true)
+                            if (get(usersAcceptedTheCall).length === 0) {
+                                callTimeout.set(false)
+                                this.leaveCall(true)
+                            }
                         }, TIME_TO_SHOW_END_CALL_FEEDBACK)
                     )
                 }
             }, TIME_TO_WAIT_FOR_ANSWER)
             timeOuts.push(timeoutWhenCallIsNull)
+            callInProgress.set(this.channel!)
             Store.setActiveCall(Store.getCallingChat(this.channel!)!, CallDirection.Outbound)
         } catch (error) {
             log.error(`Error making call: ${error}`)
@@ -502,17 +543,19 @@ export class VoiceRTC {
         while (!handled && !accepted && attempts < maxRetries) {
             try {
                 if (!conn) {
+                    let callStartedDate = new Date()
                     log.debug(`Trying to send invitation send out to ${peer} ${conn}`)
                     conn = this.localPeer!.connect(peer, {
                         metadata: {
                             did: get(Store.state.user).key,
                             username: get(Store.state.user).name,
                             channel: this.channel,
-                            timeCallStarted: new Date().toISOString(),
+                            timeCallStarted: callStartedDate.toISOString(),
                         },
                     })
                     conn.on("open", () => {
                         connected = true
+                        timeCallStarted.set(callStartedDate)
                     })
                     conn.once("data", d => {
                         if (d === CALL_ACK) {
@@ -540,12 +583,14 @@ export class VoiceRTC {
                         }
                     })
                 }
-                await new Promise(resolve => timeOuts.push(setTimeout(resolve, 5000)))
+                await new Promise(resolve => timeOuts.push(setTimeout(resolve, 3000)))
                 if (connected) {
                     // If connection has been made let it ring for 30 sec.
                     await new Promise(resolve => timeOuts.push(setTimeout(resolve, 30000)))
                     conn.close()
                     break
+                } else {
+                    conn = undefined
                 }
             } catch (error) {
                 attempts += 1
@@ -566,6 +611,8 @@ export class VoiceRTC {
             joinRoom(
                 {
                     appId: "uplink",
+                    relayUrls: ["wss://nostr-pub.wellorder.net", "wss://relay.snort.social", "wss://nostr.oxtr.dev", "wss://relay.nostr.band", "wss://nostr.mom", "wss://nostr-relay.digitalmob.ro"],
+                    relayRedundancy: 3,
                 },
                 this.channel!
             )
@@ -588,6 +635,7 @@ export class VoiceRTC {
         this.call?.room.leave()
         this.call = null
         this.channel = this.incomingCallFrom[0]
+        callInProgress.set(this.channel!)
         // Tell the other end you accepted the call
         this.incomingCallFrom[1].send(CALL_ACK)
         this.createAndSetRoom()
@@ -603,6 +651,8 @@ export class VoiceRTC {
     }
 
     async leaveCall(sendEndCallMessage = false) {
+        callInProgress.set(null)
+        timeCallStarted.set(null)
         usersDeniedTheCall.set([])
         callTimeout.set(false)
         connectionOpened.set(false)
@@ -643,6 +693,10 @@ export class VoiceRTC {
                 }
             }
             this.localStream = await this.createLocalStream()
+            if (this.localStreamHandler) {
+                this.localStreamHandler.remove()
+            }
+            this.localStreamHandler = handleStreamMeta(get(Store.state.user).key, this.localStream)
             if (this.localVideoCurrentSrc) {
                 this.localVideoCurrentSrc.srcObject = this.localStream
                 await this.localVideoCurrentSrc.play()
@@ -657,7 +711,10 @@ export class VoiceRTC {
         let localStream
         localStream = await navigator.mediaDevices.getUserMedia({
             video: true,
-            audio: true,
+            audio: {
+                echoCancellation: true,
+                noiseSuppression: true,
+            },
         })
         localStream.getVideoTracks().forEach(track => {
             track.enabled = this.callOptions.video.enabled
@@ -719,6 +776,9 @@ export class VoiceRTC {
         }
         if (this.localStream) this.localStream.getTracks().forEach(track => track.stop())
         this.localStream = null
+        if (this.localStreamHandler) {
+            this.localStreamHandler.remove()
+        }
 
         this.call?.room.leave()
         this.call = null

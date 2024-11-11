@@ -6,7 +6,7 @@ import { UIStore } from "../state/ui"
 import { ConversationStore } from "../state/conversation"
 import { MessageOptions } from "warp-wasm"
 import { ChatType, MessageAttachmentKind, Route } from "$lib/enums"
-import { type User, type Chat, defaultChat, type Message, mentions_user, type Attachment } from "$lib/types"
+import { type User, type Chat, defaultChat, type Message, mentions_user, type Attachment, messageTypeFromTexts } from "$lib/types"
 import { WarpError, handleErrors } from "./HandleWarpErrors"
 import { failure, success, type Result } from "$lib/utils/Result"
 import { create_cancellable_handler, type Cancellable } from "$lib/utils/CancellablePromise"
@@ -125,7 +125,7 @@ class RaygunStore {
                     await r.create_group_conversation(
                         name,
                         recipients.map(r => r.key),
-                        new wasm.GroupSettings()
+                        new wasm.GroupPermissions()
                     ),
                     r
                 ),
@@ -158,8 +158,50 @@ class RaygunStore {
         }, "Error updating conversation name")
     }
 
-    async updateConversationSettings(conversation_id: string, settings: ConversationSettings) {
-        return await this.get(r => r.update_conversation_settings(conversation_id, settings), "Error updating conversation settings")
+    async setGroupPermissions(conversation_id: string, permissions: { [user: string]: wasm.GroupPermission[] }) {
+        return await this.get(async r => {
+            let groupPerm = new wasm.GroupPermissions()
+            Object.entries(permissions).forEach(([user, perms]: [string, wasm.GroupPermission[]]) => {
+                groupPerm.set_permissions(user, perms)
+            })
+            r.update_conversation_permissions(conversation_id, groupPerm)
+            let chat = await r.get_conversation(conversation_id)
+            let result: {
+                [did: string]: GroupPermission[]
+            } = {}
+            chat.recipients().forEach(did => {
+                permissions[did] = chat.permissions().get_permissions(did) || []
+            })
+            return result
+        }, "Error updating conversation settings")
+    }
+    /**
+     * Set the permission for given user
+     * @returns The new permission set for the given user
+     */
+    async setPermissionFor(conversation_id: string, user: string, permission: wasm.GroupPermission, remove?: boolean) {
+        return await this.get(async r => {
+            let conv = await r.get_conversation(conversation_id)
+            let groupPerm = conv.permissions()
+            let permissions = groupPerm.get_permissions(user) || []
+            if (remove) {
+                if (permissions) {
+                    permissions.splice(permissions.indexOf(permission), 1)
+                }
+            } else {
+                if (!permissions.includes(permission)) {
+                    permissions.push(permission)
+                }
+            }
+            groupPerm.set_permissions(user, permissions)
+            r.update_conversation_permissions(conversation_id, groupPerm)
+            let result: wasm.GroupPermission[] = (await r.get_conversation(conversation_id)).permissions().get_permissions(user) || []
+            return result
+        }, "Error updating conversation settings")
+    }
+
+    async updateConversationDescription(conversation_id: string, description: string) {
+        return await this.get(r => r.set_conversation_description(conversation_id, description), "Error updating conversation settings")
     }
 
     /**
@@ -177,7 +219,7 @@ class RaygunStore {
             let convs = await r.list_conversations()
             convs
                 .convs()
-                .filter(c => parseJSValue(c.settings()).type === "direct" && recipient in c.recipients())
+                .filter(c => c.conversation_type() === wasm.ConversationType.Direct && recipient in c.recipients())
                 .forEach(async conv => {
                     await this.get(r => r.delete(conv.id(), undefined), "Error deleting message")
                 })
@@ -594,17 +636,31 @@ class RaygunStore {
                         // Handle EventCancelled. Not needed atm
                         break
                     }
-                    case "conversation_settings_updated": {
+                    case "conversation_permissions_updated": {
                         let conversation_id: string = event.values["conversation_id"]
-                        let settings = event.values["settings"] as ConversationSettings
+                        let permissions: {
+                            [did: string]: wasm.GroupPermission[]
+                        } = {}
+                        let chat = await raygun.get_conversation(conversation_id)
+                        chat.recipients().forEach(did => {
+                            permissions[did] = chat.permissions().get_permissions(did) || []
+                        })
+                        // For remote this is empty??? bug?
+                        // For now just fetch the permissions from raygun again
+                        // let added = event.values["added"] as [string, GroupPermission][]
+                        // let removed = event.values["removed"] as [string, GroupPermission][]
                         UIStore.mutateChat(conversation_id, c => {
-                            c.kind = "direct" in settings ? ChatType.DirectMessage : ChatType.Group
                             if (c.kind === ChatType.Group) {
-                                let groupSettings = settings as any
-                                let group = groupSettings["group"]
-                                c.settings.permissions.allowAnyoneToAddUsers = group["members_can_add_participants"] as boolean
-                                c.settings.permissions.allowAnyoneToModifyName = group["members_can_change_name"] as boolean
+                                c.settings.permissions = permissions
                             }
+                        })
+                        break
+                    }
+                    case "conversation_description_changed": {
+                        let conversation_id: string = event.values["conversation_id"]
+                        let description: string = event.values["description"]
+                        UIStore.mutateChat(conversation_id, c => {
+                            c.motd = description
                         })
                         break
                     }
@@ -769,6 +825,7 @@ class RaygunStore {
             reactions: message.reactions(),
             attachments: attachments.map(f => this.convertWarpAttachment(f)),
             pinned: message.pinned(),
+            type: messageTypeFromTexts(message.lines()),
         }
     }
 
@@ -799,14 +856,19 @@ class RaygunStore {
      * Converts warp message to ui message
      */
     private async convertWarpConversation(chat: wasm.Conversation, raygun: wasm.RayGunBox): Promise<Chat> {
-        let setting = parseJSValue(chat.settings())
-        let direct = setting.type === "direct"
+        let direct = chat.conversation_type() === wasm.ConversationType.Direct
         let msg = await this.getMessages(raygun, chat.id(), new MessageOptions())
         chat.recipients().forEach(async recipient => {
             let user = await MultipassStoreInstance.identity_from_did(recipient)
             if (user) {
                 Store.updateUser(user)
             }
+        })
+        let permissions: {
+            [did: string]: wasm.GroupPermission[]
+        } = {}
+        chat.recipients().forEach(did => {
+            permissions[did] = chat.permissions().get_permissions(did) || []
         })
         return {
             ...defaultChat,
@@ -816,11 +878,7 @@ class RaygunStore {
             settings: {
                 displayOwnerBadge: true,
                 readReceipts: true,
-                permissions: {
-                    allowAnyoneToAddUsers: !direct && (setting.values["members_can_add_participants"] as boolean),
-                    allowAnyoneToModifyPhoto: false,
-                    allowAnyoneToModifyName: !direct && (setting.values["members_can_change_name"] as boolean),
-                },
+                permissions: permissions,
             },
             creator: chat.creator(),
             users: chat.recipients(),
@@ -830,4 +888,6 @@ class RaygunStore {
     }
 }
 
+export type GroupPermission = wasm.GroupPermission
+export const GroupPermission = wasm.GroupPermission
 export const RaygunStoreInstance = new RaygunStore(WarpStore.warp.raygun)

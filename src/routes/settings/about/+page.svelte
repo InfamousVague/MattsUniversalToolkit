@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { onMount } from "svelte"
     import { _ } from "svelte-i18n"
     import { Appearance, Shape } from "$lib/enums"
     import { Button, Icon } from "$lib/elements"

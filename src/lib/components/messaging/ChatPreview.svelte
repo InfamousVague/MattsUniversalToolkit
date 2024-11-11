@@ -1,8 +1,8 @@
 <script lang="ts">
     import TimeAgo from "javascript-time-ago"
-    import { ChatType, Route, Size, Status } from "$lib/enums"
+    import { Appearance, ChatType, PaymentRequestsEnum, Route, Shape, Size, Status } from "$lib/enums"
     import type { Chat } from "$lib/types"
-    import { Text, Loader } from "$lib/elements"
+    import { Text, Loader, Button, Icon } from "$lib/elements"
     import { ProfilePicture } from "$lib/components"
     import { createEventDispatcher, onMount } from "svelte"
     import ProfilePictureMany from "../profile/ProfilePictureMany.svelte"
@@ -15,6 +15,8 @@
     import { checkMobile } from "$lib/utils/Mobile"
     import { ConversationStore } from "$lib/state/conversation"
     import { SettingsStore } from "$lib/state"
+    import { callInProgress, timeCallStarted } from "$lib/media/Voice"
+    import Spacer from "$lib/elements/Spacer.svelte"
 
     export let chat: Chat
     export let cta: boolean = false
@@ -25,10 +27,10 @@
 
     $: users = Store.getUsers(chat.users)
     $: lookupUsers = Store.getUsersLookup(chat.users)
-    $: chatName = chat.kind === ChatType.Group ? chat.name : $users[1]?.name ?? $users[0].name
+    $: chatName = chat.kind === ChatType.Group ? chat.name : ($users[1]?.name ?? $users[0].name)
     $: loading = chatName === "Unknown User" || ($users.length <= 2 && ($users[1]?.loading == true || $users[0].loading == true))
     $: directChatPhoto = $users[1]?.profile.photo.image ?? $users[0].profile.photo.image
-    $: chatStatus = $users.length > 2 ? Status.Offline : $users[1]?.profile.status ?? $users[0].profile.status
+    $: chatStatus = $users.length > 2 ? Status.Offline : ($users[1]?.profile.status ?? $users[0].profile.status)
     $: simpleUnreads = derived(SettingsStore.state, s => s.messaging.simpleUnreads)
     $: user = chat.typing_indicator.users().map(u => {
         return $lookupUsers[u]
@@ -46,7 +48,7 @@
             return $_("message_previews.attachment")
         }
 
-        if (chat.last_message_preview.startsWith("/request")) {
+        if (chat.last_message_preview.startsWith(PaymentRequestsEnum.Request)) {
             try {
                 const sendingUserId = ConversationStore.getMessage(chat.id, chat.last_message_id)?.details.origin
                 const sendingUserDetails = get(Store.getUser(sendingUserId!))
@@ -55,6 +57,18 @@
                 return sendingUserId !== ownId.key
                     ? $_("message_previews.coin_requested", { values: { username: sendingUserDetails.name, amount: amountPreview } })
                     : $_("message_previews.request_sent", { values: { amount: amountPreview } })
+            } catch (error) {
+                return "Invalid message format"
+            }
+        } else if (chat.last_message_preview.startsWith(PaymentRequestsEnum.Reject)) {
+            try {
+                const sendingUserId = ConversationStore.getMessage(chat.id, chat.last_message_id)?.details.origin
+                const sendingUserDetails = get(Store.getUser(sendingUserId!))
+                if (get(Store.getUser(sendingUserId!)).key !== ownId.key) {
+                    return $_("message_previews.coin_declined", { values: { username: sendingUserDetails.name } })
+                } else {
+                    return $_("message_previews.coin_canceled")
+                }
             } catch (error) {
                 return "Invalid message format"
             }
@@ -80,6 +94,24 @@
         if (!interactable) return ""
         return `${cta ? "cta" : ""} `
     }
+
+    let elapsedTime: string = "00:00"
+
+    function updateElapsedTime() {
+        const now = new Date()
+        const diff = now.getTime() - ($timeCallStarted ?? now).getTime()
+
+        const minutes = Math.floor(diff / (1000 * 60))
+            .toString()
+            .padStart(2, "0")
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000)
+            .toString()
+            .padStart(2, "0")
+
+        elapsedTime = `${minutes}:${seconds}`
+    }
+
+    const interval = setInterval(updateElapsedTime, 1000)
 </script>
 
 <button
@@ -117,7 +149,11 @@
             </Text>
             <div class="right">
                 <Text hook="chat-preview-timestamp" class="timestamp min-text" loading={loading} size={Size.Smallest} muted>
-                    {timeago}
+                    {#if $callInProgress === chat.id}
+                        <Icon icon={Shape.PhoneCall} highlight={Appearance.Success} />
+                    {:else}
+                        {timeago}
+                    {/if}
                 </Text>
                 {#if !loading}
                     {#if chat.notifications > 0 && !$simpleUnreads}
@@ -125,7 +161,7 @@
                             {chat.notifications}
                         </span>
                     {:else if chat.notifications > 0 && $simpleUnreads}
-                        <span class="unreads simple"></span>
+                        <span class="unreads simple" data-cy="unreads-notification"></span>
                     {/if}
                 {/if}
             </div>

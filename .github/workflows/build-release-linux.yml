@@ -1,45 +1,65 @@
 name: Build Linux Release
+
 on:
-    push:
-        branches:
-            - main
-    workflow_dispatch:
-
+  push:
+    tags:
+      - "*"
+      
+permissions:
+  contents: write
+  
 jobs:
-    build-linux-release:
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v4.2.2
+  build-linux-release:
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_VERSION: ${{ github.ref_name }}  # Set the release version from the tag
 
-            - name: setup node
-              uses: actions/setup-node@v4.0.4
-              with:
-                  node-version: lts/*
+    steps:
+      - uses: actions/checkout@v4.2.2
 
-            - name: install Rust stable
-              uses: dtolnay/rust-toolchain@stable
+      - name: Setup Node
+        uses: actions/setup-node@v4.1.0
+        with:
+          node-version: lts/*
 
-            - name: install dependencies (ubuntu only)
-              run: |
-                  sudo apt-get update
-                  sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+      - name: Install Rust Stable
+        uses: dtolnay/rust-toolchain@stable
 
-            - name: install frontend dependencies
-              run: npm install
+      - name: Install Ubuntu Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
 
-            - uses: tauri-apps/tauri-action@v0.5.15
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install Frontend Dependencies
+        run: npm install
 
-            - name: Calculate hashes
-              run: |
-                  sha256sum src-tauri/target/release/bundle/deb/*.deb > src-tauri/target/release/bundle/deb/SHA256SUM
+      - name: Build Tauri App
+        uses: tauri-apps/tauri-action@v0.5.15
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-            - name: Upload Ubuntu installer
-              uses: actions/upload-artifact@v4.4.0
-              with:
-                  name: build-ubuntu
-                  path: |
-                      src-tauri/target/release/bundle/deb/*.deb
-                      src-tauri/target/release/bundle/deb/SHA256SUM
-                  retention-days: 5
+      - name: Rename and Calculate Hashes for Release
+        run: |
+          # Rename the .deb file to include the release version
+          DEB_FILE=$(find src-tauri/target/release/bundle/deb -name "*.deb" | head -n 1)
+          NEW_DEB_FILE="src-tauri/target/release/bundle/deb/Uplink_${{ env.RELEASE_VERSION }}.deb"
+          mv "$DEB_FILE" "$NEW_DEB_FILE"
+          
+          # Calculate SHA256 hash for the renamed .deb file
+          sha256sum "$NEW_DEB_FILE" > src-tauri/target/release/bundle/deb/SHA256SUM
+
+      - name: Upload Ubuntu Installer
+        uses: actions/upload-artifact@v4.4.3
+        with:
+          name: build-ubuntu
+          path: |
+            src-tauri/target/release/bundle/deb/Uplink_${{ env.RELEASE_VERSION }}.deb
+            src-tauri/target/release/bundle/deb/SHA256SUM
+          retention-days: 5
+
+      - name: GitHub Release Linux
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            src-tauri/target/release/bundle/deb/Uplink_${{ env.RELEASE_VERSION }}.deb
+            src-tauri/target/release/bundle/deb/SHA256SUM

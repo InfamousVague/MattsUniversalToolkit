@@ -1,0 +1,68 @@
+name: Build Android Release
+
+on:
+  push:
+    tags:
+      - "*"
+      
+permissions:
+  contents: write
+  
+jobs:
+  build-android-release:
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_VERSION: ${{ github.ref_name }} # Set the release version from the tag
+
+    steps:
+      - uses: actions/checkout@v4.2.2
+
+      - name: Setup Node
+        uses: actions/setup-node@v4.1.0
+        with:
+          node-version: lts/*
+
+      - name: Install Rust Stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Ubuntu Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - name: Install Frontend Dependencies
+        run: npm install
+
+      - name: Build Web Assets 🔨
+        run: npm run build
+
+      - name: Set Up JDK
+        uses: actions/setup-java@v4.4.0
+        with:
+          distribution: "temurin"
+          java-version: "21"
+
+      - name: Set Up Android SDK
+        uses: android-actions/setup-android@v3.2.1
+
+      - name: Sync Capacitor Assets 🔨
+        run: npx cap sync && npx cap copy android
+
+      - name: Build APK with Dynamic Version Name
+        run: |
+          cd android
+          ./gradlew assembleDebug
+          mv app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/Uplink_${{ env.RELEASE_VERSION }}.apk
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4.4.3
+        with:
+          name: build-android
+          path: android/app/build/outputs/apk/debug/Uplink_${{ env.RELEASE_VERSION }}.apk
+          retention-days: 5
+
+      - name: GitHub Release Android
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            android/app/build/outputs/apk/debug/Uplink_${{ env.RELEASE_VERSION }}.apk
