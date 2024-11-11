@@ -656,7 +656,7 @@ async function clearAllData() {
                         on:click={_ => {
                             clearAllData()
                         }}>
-                        <Icon icon={Shape.Lock} />
+                        <Icon icon={Shape.Trash} />
                     </Button>
                 </SettingSection>
     </div>
