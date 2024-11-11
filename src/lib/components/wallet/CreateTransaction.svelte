@@ -90,7 +90,7 @@
         on:click={async () => {
             await sendMessage(transfer.toCmdString())
             onClose()
-        }}>{$_("payments.request")}</Button>
+        }}>{$_("payments.create_transaction")}</Button>
 </div>
 
 <style lang="scss">

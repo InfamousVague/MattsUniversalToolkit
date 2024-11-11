@@ -213,6 +213,7 @@
         "note": "Note",
         "date": "Date",
         "decline": "Decline",
+        "create_transaction": "Create Transaction",
         "create": "Create Payment Request",
         "decline_payment": "Decline Payment",
         "sent_request": "Sent Request",
