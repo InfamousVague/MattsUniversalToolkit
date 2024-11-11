@@ -66,28 +66,32 @@
         <Button
             appearance={Appearance.Alt}
             on:click={async () => {
-                await sendMessage(transfer.toCmdString())
-                onClose()
+                // onClose()
             }}><Icon icon={Shape.DollarOut}></Icon>{$_("payments.send")}</Button>
         <Button
             appearance={Appearance.Alt}
             on:click={async () => {
-                await sendMessage(transfer.toCmdString())
-                onClose()
+                // await sendMessage(transfer.toCmdString())
+                // onClose()
             }}><Icon icon={Shape.DollarIn}></Icon>{$_("payments.request")}</Button>
     </div>
     <div class="address">
         <Label text={$_("payments.enter_address")} />
         <div class="address_QR">
             <Input />
-            <Icon icon={Shape.Hashtag}></Icon>
+            <div class="address_button">
+                <Button icon><Icon icon={Shape.QRCode}></Icon></Button>
+            </div>
+            <!-- <Icon icon={Shape.QRCode}></Icon> -->
             <!-- <QRScanner on:qrCodeScanned={handleQRCodeScanned} /> -->
         </div>
     </div>
-
+    <div class="asset_selector">
+        <Label text={$_("payments.type") + ":"}></Label><Select bind:selected={transfer.asset.kind} options={Object.values(AssetType).map(value => ({ value: value, text: value }))} on:change={onChangeAssetKind} />
+    </div>
     <div class="amount">
         <Label text={$_("payments.amount")} />
-        <Input />
+        <Input bind:value={inputAmount} on:input={onInputAmount} />
     </div>
     <div class="note">
         <Label text={$_("payments.note")} />
@@ -102,7 +106,7 @@
             <Icon icon={Shape.History} />
         </Button>
     </div> -->
-    <div class="asset_selector">{$_("payments.type") + ":"}<Select bind:selected={transfer.asset.kind} options={Object.values(AssetType).map(value => ({ value: value, text: value }))} on:change={onChangeAssetKind} /></div>
+
     {#if needsAssetId()}
         <div class="payment_amount">{$_("payments.assetId") + ":"}<Input bind:value={transfer.asset.id} on:change={onInputAmount} /></div>
     {/if}
@@ -111,17 +115,19 @@
     {#if transfer.toAddress !== ""}
         <div>{$_("payments.receiving_to")}: {shortenAddr(transfer.toAddress, 6)}</div>
     {/if}
-    <div class="send_button"></div>
-    <Button
-        disabled={!transfer.isValid()}
-        on:click={async () => {
-            await sendMessage(transfer.toCmdString())
-            onClose()
-        }}>{$_("payments.create_transaction")}</Button>
+    <div class="send_button">
+        <Button
+            disabled={!transfer.isValid()}
+            on:click={async () => {
+                await sendMessage(transfer.toCmdString())
+                onClose()
+            }}>{$_("payments.create_transaction")}</Button>
+    </div>
 </div>
 
 <style lang="scss">
     .payment_modal {
+        padding: var(--gap-less);
         max-width: 300px;
     }
     .address_QR {
@@ -129,14 +135,19 @@
         width: 100%;
         align-items: center;
         justify-content: center;
+        .address_button {
+            margin-left: 10px;
+        }
     }
     .title {
+        gap: var(--gap-less);
         display: flex;
         width: 100%;
         align-items: center;
         justify-content: center;
     }
     .address {
+        padding: var(--gap-less);
         display: block;
         width: 100%;
         align-items: center;
@@ -147,17 +158,41 @@
         width: 100%;
         justify-content: space-between;
         align-items: center;
-        padding: 0 10%;
+        padding: 0 5%;
+    }
+    .amount {
+        display: block;
+        width: 100%;
+        align-items: center;
+        justify-content: center;
+        padding: var(--gap-less);
+    }
+    .note {
+        display: block;
+        width: 100%;
+        align-items: center;
+        justify-content: center;
+        padding: var(--gap-less);
     }
     .payment_amount {
         display: inline-flex;
         gap: var(--gap-less);
     }
-    .asset_selector {
+    .send_button {
         display: flex;
+        // width: 100%;
+        // justify-content: space-between;
+        // align-items: center;
+        // padding: 0 25%;
+        padding: var(--gap-less);
+        :global(button) {
+            width: 100%;
+        }
+    }
+    .asset_selector {
+        display: block;
         justify-content: space-between;
         align-items: center;
         padding: var(--gap-less);
-        gap: var(--gap-less);
     }
 </style>
