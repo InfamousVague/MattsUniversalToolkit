@@ -27,7 +27,7 @@
 - [x] Chat Preview
 - [x] Color Swatch
 - [ ] Verification Code
-- [ ] Volume Slider (Horizontal & Vertical)
+- [x] Volume Slider (Horizontal & Vertical)
 - [x] Wallet
 - [x] Payment
 - [ ] Payment Receipt
@@ -55,11 +55,11 @@
 
 ## Other
 
-- [ ] Group Chat UI
-  - [ ] Edit Group
+- [x] Group Chat UI
+  - [x] Edit Group
   - [ ] Edit Users
-  - [ ] Permissions Modal
+  - [x] Permissions Modal
   - [x] Group Chat Profile Picture
-  - [ ] Create Group Modal
+  - [x] Create Group Modal
   - [x] Chat Preview
-- [ ] Emoji Picker
+- [x] Emoji Picker
