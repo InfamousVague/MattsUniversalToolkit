@@ -22,7 +22,6 @@
     import { _, locale } from "svelte-i18n"
     import { initializeLocale } from "$lib/lang/index"
     import CircularProgressIndicator from "$lib/components/loading/CircularProgressIndicator.svelte"
-    import VideoPreview from "$lib/components/calling/VideoPreview.svelte"
     import MouseListener from "$lib/components/ui/MouseListener.svelte"
     import InstallBanner from "$lib/components/ui/InstallBanner.svelte"
     import Market from "$lib/components/market/Market.svelte"
