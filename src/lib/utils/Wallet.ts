@@ -461,7 +461,6 @@ export class Transfer {
     toAddress: string
     amountPreview: string
     id: string
-    id: string
 
     constructor() {
         this.asset = { kind: AssetType.None, id: "" }
