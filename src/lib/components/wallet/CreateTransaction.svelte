@@ -6,8 +6,9 @@
     import { RaygunStoreInstance } from "$lib/wasm/RaygunStore"
     import { get } from "svelte/store"
     import { _ } from "svelte-i18n"
-    import { Icon, Select, Text } from "$lib/elements"
+    import { Icon, Input, Label, Select, Text } from "$lib/elements"
     import { Appearance, Shape, Size } from "$lib/enums"
+    // import CurrencySelector from "./CurrencySelector.svelte"
 
     export let onClose
 
@@ -57,7 +58,7 @@
     }
 </script>
 
-<div>
+<div class="payment_modal">
     <div class="title">
         <Text size={Size.Large} color="#00B894" centered hook="chat-topbar-username" class="min-text" singleLine>Transfer Funds</Text>
     </div>
@@ -75,12 +76,38 @@
                 onClose()
             }}><Icon icon={Shape.DollarIn}></Icon>{$_("payments.request")}</Button>
     </div>
+    <div class="address">
+        <Label text={$_("payments.enter_address")} />
+        <div class="address_QR">
+            <Input />
+            <Icon icon={Shape.Hashtag}></Icon>
+            <!-- <QRScanner on:qrCodeScanned={handleQRCodeScanned} /> -->
+        </div>
+    </div>
+
+    <div class="amount">
+        <Label text={$_("payments.amount")} />
+        <Input />
+    </div>
+    <div class="note">
+        <Label text={$_("payments.note")} />
+        <Input />
+    </div>
+    <!-- <QRScanner on:qrCodeScanned={handleQRCodeScanned} /> -->
+
+    <!-- <div class="header">
+        <CurrencySelector currencies={currencies} bind:selectedCurrency={selectedCurrency} on:currencySelected={handleCurrencySelected} />
+
+        <Button appearance={Appearance.Alt} icon tooltip="History" on:click={handleHistory}>
+            <Icon icon={Shape.History} />
+        </Button>
+    </div> -->
     <div class="asset_selector">{$_("payments.type") + ":"}<Select bind:selected={transfer.asset.kind} options={Object.values(AssetType).map(value => ({ value: value, text: value }))} on:change={onChangeAssetKind} /></div>
     {#if needsAssetId()}
-        <div class="payment_amount">{$_("payments.assetId") + ":"}<input bind:value={transfer.asset.id} on:change={onInputAmount} /></div>
+        <div class="payment_amount">{$_("payments.assetId") + ":"}<Input bind:value={transfer.asset.id} on:change={onInputAmount} /></div>
     {/if}
-    <div class="payment_amount">{transfer.amountPreview}</div>
-    <div>{$_("payments.amount") + ":"} <input bind:value={inputAmount} type="text" on:input={onInputAmount} /></div>
+    <!-- <div class="payment_amount">{transfer.amountPreview}</div> -->
+    <!-- <div>{$_("payments.amount") + ":"} <input bind:value={inputAmount} type="text" on:input={onInputAmount} /></div> -->
     {#if transfer.toAddress !== ""}
         <div>{$_("payments.receiving_to")}: {shortenAddr(transfer.toAddress, 6)}</div>
     {/if}
@@ -94,8 +121,23 @@
 </div>
 
 <style lang="scss">
+    .payment_modal {
+        max-width: 300px;
+    }
+    .address_QR {
+        display: flex;
+        width: 100%;
+        align-items: center;
+        justify-content: center;
+    }
     .title {
         display: flex;
+        width: 100%;
+        align-items: center;
+        justify-content: center;
+    }
+    .address {
+        display: block;
         width: 100%;
         align-items: center;
         justify-content: center;
