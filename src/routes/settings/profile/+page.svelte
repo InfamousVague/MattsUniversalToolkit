@@ -621,8 +621,22 @@ async function clearAllData() {
                     </Checkbox>
                 </div>
             {/if}
+
             <div class="section">
-                <SettingSection hook="section-log-out" name={$_("settings.profile.log_out.label")} description={$_("settings.profile.log_out.description")}>
+            <SettingSection hook="section-support" name={$_("settings.profile.support.label")} description={$_("settings.profile.support.description")}>
+             <a href="mailto:support@satellite.com">
+             <Button
+              hook="button-support"
+              appearance={Appearance.Alt}
+               text={$_("settings.profile.support.button")}
+              >
+               <Icon icon={Shape.Email} />
+             </Button>
+             </a>
+             </SettingSection>
+            </div>
+
+            <SettingSection hook="section-log-out" name={$_("settings.profile.log_out.label")} description={$_("settings.profile.log_out.description")}>
                     <Button
                         hook="button-log-out"
                         appearance={Appearance.Alt}
@@ -634,7 +648,6 @@ async function clearAllData() {
                     </Button>
                 </SettingSection>
             </div>
-                <div class="section">
                 <SettingSection hook="section-delete-account" name={$_("settings.profile.delete_title")} description={$_("settings.profile.delete_subtitle")}>
                     <Button
                         hook="button-delete-account"
@@ -643,11 +656,9 @@ async function clearAllData() {
                         on:click={_ => {
                             clearAllData()
                         }}>
-                        <Icon icon={Shape.Lock} />
+                        <Icon icon={Shape.Trash} />
                     </Button>
                 </SettingSection>
-            </div>
-        </div>
     </div>
 </div>
 
