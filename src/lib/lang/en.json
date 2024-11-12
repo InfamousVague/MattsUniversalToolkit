@@ -214,6 +214,7 @@
         "date": "Date",
         "decline": "Decline",
         "enter_address": "Enter Address",
+        "address": "Address",
         "create_transaction": "Create Transaction",
         "create": "Create Payment Request",
         "decline_payment": "Decline Payment",

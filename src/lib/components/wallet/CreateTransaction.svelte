@@ -13,7 +13,7 @@
     export let onClose
 
     let transfer = new Transfer()
-
+    let sendCoin = ""
     async function sendMessage(text: string) {
         let chat = get(Store.state.activeChat)
         let txt = text.split("\n")
@@ -67,39 +67,44 @@
             appearance={Appearance.Alt}
             on:click={async () => {
                 // onClose()
+                sendCoin = "send"
             }}><Icon icon={Shape.DollarOut}></Icon>{$_("payments.send")}</Button>
         <Button
             appearance={Appearance.Alt}
             on:click={async () => {
                 // await sendMessage(transfer.toCmdString())
                 // onClose()
+                sendCoin = "recieve"
             }}><Icon icon={Shape.DollarIn}></Icon>{$_("payments.request")}</Button>
     </div>
-    <div class="address">
-        <Label text={$_("payments.enter_address")} />
-        <div class="address_QR">
-            <Input />
-            <div class="address_button">
-                <Button icon><Icon icon={Shape.QRCode}></Icon></Button>
-            </div>
-            <!-- <Icon icon={Shape.QRCode}></Icon> -->
-            <!-- <QRScanner on:qrCodeScanned={handleQRCodeScanned} /> -->
+    {#if sendCoin === "send"}
+        <div class="asset_selector">
+            <Label text={$_("payments.type") + ":"}></Label><Select bind:selected={transfer.asset.kind} options={Object.values(AssetType).map(value => ({ value: value, text: value }))} on:change={onChangeAssetKind} />
         </div>
-    </div>
-    <div class="asset_selector">
-        <Label text={$_("payments.type") + ":"}></Label><Select bind:selected={transfer.asset.kind} options={Object.values(AssetType).map(value => ({ value: value, text: value }))} on:change={onChangeAssetKind} />
-    </div>
-    <div class="amount">
-        <Label text={$_("payments.amount")} />
-        <Input bind:value={inputAmount} on:input={onInputAmount} />
-    </div>
-    <div class="note">
-        <Label text={$_("payments.note")} />
-        <Input />
-    </div>
-    <!-- <QRScanner on:qrCodeScanned={handleQRCodeScanned} /> -->
+        {#if transfer.toAddress !== ""}
+            <div class="address">
+                <Label text={$_("payments.address")} />
+                <div class="address_QR">
+                    <Input value={transfer.toAddress} />
+                    <div class="address_button">
+                        <Button icon><Icon icon={Shape.QRCode}></Icon></Button>
+                    </div>
+                    <!-- <Icon icon={Shape.QRCode}></Icon>
+                <QRScanner on:qrCodeScanned={handleQRCodeScanned} /> -->
+                </div>
+            </div>
+        {/if}
+        <div class="amount">
+            <Label text={$_("payments.amount")} />
+            <Input bind:value={inputAmount} on:input={onInputAmount} />
+        </div>
+        <!-- <div class="note">
+            <Label text={$_("payments.note")} />
+            <Input />
+        </div> -->
+        <!-- <QRScanner on:qrCodeScanned={handleQRCodeScanned} /> -->
 
-    <!-- <div class="header">
+        <!-- <div class="header">
         <CurrencySelector currencies={currencies} bind:selectedCurrency={selectedCurrency} on:currencySelected={handleCurrencySelected} />
 
         <Button appearance={Appearance.Alt} icon tooltip="History" on:click={handleHistory}>
@@ -107,22 +112,72 @@
         </Button>
     </div> -->
 
-    {#if needsAssetId()}
-        <div class="payment_amount">{$_("payments.assetId") + ":"}<Input bind:value={transfer.asset.id} on:change={onInputAmount} /></div>
+        {#if needsAssetId()}
+            <div class="payment_amount">{$_("payments.assetId") + ":"}<Input bind:value={transfer.asset.id} on:change={onInputAmount} /></div>
+        {/if}
+        <!-- <div class="payment_amount">{transfer.amountPreview}</div> -->
+        <!-- <div>{$_("payments.amount") + ":"} <input bind:value={inputAmount} type="text" on:input={onInputAmount} /></div> -->
+        <!-- {#if transfer.toAddress !== ""}
+            <div>{$_("payments.receiving_to")}: {shortenAddr(transfer.toAddress, 6)}</div>
+        {/if} -->
+        <div class="send_button">
+            <Button
+                disabled={!transfer.isValid()}
+                on:click={async () => {
+                    await sendMessage(transfer.toCmdString())
+                    onClose()
+                }}>{$_("payments.create_transaction")}</Button>
+        </div>
+    {:else if sendCoin === "recieve"}
+        <div class="asset_selector">
+            <Label text={$_("payments.type") + ":"}></Label><Select bind:selected={transfer.asset.kind} options={Object.values(AssetType).map(value => ({ value: value, text: value }))} on:change={onChangeAssetKind} />
+        </div>
+        <div class="address">
+            <Label text={$_("payments.enter_address")} />
+            <div class="address_QR">
+                <Input value={transfer.toAddress} />
+                <div class="address_button">
+                    <Button icon><Icon icon={Shape.QRCode}></Icon></Button>
+                </div>
+                <!-- <Icon icon={Shape.QRCode}></Icon> -->
+                <!-- <QRScanner on:qrCodeScanned={handleQRCodeScanned} /> -->
+            </div>
+        </div>
+        <div class="amount">
+            <Label text={$_("payments.amount")} />
+            <Input bind:value={inputAmount} on:input={onInputAmount} />
+        </div>
+        <div class="note">
+            <Label text={$_("payments.note")} />
+            <Input />
+        </div>
+        <!-- <QRScanner on:qrCodeScanned={handleQRCodeScanned} /> -->
+
+        <!-- <div class="header">
+    <CurrencySelector currencies={currencies} bind:selectedCurrency={selectedCurrency} on:currencySelected={handleCurrencySelected} />
+
+    <Button appearance={Appearance.Alt} icon tooltip="History" on:click={handleHistory}>
+        <Icon icon={Shape.History} />
+    </Button>
+</div> -->
+
+        {#if needsAssetId()}
+            <div class="payment_amount">{$_("payments.assetId") + ":"}<Input bind:value={transfer.asset.id} on:change={onInputAmount} /></div>
+        {/if}
+        <!-- <div class="payment_amount">{transfer.amountPreview}</div> -->
+        <!-- <div>{$_("payments.amount") + ":"} <input bind:value={inputAmount} type="text" on:input={onInputAmount} /></div> -->
+        <!-- {#if transfer.toAddress !== ""}
+            <div>{$_("payments.receiving_to")}: {shortenAddr(transfer.toAddress, 6)}</div>
+        {/if} -->
+        <div class="send_button">
+            <Button
+                disabled={!transfer.isValid()}
+                on:click={async () => {
+                    await sendMessage(transfer.toCmdString())
+                    onClose()
+                }}>{$_("payments.create_transaction")}</Button>
+        </div>
     {/if}
-    <!-- <div class="payment_amount">{transfer.amountPreview}</div> -->
-    <!-- <div>{$_("payments.amount") + ":"} <input bind:value={inputAmount} type="text" on:input={onInputAmount} /></div> -->
-    {#if transfer.toAddress !== ""}
-        <div>{$_("payments.receiving_to")}: {shortenAddr(transfer.toAddress, 6)}</div>
-    {/if}
-    <div class="send_button">
-        <Button
-            disabled={!transfer.isValid()}
-            on:click={async () => {
-                await sendMessage(transfer.toCmdString())
-                onClose()
-            }}>{$_("payments.create_transaction")}</Button>
-    </div>
 </div>
 
 <style lang="scss">
