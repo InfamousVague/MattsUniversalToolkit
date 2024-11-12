@@ -1,20 +1,17 @@
 {
-  "name": "Uplink Web",
-  "short_name": "Uplink",
-  "description": "Privacy first, modular, universal messaging client.",
-  "display": "standalone",
-  "start_url": "/",
-  "icons": [
-    {
-      "src": "/assets/logo/logo.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
-  ],
-  "permissions": [
-    "unlimitedStorage",
-    "fullscreen"
-  ],
-  "orientation": "portrait"
+    "name": "Uplink Web",
+    "short_name": "Uplink",
+    "description": "Privacy first, modular, universal messaging client.",
+    "display": "standalone",
+    "start_url": "/",
+    "icons": [
+        {
+            "src": "/assets/logo/logo.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ],
+    "permissions": ["unlimitedStorage", "fullscreen"],
+    "orientation": "portrait"
 }
