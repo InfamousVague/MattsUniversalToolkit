@@ -10,7 +10,7 @@
         Windows = "Windows",
         MacOS = "MacOS",
         Android = "Android",
-       /* iOS = "iOS", */
+        /* iOS = "iOS", */
         Linux = "Linux",
         Other = "Other",
     }
@@ -66,7 +66,7 @@
             icon: Shape.Android,
             download: DOWNLOAD_LINKS.Android,
         },
-      /*  [Platform.iOS]: {
+        /*  [Platform.iOS]: {
             text: "iPhone",
             icon: Shape.Apple,
             download: DOWNLOAD_LINKS.iOS,
