@@ -24,8 +24,8 @@
     let showAccounts = false
     let showConfigureRelay = false
 
-        // Function to delete IndexedDB database by name
-        function deleteIndexedDB(dbName) {
+    // Function to delete IndexedDB database by name
+    function deleteIndexedDB(dbName) {
         return new Promise((resolve, reject) => {
             const request = indexedDB.deleteDatabase(dbName)
 
@@ -85,7 +85,6 @@
             console.error("Error clearing data:", error)
         }
     }
-
 </script>
 
 <div id="auth-unlock">
@@ -143,22 +142,20 @@
                 <Button tooltip={$_("pages.auth.changeUser")} hook="button-change-user" icon on:click={_ => (showAccounts = true)} appearance={Appearance.Alt}>
                     <Icon icon={Shape.Profile} />
                 </Button>
-
-                <!-- Delete Account Button (visible only in dev mode) -->
-                <Button
-                    hook="button-delete-account"
-                    tooltip={$_("settings.profile.delete_title")}
-                    appearance={Appearance.Alt}
-                    icon
-                    on:click={_ => {
-                        clearAllData()
-                    }}>
-                    <Icon icon={Shape.Trash} />
-                </Button>
             {/if}
 
             <Button tooltip={$_("pages.auth.relay")} hook="button-configure-relay" icon on:click={_ => (showConfigureRelay = true)} appearance={Appearance.Alt}>
                 <Icon icon={Shape.Relay} />
+            </Button>
+            <Button
+                hook="button-delete-account"
+                tooltip={$_("settings.profile.delete_title")}
+                appearance={Appearance.Alt}
+                icon
+                on:click={_ => {
+                    clearAllData()
+                }}>
+                <Icon icon={Shape.Trash} />
             </Button>
         </Controls>
     </div>
