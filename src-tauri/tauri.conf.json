@@ -41,7 +41,7 @@
     "productName": "Uplink",
     "mainBinaryName": "Uplink",
     "version": "2.0.0",
-    "identifier": "im.satellite.uplink",
+    "identifier": "com.uplink.satellite.app",
     "plugins": {},
     "app": {
         "windows": [
