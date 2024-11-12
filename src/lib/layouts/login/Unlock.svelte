@@ -14,7 +14,6 @@
     import { AuthStore } from "$lib/state/auth"
     import { createEventDispatcher } from "svelte"
     import { SettingsStore } from "$lib/state"
-    
     export let create: boolean = false
     const dispatch = createEventDispatcher()
 
