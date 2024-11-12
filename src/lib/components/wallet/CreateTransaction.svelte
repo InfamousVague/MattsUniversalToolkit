@@ -8,12 +8,20 @@
     import { _ } from "svelte-i18n"
     import { Icon, Input, Label, Select, Text } from "$lib/elements"
     import { Appearance, Shape, Size } from "$lib/enums"
+    // import QRCodeDisplay from "./QRCodeDisplay.svelte"
+    // import QRScanner from "./QRScanner.svelte"
     // import CurrencySelector from "./CurrencySelector.svelte"
 
     export let onClose
-
+    enum ViewMode {
+        None = "",
+        Send = "send",
+        Receive = "receive",
+        QRScanner = "send",
+        SendFunds = "SendFunds",
+    }
     let transfer = new Transfer()
-    let sendCoin = ""
+    let sendCoin = ViewMode.None
     async function sendMessage(text: string) {
         let chat = get(Store.state.activeChat)
         let txt = text.split("\n")
@@ -24,7 +32,8 @@
     }
 
     let inputAmount = ""
-
+    let currentView: ViewMode = ViewMode.None
+    let scannedQRCode = ""
     function onInputAmount() {
         //remove any input that is not a number or a dot
         inputAmount = inputAmount.replace(/[^0-9.]/g, "")
@@ -41,6 +50,10 @@
                 transfer.amountPreview = amountPreview
             })
         })
+    }
+    function handleQRCodeScanned(event: { detail: string }) {
+        scannedQRCode = event.detail
+        currentView = ViewMode.None
     }
     onInputAmount()
     function onChangeAssetKind() {
@@ -66,18 +79,15 @@
         <Button
             appearance={Appearance.Alt}
             on:click={async () => {
-                // onClose()
-                sendCoin = "send"
+                sendCoin = ViewMode.Send
             }}><Icon icon={Shape.DollarOut}></Icon>{$_("payments.send")}</Button>
         <Button
             appearance={Appearance.Alt}
             on:click={async () => {
-                // await sendMessage(transfer.toCmdString())
-                // onClose()
-                sendCoin = "recieve"
+                sendCoin = ViewMode.Receive
             }}><Icon icon={Shape.DollarIn}></Icon>{$_("payments.request")}</Button>
     </div>
-    {#if sendCoin === "send"}
+    {#if sendCoin === ViewMode.Send}
         <div class="asset_selector">
             <Label text={$_("payments.type") + ":"}></Label><Select bind:selected={transfer.asset.kind} options={Object.values(AssetType).map(value => ({ value: value, text: value }))} on:change={onChangeAssetKind} />
         </div>
@@ -93,11 +103,11 @@
                 <QRScanner on:qrCodeScanned={handleQRCodeScanned} /> -->
                 </div>
             </div>
+            <div class="amount">
+                <Label text={$_("payments.amount")} />
+                <Input bind:value={inputAmount} on:input={onInputAmount} />
+            </div>
         {/if}
-        <div class="amount">
-            <Label text={$_("payments.amount")} />
-            <Input bind:value={inputAmount} on:input={onInputAmount} />
-        </div>
         <!-- <div class="note">
             <Label text={$_("payments.note")} />
             <Input />
@@ -128,29 +138,31 @@
                     onClose()
                 }}>{$_("payments.create_transaction")}</Button>
         </div>
-    {:else if sendCoin === "recieve"}
+    {:else if sendCoin === ViewMode.Receive}
         <div class="asset_selector">
             <Label text={$_("payments.type") + ":"}></Label><Select bind:selected={transfer.asset.kind} options={Object.values(AssetType).map(value => ({ value: value, text: value }))} on:change={onChangeAssetKind} />
         </div>
-        <div class="address">
-            <Label text={$_("payments.enter_address")} />
-            <div class="address_QR">
-                <Input value={transfer.toAddress} />
-                <div class="address_button">
-                    <Button icon><Icon icon={Shape.QRCode}></Icon></Button>
+        {#if transfer.toAddress !== ""}
+            <div class="address">
+                <Label text={$_("payments.enter_address")} />
+                <div class="address_QR">
+                    <Input value={transfer.toAddress} />
+                    <div class="address_button">
+                        <Button icon><Icon icon={Shape.QRCode}></Icon></Button>
+                    </div>
+                    <!-- <Icon icon={Shape.QRCode}></Icon> -->
+                    <!-- <QRScanner on:qrCodeScanned={handleQRCodeScanned} /> -->
                 </div>
-                <!-- <Icon icon={Shape.QRCode}></Icon> -->
-                <!-- <QRScanner on:qrCodeScanned={handleQRCodeScanned} /> -->
             </div>
-        </div>
-        <div class="amount">
-            <Label text={$_("payments.amount")} />
-            <Input bind:value={inputAmount} on:input={onInputAmount} />
-        </div>
-        <div class="note">
+            <div class="amount">
+                <Label text={$_("payments.amount")} />
+                <Input bind:value={inputAmount} on:input={onInputAmount} />
+            </div>
+        {/if}
+        <!-- <div class="note">
             <Label text={$_("payments.note")} />
             <Input />
-        </div>
+        </div> -->
         <!-- <QRScanner on:qrCodeScanned={handleQRCodeScanned} /> -->
 
         <!-- <div class="header">
