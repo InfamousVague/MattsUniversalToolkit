@@ -10,7 +10,11 @@
         Windows = "Windows",
         MacOS = "MacOS",
         Android = "Android",
+<<<<<<< HEAD
         iOS = "iOS",
+=======
+        /* iOS = "iOS", */
+>>>>>>> dev
         Linux = "Linux",
         Other = "Other",
     }
@@ -62,7 +66,11 @@
             icon: Shape.Android,
             download: DOWNLOAD_LINKS.Android,
         },
+<<<<<<< HEAD
         [Platform.iOS]: {
+=======
+        /*  [Platform.iOS]: {
+>>>>>>> dev
             text: "iPhone",
             icon: Shape.Apple,
             download: DOWNLOAD_LINKS.iOS,

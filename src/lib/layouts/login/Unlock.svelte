@@ -14,9 +14,7 @@
     import { AuthStore } from "$lib/state/auth"
     import { createEventDispatcher } from "svelte"
     import { SettingsStore } from "$lib/state"
-
     export let create: boolean = false
-
     const dispatch = createEventDispatcher()
 
     let loading = false
@@ -25,6 +23,68 @@
 
     let showAccounts = false
     let showConfigureRelay = false
+
+    // Function to delete IndexedDB database by name
+    function deleteIndexedDB(dbName) {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.deleteDatabase(dbName)
+
+            request.onsuccess = function () {
+                console.log(`Database '${dbName}' deleted successfully.`)
+                resolve()
+            }
+
+            request.onerror = function () {
+                console.error(`Failed to delete database '${dbName}':`, request.error)
+                reject(request.error)
+            }
+
+            request.onblocked = function () {
+                console.warn(`Database deletion for '${dbName}' is blocked. Close other tabs that use it and try again.`)
+                // Continue even if blocked, but mark as incomplete
+                resolve("Blocked")
+            }
+        })
+    }
+
+    // Function to clear all IndexedDB data, localStorage, sessionStorage, and cookies
+    async function clearAllData() {
+        try {
+            // Clear localStorage and sessionStorage first
+            localStorage.clear()
+            console.log("localStorage cleared.")
+
+            sessionStorage.clear()
+            console.log("sessionStorage cleared.")
+
+            // Attempt to delete specific database 'tesseract' and all other IndexedDB databases
+            await deleteIndexedDB("tesseract")
+            console.log("Database 'tesseract' cleared if it existed.")
+
+            const dbNames = await indexedDB.databases()
+            for (let dbInfo of dbNames) {
+                if (dbInfo.name) {
+                    const result = await deleteIndexedDB(dbInfo.name)
+                    if (result === "Blocked") {
+                        console.warn(`Could not delete database '${dbInfo.name}' due to blocking issues.`)
+                    }
+                }
+            }
+            console.log("All IndexedDB data cleared, where not blocked.")
+
+            // Clear cookies
+            document.cookie.split(";").forEach(cookie => {
+                const cookieName = cookie.split("=")[0].trim()
+                document.cookie = cookieName + "=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/"
+            })
+            console.log("Cookies cleared.")
+
+            // Redirect to '/auth' with cache busting to prevent stale cache loading
+            window.location.href = "/auth?cacheBust=" + new Date().getTime()
+        } catch (error) {
+            console.error("Error clearing data:", error)
+        }
+    }
 </script>
 
 <div id="auth-unlock">
@@ -78,12 +138,24 @@
     <div class="unlock-controls">
         <Controls>
             {#if get(SettingsStore.state).devmode}
+                <!-- Change User Button (visible only in dev mode) -->
                 <Button tooltip={$_("pages.auth.changeUser")} hook="button-change-user" icon on:click={_ => (showAccounts = true)} appearance={Appearance.Alt}>
                     <Icon icon={Shape.Profile} />
                 </Button>
             {/if}
+
             <Button tooltip={$_("pages.auth.relay")} hook="button-configure-relay" icon on:click={_ => (showConfigureRelay = true)} appearance={Appearance.Alt}>
                 <Icon icon={Shape.Relay} />
+            </Button>
+            <Button
+                hook="button-delete-account"
+                tooltip={$_("settings.profile.delete_title")}
+                appearance={Appearance.Alt}
+                icon
+                on:click={_ => {
+                    clearAllData()
+                }}>
+                <Icon icon={Shape.Trash} />
             </Button>
         </Controls>
     </div>
@@ -104,6 +176,8 @@
             position: absolute;
             right: var(--padding);
             bottom: var(--padding);
+            display: flex;
+            gap: var(--gap);
         }
 
         .profiles {
