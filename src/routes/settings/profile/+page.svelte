@@ -665,8 +665,12 @@
                 isDeleteAccountModalOpened.set(false)
             }}>
             <div class="delete-account-pin">
-                <Label text={$_("settings.profile.delete_account_action_description")} />
-                <Label text={$_("settings.profile.delete_account_confirm_pin")} />
+                <Text hook="text-delete-account-pin-first-message" class="delete-account-pin-first-message" appearance={Appearance.Error}>
+                    {$_("settings.profile.delete_account_action_description")}
+                </Text>
+                <Text>
+                    {$_("settings.profile.delete_account_confirm_pin")}
+                </Text>
                 <PinInput
                     min={4}
                     max={8}
@@ -865,7 +869,6 @@
             gap: var(--gap);
             align-items: center;
             padding: var(--padding);
-            width: var(--max-component-width);
         }
     }
 </style>
