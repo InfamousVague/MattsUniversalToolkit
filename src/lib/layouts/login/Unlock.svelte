@@ -8,18 +8,23 @@
     import ProfilePicture from "$lib/components/profile/ProfilePicture.svelte"
     import { mock_users } from "$lib/mock/users"
     import Spacer from "$lib/elements/Spacer.svelte"
-    import { get } from "svelte/store"
+    import { get, writable } from "svelte/store"
     import RelaySelector from "$lib/components/ui/RelaySelector.svelte"
     import { Controls } from "$lib/layouts"
     import { AuthStore } from "$lib/state/auth"
     import { createEventDispatcher } from "svelte"
     import { SettingsStore } from "$lib/state"
+    import { Store } from "$lib/state/Store"
+    import { ToastMessage } from "$lib/state/ui/toast"
+    import { TesseractStoreInstance } from "$lib/wasm/TesseractStore"
     export let create: boolean = false
     const dispatch = createEventDispatcher()
 
     let loading = false
     let scramble = get(AuthStore.state).scramblePin
     let stayLoggedIn = get(AuthStore.state).stayLoggedIn
+    let isDeleteAccountModalOpened = writable(false)
+    let wrongPinToDeleteAccountMessage = $_("settings.profile.delete_account_wrong_pin")
 
     let showAccounts = false
     let showConfigureRelay = false
@@ -153,12 +158,47 @@
                 appearance={Appearance.Alt}
                 icon
                 on:click={_ => {
-                    clearAllData()
+                    isDeleteAccountModalOpened.set(true)
                 }}>
                 <Icon icon={Shape.Trash} />
             </Button>
         </Controls>
     </div>
+    {#if $isDeleteAccountModalOpened}
+        <Modal
+            on:close={_ => {
+                isDeleteAccountModalOpened.set(false)
+            }}>
+            <div class="delete-account-pin">
+                <Text hook="text-delete-account-pin-first-message" class="delete-account-pin-first-message" appearance={Appearance.Error}>
+                    {$_("settings.profile.delete_account_action_description")}
+                </Text>
+                <Text>
+                    {$_("settings.profile.delete_account_confirm_pin")}
+                </Text>
+                <PinInput
+                    min={4}
+                    max={8}
+                    loading={false}
+                    scramble={false}
+                    stayLoggedIn={false}
+                    showSettings={false}
+                    showButtonSettings={false}
+                    on:submit={async e => {
+                        let pin = e.detail
+                        await new Promise(async _ => {
+                            let result = await TesseractStoreInstance.unlock(pin)
+                            result.onFailure(_ => {
+                                Store.addToastNotification(new ToastMessage("", wrongPinToDeleteAccountMessage, 3))
+                            })
+                            result.onSuccess(async _ => {
+                                await clearAllData()
+                            })
+                        })
+                    }} />
+            </div>
+        </Modal>
+    {/if}
 </div>
 
 <style lang="scss">
@@ -205,6 +245,13 @@
                     flex: 1;
                 }
             }
+        }
+        .delete-account-pin {
+            display: flex;
+            flex-direction: column;
+            gap: var(--gap);
+            align-items: center;
+            padding: var(--padding);
         }
     }
 </style>
