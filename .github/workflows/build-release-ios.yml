@@ -50,30 +50,35 @@ jobs:
 
             - name: Set Rust target for iOS
               run: |
-                rustup target add aarch64-apple-ios
-                rustup target add x86_64-apple-ios
+                  rustup target add aarch64-apple-ios
+                  rustup target add x86_64-apple-ios
 
             - name: Build Tauri project for iOS
               run: |
-                # Build the Tauri app for iOS
-                tauri build --target aarch64-apple-ios
+                  # Build the Tauri app for iOS
+                  tauri build --target aarch64-apple-ios
+
+            - name: List recursive files
+              working-directory: src-tauri
+              run: |
+                  ls -lR ./
 
             - name: Create IPA for iOS
               run: |
-                # Use Xcode to create the .ipa file for distribution
-                xcodebuild -workspace ./ios/App/App.xcworkspace \
-                           -scheme App \
-                           -destination generic/platform=iOS \
-                           -archivePath App.xcarchive archive \
-                           DEVELOPMENT_TEAM="${{ secrets.MACOS_NOTARIZATION_TEAM_ID }}" \
-                           CODE_SIGN_IDENTITY="${{ secrets.MACOS_CERTIFICATE_NAME }}"
+                  # Use Xcode to create the .ipa file for distribution
+                  xcodebuild -workspace ./ios/App/App.xcworkspace \
+                             -scheme App \
+                             -destination generic/platform=iOS \
+                             -archivePath App.xcarchive archive \
+                             DEVELOPMENT_TEAM="${{ secrets.MACOS_NOTARIZATION_TEAM_ID }}" \
+                             CODE_SIGN_IDENTITY="${{ secrets.MACOS_CERTIFICATE_NAME }}"
 
             - name: Export IPA
               run: |
-                xcodebuild -exportArchive -archivePath App.xcarchive \
-                           -exportOptionsPlist ./src-tauri/ios/exportOptions.plist \
-                           -exportPath output \
-                           -allowProvisioningUpdates
+                  xcodebuild -exportArchive -archivePath App.xcarchive \
+                             -exportOptionsPlist ./src-tauri/ios/exportOptions.plist \
+                             -exportPath output \
+                             -allowProvisioningUpdates
 
             - name: Notarize App with Apple
               env:
