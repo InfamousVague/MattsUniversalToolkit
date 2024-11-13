@@ -229,8 +229,6 @@
     Store.state.devices.muted.subscribe(state => (muted = state))
     Store.state.devices.deafened.subscribe(state => (deafened = state))
 
-    console.log("Arriving here on +layout")
-
     window.addEventListener(
         "click",
         () => {
