@@ -441,7 +441,8 @@ export class VoiceRTC {
     }
 
     private async setupLocalPeer(reset?: boolean) {
-        this.testGoodRelaysForCall()
+        // TODO(Lucas): Work on that in a next PR
+        // this.testGoodRelaysForCall()
         if ((reset && this.localPeer) || this.localPeer?.disconnected || this.localPeer?.destroyed) {
             this.localPeer.destroy()
             this.localPeer = null
@@ -693,8 +694,8 @@ export class VoiceRTC {
             joinRoom(
                 {
                     appId: "uplink",
-                    relayUrls: get(relaysAvailable),
-                    relayRedundancy: 2,
+                    // relayUrls: get(relaysAvailable),
+                    relayRedundancy: 3,
                 },
                 this.channel!
             )
