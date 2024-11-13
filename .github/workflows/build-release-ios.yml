@@ -1,10 +1,8 @@
 name: Build iOS
 
 on:
-    push:
-        branches:
-            - main
-    workflow_dispatch:
+    pull_request:
+        types: [opened, synchronize, reopened, edited]
 
 jobs:
     build:
@@ -39,39 +37,45 @@ jobs:
               with:
                   xcode-version: 14.3.1
 
-            - name: setup node
+            - name: Setup Node.js
               uses: actions/setup-node@v4.1.0
               with:
                   node-version: lts/*
 
-            - name: Install app dependencies
+            - name: Install dependencies
               run: npm install
 
-            - name: Build project app
-              run: npm run build
+            - name: Install Tauri CLI
+              run: npm install -g @tauri-apps/cli
 
-            - name: Capacitor update
-              run: npx cap update
+            - name: Build Tauri project for iOS
+              run: |
+                  # Build the Tauri app for iOS (this will build the app locally first)
+                  tauri build --target ios
 
-            - name: Capacitor copy
-              run: npx cap copy
+            - name: Create IPA for iOS
+              run: |
+                  # Use Xcode to create the .ipa file for distribution
+                  xcodebuild -workspace ./src-tauri/ios/App/App.xcworkspace \
+                             -scheme App \
+                             -destination generic/platform=iOS \
+                             -archivePath App.xcarchive archive \
+                             DEVELOPMENT_TEAM="${{ secrets.MACOS_NOTARIZATION_TEAM_ID }}" \
+                             CODE_SIGN_IDENTITY="${{ secrets.MACOS_CERTIFICATE_NAME }}"
 
-            - name: Build project
-              env:
-                  APPLE_TEAM_ID: ${{ secrets.MACOS_NOTARIZATION_TEAM_ID }}
-                  APPLE_SIGNING_IDENTITY: ${{ secrets.MACOS_CERTIFICATE_NAME }}
-              run: xcodebuild -workspace './ios/App/App.xcworkspace' -scheme App -destination generic/platform=iOS -archivePath App.xcarchive archive DEVELOPMENT_TEAM="$APPLE_TEAM_ID" CODE_SIGN_IDENTITY="$APPLE_SIGNING_IDENTITY"
-
-            - name: 🍻 Assemble IPA
-              run: xcodebuild archive -archivePath App.xcarchive -exportArchive -exportOptionsPlist ./archive.plist -exportPath output -allowProvisioningUpdates
+            - name: Export IPA
+              run: |
+                  xcodebuild -exportArchive -archivePath App.xcarchive \
+                             -exportOptionsPlist ./src-tauri/ios/exportOptions.plist \
+                             -exportPath output \
+                             -allowProvisioningUpdates
 
             - name: Notarize App with Apple
               env:
                   APPLE_ID: ${{ secrets.MACOS_NOTARIZATION_APPLE_ID }}
                   APPLE_PASSWORD: ${{ secrets.MACOS_NOTARIZATION_PWD }}
-                  APPLE_TEAM_ID: ${{ secrets.MACOS_NOTARIZATION_TEAM_ID }}
               run: |
-                  xcrun altool --notarize-app -f build/YourApp.ipa \
+                  xcrun altool --notarize-app -f output/YourApp.ipa \
                            --primary-bundle-id "com.yourapp.bundle" \
                            -u "$APPLE_ID" \
                            -p "$APPLE_PASSWORD"
