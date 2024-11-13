@@ -61,7 +61,7 @@ jobs:
             - name: Create IPA for iOS
               run: |
                 # Use Xcode to create the .ipa file for distribution
-                xcodebuild -workspace ./src-tauri/ios/App/App.xcworkspace \
+                xcodebuild -workspace ./ios/App/App.xcworkspace \
                            -scheme App \
                            -destination generic/platform=iOS \
                            -archivePath App.xcarchive archive \
