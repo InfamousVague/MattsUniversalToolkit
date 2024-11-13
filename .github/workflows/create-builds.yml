@@ -66,7 +66,14 @@ jobs:
               if: matrix.platform == 'ubuntu-latest'
               uses: android-actions/setup-android@v3.2.1
 
+            - name: Setup NDK
+              if: matrix.platform == 'ubuntu-latest'
+              uses: nttld/setup-ndk@v1
+              with:
+                  ndk-version: r26d
+
             - name: Setup Android Env Variables
+              if: matrix.platform == 'ubuntu-latest'
               run: |
                   export JAVA_HOME=/opt/android-studio/jbr
                   export ANDROID_HOME="$HOME/Android/Sdk"

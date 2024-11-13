@@ -45,6 +45,11 @@ jobs:
             - name: Set Up Android SDK
               uses: android-actions/setup-android@v3.2.1
 
+            - name: Setup NDK
+              uses: nttld/setup-ndk@v1
+              with:
+                  ndk-version: r26d
+
             - name: Setup Android Env Variables
               run: |
                   export JAVA_HOME=/opt/android-studio/jbr
