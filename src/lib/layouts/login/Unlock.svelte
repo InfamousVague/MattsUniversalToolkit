@@ -25,13 +25,13 @@
     let showConfigureRelay = false
 
     // Function to delete IndexedDB database by name
-    function deleteIndexedDB(dbName) {
+    function deleteIndexedDB(dbName: string) {
         return new Promise((resolve, reject) => {
             const request = indexedDB.deleteDatabase(dbName)
 
             request.onsuccess = function () {
                 console.log(`Database '${dbName}' deleted successfully.`)
-                resolve()
+                resolve("Success")
             }
 
             request.onerror = function () {
