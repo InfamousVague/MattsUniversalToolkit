@@ -1,3 +1,3 @@
-package com.uplink.satellite.app
+package com.satellite.uplink.app
 
 class MainActivity : TauriActivity()

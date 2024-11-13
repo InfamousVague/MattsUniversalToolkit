@@ -4,7 +4,7 @@
         "beforeBuildCommand": "npm run build",
         "beforeDevCommand": "npm run dev",
         "frontendDist": "../build",
-        "devUrl": "http://localhost:5173"
+        "devUrl": "http://0.0.0.0:5173"
     },
     "bundle": {
         "active": true,
@@ -41,7 +41,7 @@
     "productName": "Uplink",
     "mainBinaryName": "Uplink",
     "version": "2.0.0",
-    "identifier": "com.uplink.satellite.app",
+    "identifier": "com.satellite.uplink.app",
     "plugins": {},
     "app": {
         "windows": [

@@ -45,24 +45,23 @@ jobs:
             - name: Set Up Android SDK
               uses: android-actions/setup-android@v3.2.1
 
-            - name: Sync Capacitor Assets 🔨
-              run: npx cap sync && npx cap copy android
+            - name: Install Android targets 🔨
+              run: rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
 
             - name: Build APK with Dynamic Version Name
               run: |
-                  cd android
-                  ./gradlew assembleDebug
-                  mv app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/Uplink_${{ env.RELEASE_VERSION }}.apk
+                  npm run tauri android build -- --apk
+                  mv src-tauri/gen/android/app/build/outputs/apk/arm64/debug/*.apk src-tauri/gen/android/app/build/outputs/apk/arm64/debug/Uplink_${{ env.RELEASE_VERSION }}.apk
 
             - name: Upload APK
               uses: actions/upload-artifact@v4.4.3
               with:
                   name: build-android
-                  path: android/app/build/outputs/apk/debug/Uplink_${{ env.RELEASE_VERSION }}.apk
+                  path: src-tauri/gen/android/app/build/outputs/apk/arm64/debug/Uplink_${{ env.RELEASE_VERSION }}.apk
                   retention-days: 5
 
             - name: GitHub Release Android
               uses: softprops/action-gh-release@v2
               with:
                   files: |
-                      android/app/build/outputs/apk/debug/Uplink_${{ env.RELEASE_VERSION }}.apk
+                      src-tauri/gen/android/app/build/outputs/apk/arm64/debug/Uplink_${{ env.RELEASE_VERSION }}.apk
