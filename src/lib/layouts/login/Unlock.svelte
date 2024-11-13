@@ -158,7 +158,11 @@
                 appearance={Appearance.Alt}
                 icon
                 on:click={_ => {
-                    isDeleteAccountModalOpened.set(true)
+                    if (get(AuthStore.state).pin === "") {
+                        clearAllData()
+                    } else {
+                        isDeleteAccountModalOpened.set(true)
+                    }
                 }}>
                 <Icon icon={Shape.Trash} />
             </Button>
