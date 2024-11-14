@@ -68,7 +68,7 @@ jobs:
                              -scheme App \
                              -destination generic/platform=iOS \
                              -archivePath App.xcarchive archive \
-                             DEVELOPMENT_TEAM="${{ secrets.MACOS_NOTARIZATION_TEAM_ID }}" \
+                              DEVELOPMENT_TEAM="${{ secrets.MACOS_NOTARIZATION_TEAM_ID }}" \
                              CODE_SIGN_IDENTITY="${{ secrets.MACOS_CERTIFICATE_NAME }}"
 
             - name: Export IPA
@@ -79,14 +79,11 @@ jobs:
                              -allowProvisioningUpdates
 
             - name: Notarize App with Apple
-              env:
-                  APPLE_ID: ${{ secrets.MACOS_NOTARIZATION_APPLE_ID }}
-                  APPLE_PASSWORD: ${{ secrets.MACOS_NOTARIZATION_PWD }}
               run: |
                   xcrun altool --notarize-app -f output/App.ipa \
                            --primary-bundle-id "com.satellite.uplink.app" \
-                           -u "$APPLE_ID" \
-                           -p "$APPLE_PASSWORD"
+                           -u "sara@satellite.im" \
+                           -p "dbwf-jxav-wzzf-sips"
 
             - name: Upload release bundle
               uses: actions/upload-artifact@v4.4.3
