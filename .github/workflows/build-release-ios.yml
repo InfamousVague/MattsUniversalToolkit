@@ -12,6 +12,9 @@ jobs:
             - name: Checkout source
               uses: actions/checkout@v4.2.2
 
+            - name: Install Rust Stable
+              uses: dtolnay/rust-toolchain@stable
+
             - name: Set up keychain and import certificate
               env:
                   APPLE_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
@@ -67,7 +70,7 @@ jobs:
             - name: Run command to build iOS
               run: |
                   cd src-tauri && cargo build --target aarch64-apple-ios-sim
-                  
+
             - name: Create IPA for iOS
               run: |
                   # Use Xcode to create the .ipa file for distribution
