@@ -22,6 +22,7 @@
     import { identityColor, toIntegrationIconSrc, toIntegrationKind } from "$lib/utils/ProfileUtils"
     import { log } from "$lib/utils/Logger"
     import Modal from "$lib/components/ui/Modal.svelte"
+    import PinInput from "$lib/components/PinInput.svelte"
 
     enum SeedState {
         Hidden,
@@ -33,6 +34,8 @@
     let isValidUsernameToUpdate = false
     let isValidStatusMessageToUpdate = true
     let seedPhrase = TesseractStoreInstance.fetchSeed()?.split(" ")
+    let isDeleteAccountModalOpened = writable(false)
+    let wrongPinToDeleteAccountMessage = $_("settings.profile.delete_account_wrong_pin")
 
     function toggleSeedPhrase() {
         if (showSeed === SeedState.Missing) return
@@ -101,13 +104,13 @@
     }
 
     // Function to delete IndexedDB database by name
-    function deleteIndexedDB(dbName) {
-        return new Promise((resolve, reject) => {
+    function deleteIndexedDB(dbName: string) {
+        return new Promise<string>((resolve, reject) => {
             const request = indexedDB.deleteDatabase(dbName)
 
             request.onsuccess = function () {
                 console.log(`Database '${dbName}' deleted successfully.`)
-                resolve()
+                resolve("Success")
             }
 
             request.onerror = function () {
@@ -646,15 +649,51 @@
         <SettingSection hook="section-delete-account" name={$_("settings.profile.delete_title")} description={$_("settings.profile.delete_subtitle")}>
             <Button
                 hook="button-delete-account"
-                appearance={Appearance.Alt}
+                appearance={Appearance.Error}
                 text={$_("settings.profile.delete_title")}
                 on:click={_ => {
-                    clearAllData()
+                    isDeleteAccountModalOpened.set(true)
+                    // clearAllData()
                 }}>
                 <Icon icon={Shape.Trash} />
             </Button>
         </SettingSection>
     </div>
+    {#if $isDeleteAccountModalOpened}
+        <Modal
+            on:close={_ => {
+                isDeleteAccountModalOpened.set(false)
+            }}>
+            <div class="delete-account-pin">
+                <Text hook="text-delete-account-pin-first-message" class="delete-account-pin-first-message" appearance={Appearance.Error}>
+                    {$_("settings.profile.delete_account_action_description")}
+                </Text>
+                <Text>
+                    {$_("settings.profile.delete_account_confirm_pin")}
+                </Text>
+                <PinInput
+                    min={4}
+                    max={8}
+                    loading={false}
+                    scramble={false}
+                    stayLoggedIn={false}
+                    showSettings={false}
+                    showButtonSettings={false}
+                    on:submit={async e => {
+                        let pin = e.detail
+                        await new Promise(async _ => {
+                            let result = await TesseractStoreInstance.unlock(pin)
+                            result.onFailure(_ => {
+                                Store.addToastNotification(new ToastMessage("", wrongPinToDeleteAccountMessage, 3))
+                            })
+                            result.onSuccess(async _ => {
+                                await clearAllData()
+                            })
+                        })
+                    }} />
+            </div>
+        </Modal>
+    {/if}
 </div>
 
 <style lang="scss">
@@ -821,6 +860,14 @@
             overflow: hidden;
             align-items: center;
             gap: var(--gap);
+            padding: var(--padding);
+        }
+
+        .delete-account-pin {
+            display: flex;
+            flex-direction: column;
+            gap: var(--gap);
+            align-items: center;
             padding: var(--padding);
         }
     }

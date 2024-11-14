@@ -172,11 +172,13 @@ class MultipassStore {
         return failure(WarpError.MULTIPASS_NOT_FOUND)
     }
 
-    async fetchAllFriendsAndRequests() {
+    async fetchAllFriendsAndRequests(listFriends: boolean = true) {
         await this.listIncomingFriendRequests()
         await this.listOutgoingFriendRequests()
         await this.listBlockedFriends()
-        await this.listFriends()
+        if (listFriends) {
+            await this.listFriends()
+        }
     }
 
     /**
