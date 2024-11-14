@@ -59,7 +59,7 @@ jobs:
 
             - name: Run command to build iOS
               run: |
-                  cd src-tauri && cargo build --target aarch64-apple-ios-sim
+                  npm run tauri ios build -- --export-method app-store-connect
 
             - name: List recursive files src-tauri
               working-directory: src-tauri
