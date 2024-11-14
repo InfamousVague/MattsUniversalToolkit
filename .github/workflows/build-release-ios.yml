@@ -52,6 +52,7 @@ jobs:
               run: |
                   rustup target add aarch64-apple-ios
                   rustup target add x86_64-apple-ios
+                  rustup target add aarch64-apple-ios-sim
 
             - name: Build Tauri project for iOS
               run: |
