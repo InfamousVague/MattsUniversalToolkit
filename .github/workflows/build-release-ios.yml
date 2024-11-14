@@ -57,19 +57,19 @@ jobs:
                   rustup target add x86_64-apple-ios
                   rustup target add aarch64-apple-ios-sim
 
-            - name: Build Tauri project for iOS
+            - name: Run command to build iOS
               run: |
-                  # Build the Tauri app for iOS
-                  tauri build --target aarch64-apple-ios
+                  cd src-tauri && cargo build --target aarch64-apple-ios-sim
 
-            - name: List recursive files
+            - name: List recursive files src-tauri
               working-directory: src-tauri
               run: |
                   ls -lR ./
 
-            - name: Run command to build iOS
+            - name: List recursive files ios
+              working-directory: ios
               run: |
-                  cd src-tauri && cargo build --target aarch64-apple-ios-sim
+                  ls -lR ./
 
             - name: Create IPA for iOS
               run: |
