@@ -13,9 +13,9 @@
     import type { Chat } from "$lib/types"
     import VolumeMixer from "./VolumeMixer.svelte"
     import { createEventDispatcher, onDestroy, onMount } from "svelte"
-    import { callInProgress, callTimeout, makeCallSound, TIME_TO_SHOW_CONNECTING, TIME_TO_SHOW_END_CALL_FEEDBACK, timeCallStarted, usersAcceptedTheCall, usersDeniedTheCall, VoiceRTCInstance } from "$lib/media/Voice"
+    import { callInProgress, callScreenVisible, callTimeout, makeCallSound, TIME_TO_SHOW_CONNECTING, TIME_TO_SHOW_END_CALL_FEEDBACK, timeCallStarted, usersAcceptedTheCall, usersDeniedTheCall, VoiceRTCInstance } from "$lib/media/Voice"
     import { log } from "$lib/utils/Logger"
-    import { playSound, SoundHandler, Sounds } from "../utils/SoundHandler"
+    import { playSound, Sounds } from "../utils/SoundHandler"
     import { MultipassStoreInstance } from "$lib/wasm/MultipassStore"
     import { debounce } from "$lib/utils/Functions"
 
@@ -188,6 +188,7 @@
     }
 
     onMount(async () => {
+        callScreenVisible.set(true)
         if ($makeCallSound) {
             stopMakeCallSound()
         }
@@ -238,6 +239,7 @@
     })
 
     onDestroy(() => {
+        callScreenVisible.set(false)
         window.removeEventListener("keydown", handleKeyDown)
         window.removeEventListener("keyup", handleKeyUp)
         callTimeout.set(false)
