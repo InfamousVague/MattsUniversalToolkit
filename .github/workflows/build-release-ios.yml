@@ -23,15 +23,12 @@ jobs:
                   # Create a temporary keychain
                   security create-keychain -p "" build.keychain
                   security set-keychain-settings -lut 21600 build.keychain
-
                   # Import the certificate
                   echo "$APPLE_CERTIFICATE" | base64 --decode > certificate.p12
                   security import certificate.p12 -k build.keychain -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
-
                   # Set the keychain as default
                   security list-keychains -d user -s build.keychain
                   security unlock-keychain -p "" build.keychain
-
                   # Give the codesign tool access to the keychain
                   security set-key-partition-list -S apple-tool:,apple: -k "" build.keychain
 
@@ -58,8 +55,10 @@ jobs:
                   rustup target add aarch64-apple-ios-sim
 
             - name: Run command to build iOS
+              env:
+                  DEVELOPMENT_TEAM: ${{ secrets.MACOS_NOTARIZATION_TEAM_ID }}
               run: |
-                  npm run tauri ios build -- --export-method app-store-connect
+                  npm run tauri ios build -- --export-method app-store-connect --team-id "$DEVELOPMENT_TEAM"
 
             - name: List recursive files src-tauri
               working-directory: src-tauri
@@ -72,14 +71,18 @@ jobs:
                   ls -lR ./
 
             - name: Create IPA for iOS
+              env:
+                  DEVELOPMENT_TEAM: ${{ secrets.MACOS_NOTARIZATION_TEAM_ID }}
+                  CODE_SIGN_IDENTITY: ${{ secrets.MACOS_CERTIFICATE_NAME }}
               run: |
                   # Use Xcode to create the .ipa file for distribution
                   xcodebuild -workspace ./ios/App/App.xcworkspace \
                              -scheme App \
                              -destination generic/platform=iOS \
                              -archivePath App.xcarchive archive \
-                             DEVELOPMENT_TEAM="${{ secrets.MACOS_NOTARIZATION_TEAM_ID }}" \
-                             CODE_SIGN_IDENTITY="${{ secrets.MACOS_CERTIFICATE_NAME }}"
+                             CODE_SIGN_IDENTITY="$CODE_SIGN_IDENTITY" \
+                             DEVELOPMENT_TEAM="$DEVELOPMENT_TEAM" \
+                             PROVISIONING_PROFILE_SPECIFIER="satelliteprovisioning"
 
             - name: Export IPA
               run: |
@@ -93,10 +96,10 @@ jobs:
                   APPLE_ID: ${{ secrets.MACOS_NOTARIZATION_APPLE_ID }}
                   APPLE_PASSWORD: ${{ secrets.MACOS_NOTARIZATION_PWD }}
               run: |
-                  xcrun altool --notarize-app -f output/YourApp.ipa \
-                           --primary-bundle-id "com.yourapp.bundle" \
-                           -u "$APPLE_ID" \
-                           -p "$APPLE_PASSWORD"
+                  xcrun altool --notarize-app -f output/App.ipa \
+                               --primary-bundle-id "com.satellite.uplink.app" \
+                               -u "$APPLE_ID" \
+                               -p "$APPLE_PASSWORD"
 
             - name: Upload release bundle
               uses: actions/upload-artifact@v4.4.3
