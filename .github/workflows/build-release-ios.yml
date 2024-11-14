@@ -55,10 +55,8 @@ jobs:
                   rustup target add aarch64-apple-ios-sim
 
             - name: Run command to build iOS
-              env:
-                  DEVELOPMENT_TEAM: ${{ secrets.MACOS_NOTARIZATION_TEAM_ID }}
               run: |
-                  npm run tauri ios build -- --export-method app-store-connect --team-id "$DEVELOPMENT_TEAM"
+                  npm run tauri ios build -- --export-method app-store-connect
 
             - name: List recursive files src-tauri
               working-directory: src-tauri
