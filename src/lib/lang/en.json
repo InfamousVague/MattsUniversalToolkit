@@ -230,6 +230,8 @@
         "paymentDeclined": "Payment Canceled",
         "youCanceledRequest": "You Canceled Payment Request",
         "declinedPayment": "{user} Canceled Payment",
+        "recievedPayment": "{user} Sent You {amount}",
+        "sentPayment": "You Sent {amount}",
         "assetType": "Asset type",
         "assetName": "Asset name",
         "assetId": "Asset Id",

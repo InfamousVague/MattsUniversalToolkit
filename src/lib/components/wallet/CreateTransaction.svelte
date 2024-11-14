@@ -134,7 +134,7 @@
             <Button
                 disabled={!transfer.isValid()}
                 on:click={async () => {
-                    await sendMessage(transfer.toCmdString())
+                    await sendMessage(transfer.toDisplayString())
                     onClose()
                 }}>{$_("payments.create_transaction")}</Button>
         </div>
@@ -144,7 +144,7 @@
         </div>
         {#if transfer.toAddress !== ""}
             <div class="address">
-                <Label text={$_("payments.enter_address")} />
+                <Label text={$_("payments.address")} />
                 <div class="address_QR">
                     <Input value={transfer.toAddress} />
                     <div class="address_button">

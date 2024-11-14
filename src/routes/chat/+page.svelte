@@ -153,6 +153,45 @@
         return `Send ${amountPreview} ${kind}`
     }
 
+    function sanitizePaymentSent(message: string, sender: string, reciever: string): string {
+        // Match and extract "kind", "amountPreview", and "toAddress" from the input string
+        if (sender !== "") {
+            const kindMatch = message.match(/"kind":"(.*?)"/)
+            const amountPreviewMatch = message.match(/"amountPreview":"(.*?)"/)
+            // const toAddressMatch = message.match(/"toAddress":"(.*?)"/)
+
+            // Extract the values from the match results, defaulting to an empty string if not found
+            const kind = kindMatch ? kindMatch[1] : ""
+            let amountPreview = amountPreviewMatch ? amountPreviewMatch[1] : ""
+            // const toAddress = toAddressMatch ? toAddressMatch[1] : ""
+
+            // Remove any extra occurrence of the currency symbol in `amountPreview`
+            if (amountPreview.includes(kind)) {
+                amountPreview = amountPreview.replace(kind, "").trim()
+            }
+            amountPreview = amountPreview.replace(/(\.\d*?[1-9])0+$|\.0*$/, "$1")
+            // Return the formatted string
+            return `${sender} sent you ${amountPreview} ${kind}`
+        } else {
+            const kindMatch = message.match(/"kind":"(.*?)"/)
+            const amountPreviewMatch = message.match(/"amountPreview":"(.*?)"/)
+            // const toAddressMatch = message.match(/"toAddress":"(.*?)"/)
+
+            // Extract the values from the match results, defaulting to an empty string if not found
+            const kind = kindMatch ? kindMatch[1] : ""
+            let amountPreview = amountPreviewMatch ? amountPreviewMatch[1] : ""
+            // const toAddress = toAddressMatch ? toAddressMatch[1] : ""
+
+            // Remove any extra occurrence of the currency symbol in `amountPreview`
+            if (amountPreview.includes(kind)) {
+                amountPreview = amountPreview.replace(kind, "").trim()
+            }
+            amountPreview = amountPreview.replace(/(\.\d*?[1-9])0+$|\.0*$/, "$1")
+            // Return the formatted string
+            return `You sent ${amountPreview} ${kind} to ${reciever}`
+        }
+    }
+
     function addFilesToUpload(selected: File[]) {
         let files: [File?, string?][] = []
         for (let file of selected) {
@@ -307,7 +346,7 @@
         let chat = get(Store.state.activeChat)
         let rejectTranser = transfer.toRejectString(message.id)
         let txt = rejectTranser.split("\n")
-        if (paymentType === "result") {
+        if (paymentType === PaymentRequestsEnum.Request) {
             let result = await RaygunStoreInstance.send(chat.id, txt, [])
             result.onSuccess(res => {
                 if (getValidPaymentRequest(message.text[0])) {
@@ -341,6 +380,26 @@
                     }
                 })
                 transfer.toRejectString(message.id)
+                ConversationStore.addPendingMessages(chat.id, res.message, txt)
+            })
+        }
+        if (paymentType === PaymentRequestsEnum.Send) {
+            let result = await RaygunStoreInstance.send(chat.id, txt, [])
+            result.onSuccess(res => {
+                if (getValidPaymentRequest(message.text[0])) {
+                    getValidPaymentRequest(message.text[0])?.execute()
+                }
+                Store.state.paymentTracker.update(payments => {
+                    const alreadyRejected = payments.some(payment => payment.messageId === message.id)
+
+                    if (!alreadyRejected) {
+                        return [...payments, { messageId: message.id, senderId: message.details.origin, rejectedPayment: false }]
+                    } else {
+                        console.log(`MessageId ${message.id} is already in the rejected payments list`)
+                        return payments
+                    }
+                })
+                transfer.toCmdString()
                 ConversationStore.addPendingMessages(chat.id, res.message, txt)
             })
         }
@@ -838,6 +897,14 @@
                                                                         appearance={group.details.remote ? Appearance.Default : Appearance.Alt} />
                                                                 {:else}
                                                                     <Text hook="text-chat-message" markdown={$_("payments.youCanceledRequest")} appearance={group.details.remote ? Appearance.Default : Appearance.Alt} />
+                                                                {/if}
+                                                            {/if}
+                                                        {:else if line.startsWith(PaymentRequestsEnum.Send)}
+                                                            {#if !checkForActiveRequest(message, line)}
+                                                                {#if $own_user.key !== message.details.origin}
+                                                                    <Text hook="text-chat-message" markdown={sanitizePaymentSent(line, resolved.name, "")} appearance={group.details.remote ? Appearance.Default : Appearance.Alt} />
+                                                                {:else}
+                                                                    <Text hook="text-chat-message" markdown={sanitizePaymentSent(line, "", resolved.name)} appearance={group.details.remote ? Appearance.Default : Appearance.Alt} />
                                                                 {/if}
                                                             {/if}
                                                         {:else if getValidPaymentRequest(line) !== undefined}

@@ -60,7 +60,8 @@
             } catch (error) {
                 return "Invalid message format"
             }
-        } else if (chat.last_message_preview.startsWith(PaymentRequestsEnum.Reject)) {
+        }
+        if (chat.last_message_preview.startsWith(PaymentRequestsEnum.Reject)) {
             try {
                 const sendingUserId = ConversationStore.getMessage(chat.id, chat.last_message_id)?.details.origin
                 const sendingUserDetails = get(Store.getUser(sendingUserId!))
@@ -70,6 +71,42 @@
                     return $_("message_previews.coin_canceled")
                 }
             } catch (error) {
+                return "Invalid message format"
+            }
+        }
+        if (chat.last_message_preview.startsWith(PaymentRequestsEnum.Send)) {
+            console.log("Reached PaymentRequestsEnum.Send condition")
+
+            try {
+                const sendingUserId = ConversationStore.getMessage(chat.id, chat.last_message_id)?.details.origin
+                const sendingUserDetails = get(Store.getUser(sendingUserId!))
+
+                // Find the JSON part of the string
+                const jsonStartIndex = chat.last_message_preview.indexOf("{")
+                if (jsonStartIndex === -1) {
+                    console.error("No JSON found in last_message_preview:", chat.last_message_preview)
+                    return "Invalid message format"
+                }
+
+                const jsonPart = chat.last_message_preview.slice(jsonStartIndex)
+                console.log("Extracted JSON part:", jsonPart)
+
+                let amountPreview
+                try {
+                    amountPreview = JSON.parse(jsonPart)
+                    console.log("Parsed amountPreview:", amountPreview)
+                } catch (error) {
+                    console.error("JSON parsing error:", error)
+                    return "Invalid message format"
+                }
+
+                if (get(Store.getUser(sendingUserId!)).key !== ownId.key) {
+                    return $_("payments.recievedPayment", { values: { user: sendingUserDetails.name, amount: amountPreview.amountPreview } })
+                } else {
+                    return $_("payments.sentPayment", { values: { amount: amountPreview.amountPreview } })
+                }
+            } catch (error) {
+                console.error("Error in PaymentRequestsEnum.Send condition:", error)
                 return "Invalid message format"
             }
         }

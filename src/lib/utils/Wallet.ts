@@ -1,6 +1,7 @@
 import Wallet, { AddressPurpose, AddressType, RpcErrorCode } from "sats-connect"
 import { ethers } from "ethers"
 import { log } from "./Logger"
+import { PaymentRequestsEnum } from "$lib/enums"
 
 export type Account = {
     address: string
@@ -498,7 +499,9 @@ export class Transfer {
 
     toDisplayString(): string {
         let id = this.asset.id === "n/a" ? "" : this.asset.id
-        return `Send ${this.amountPreview} to ${shortenAddr(this.toAddress, 6)}`
+        let transfer = JSON.stringify(this, (k, v) => (k === "amount" && typeof v === "bigint" ? v.toString() : v))
+        console.log(id, "HERE DISPLAY")
+        return `/send ${this.amountPreview} to ${shortenAddr(this.toAddress, 6)}  ${transfer}`
     }
 
     async execute() {
@@ -509,12 +512,10 @@ export class Transfer {
 }
 
 export function getValidPaymentRequest(msg: string, msgId?: string): Transfer | undefined {
-    let requestCmd = "/request"
-    let rejectCmd = "/reject"
+    let transfer = new Transfer()
+    if (msg.startsWith(PaymentRequestsEnum.Request)) {
+        let json = msg.substring(PaymentRequestsEnum.Request.length, msg.length).trim()
 
-    if (msg.startsWith(requestCmd)) {
-        let json = msg.substring(requestCmd.length, msg.length).trim()
-        let transfer = new Transfer()
         try {
             let parsed = JSON.parse(json, (k, v) => (k === "amount" && typeof v === "string" ? BigInt(v) : v))
             transfer.asset = parsed.asset
@@ -527,9 +528,8 @@ export function getValidPaymentRequest(msg: string, msgId?: string): Transfer | 
         if (transfer.asset.kind !== AssetType.None && transfer.isValid()) {
             return transfer
         }
-    } else if (msg.startsWith(rejectCmd)) {
-        let json = msg.substring(rejectCmd.length, msg.length).trim()
-        let transfer = new Transfer()
+    } else if (msg.startsWith(PaymentRequestsEnum.Reject)) {
+        let json = msg.substring(PaymentRequestsEnum.Reject.length, msg.length).trim()
 
         if (json.startsWith("{")) {
             try {
@@ -543,6 +543,31 @@ export function getValidPaymentRequest(msg: string, msgId?: string): Transfer | 
             }
         } else {
             console.log("Reject message is not JSON, possibly an ID or UUID:", json)
+            return undefined
+        }
+
+        if (transfer.asset.kind !== AssetType.None && transfer.isValid()) {
+            return transfer
+        }
+    } else if (msg.startsWith(PaymentRequestsEnum.Send)) {
+        let json = msg.substring(PaymentRequestsEnum.Send.length, msg.length).trim()
+
+        // Find the position of the first `{` to locate the JSON portion
+        let jsonStartIndex = json.indexOf("{")
+        if (jsonStartIndex !== -1) {
+            json = json.substring(jsonStartIndex).trim() // Extract only the JSON part
+
+            try {
+                let parsed = JSON.parse(json, (k, v) => (k === "amount" && typeof v === "string" ? BigInt(v) : v))
+                transfer.asset = parsed.asset
+                transfer.amount = parsed.amount
+                transfer.toAddress = parsed.toAddress
+                transfer.amountPreview = parsed.amountPreview
+            } catch (err) {
+                console.log("Parse Failed", err)
+            }
+        } else {
+            console.log("Send message is not JSON:", json)
             return undefined
         }
 
