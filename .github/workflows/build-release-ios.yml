@@ -11,6 +11,8 @@ jobs:
         env:
             DEVELOPMENT_TEAM: ${{ secrets.MACOS_NOTARIZATION_TEAM_ID }}
             CODE_SIGN_IDENTITY: ${{ secrets.MACOS_CERTIFICATE_NAME }}
+            APPLE_ID: ${{ secrets.MACOS_NOTARIZATION_APPLE_ID }}
+            APPLE_PASSWORD: ${{ secrets.MACOS_NOTARIZATION_PWD }}
 
         steps:
             - name: Checkout source
@@ -40,6 +42,11 @@ jobs:
               uses: maxim-lobanov/setup-xcode@v1
               with:
                   xcode-version: 14.3.1
+
+            - name: Sign into Apple Developer account
+              run: |
+                  # Authenticate with Xcode
+                  echo "$APPLE_PASSWORD" | xcrun altool --list-providers -u "$APPLE_ID" -p @env
 
             - name: Setup Node.js
               uses: actions/setup-node@v4.1.0
@@ -91,9 +98,6 @@ jobs:
                              -allowProvisioningUpdates
 
             - name: Notarize App with Apple
-              env:
-                  APPLE_ID: ${{ secrets.MACOS_NOTARIZATION_APPLE_ID }}
-                  APPLE_PASSWORD: ${{ secrets.MACOS_NOTARIZATION_PWD }}
               run: |
                   xcrun altool --notarize-app -f output/App.ipa \
                                --primary-bundle-id "com.satellite.uplink.app" \
