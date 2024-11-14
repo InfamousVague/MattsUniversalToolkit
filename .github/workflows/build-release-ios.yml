@@ -57,6 +57,9 @@ jobs:
                   rustup target add x86_64-apple-ios
                   rustup target add aarch64-apple-ios-sim
 
+            - name: Create XCode project
+              run: npm run tauri ios init
+
             - name: Run command to build iOS
               run: |
                   npm run tauri ios build -- --export-method app-store-connect
