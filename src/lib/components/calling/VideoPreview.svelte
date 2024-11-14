@@ -17,6 +17,9 @@
 
     $: chat = get(Store.state.activeCall)?.chat
 
+    $: filteredUsers = chat?.users.filter(user => $userCache[user] && $userCache[user].key !== ownUser.key && $remoteStreams[user]) || []
+    $: gridTemplateColumns = `repeat(${Math.min(filteredUsers.length, 3)}, 1fr)`
+
     Store.state.activeCall.subscribe(async activeCall => {
         log.debug(`VideoPreview: Page: ${$page.route.id}. activeCall: ${activeCall}`)
         if (activeCall) {
@@ -128,31 +131,33 @@
 <div id="video-preview" class={showVideoPreview ? "video-preview" : "hidden"}>
     <div id="preview-video" bind:this={previewVideo}>
         {#if chat !== undefined && get(Store.state.activeCall) !== null}
-            {#each chat.users as user}
-                {#if $userCache[user] && $userCache[user].key !== ownUser.key && $remoteStreams[user]}
-                    <div class="video-container {$userCache[user].media.is_playing_audio ? 'talking' : ''}" style={!$remoteStreams[user].user.videoEnabled ? "display: none" : ""} role="none">
-                        <video data-cy="remote-user-video" id="remote-user-video-{user}" class={$remoteStreams[user].user.videoEnabled ? "" : "disabled"} autoplay muted={false} use:attachStream={user}>
-                            <track kind="captions" src="" />
-                        </video>
-                        <div class="user-name">{$userCache[user].name}</div>
-                        {#if !$remoteStreams[user].user.audioEnabled}
-                            <div class="mute-status">
-                                <Icon icon={Shape.MicrophoneSlash}></Icon>
-                            </div>
-                        {/if}
-                    </div>
+            <div class="video-grid" style="grid-template-columns: {gridTemplateColumns};">
+                {#each filteredUsers as user}
+                    {#if $remoteStreams[user]}
+                        <div class="video-container {$userCache[user].media.is_playing_audio ? 'talking' : ''}" style={!$remoteStreams[user].user.videoEnabled ? "display: none" : ""} role="none">
+                            <video data-cy="remote-user-video" id="remote-user-video-{user}" class={$remoteStreams[user].user.videoEnabled ? "" : "disabled"} autoplay muted={false} use:attachStream={user}>
+                                <track kind="captions" src="" />
+                            </video>
+                            <div class="user-name">{$userCache[user].name}</div>
+                            {#if !$remoteStreams[user].user.audioEnabled}
+                                <div class="mute-status">
+                                    <Icon icon={Shape.MicrophoneSlash}></Icon>
+                                </div>
+                            {/if}
+                        </div>
 
-                    {#if !$remoteStreams[user].stream || !$remoteStreams[user].user.videoEnabled}
-                        <Participant
-                            participant={$userCache[user]}
-                            hasVideo={$userCache[user].media.is_streaming_video}
-                            isMuted={$remoteStreams[user] && !$remoteStreams[user].user.audioEnabled}
-                            isDeafened={$remoteStreams[user] && $remoteStreams[user].user.isDeafened}
-                            isTalking={$userCache[user].media.is_playing_audio}
-                            on:click={_ => {}} />
+                        {#if !$remoteStreams[user].stream || !$remoteStreams[user].user.videoEnabled}
+                            <Participant
+                                participant={$userCache[user]}
+                                hasVideo={$userCache[user].media.is_streaming_video}
+                                isMuted={$remoteStreams[user] && !$remoteStreams[user].user.audioEnabled}
+                                isDeafened={$remoteStreams[user] && $remoteStreams[user].user.isDeafened}
+                                isTalking={$userCache[user].media.is_playing_audio}
+                                on:click={_ => {}} />
+                        {/if}
                     {/if}
-                {/if}
-            {/each}
+                {/each}
+            </div>
         {/if}
     </div>
 </div>
@@ -204,6 +209,17 @@
             overflow: hidden;
             align-items: center;
 
+            .video-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                justify-content: center;
+                align-items: center;
+                justify-items: center;
+                gap: 10px;
+                width: 100%;
+                height: 100%;
+            }
+
             .video-container {
                 position: relative;
                 display: inline-block;
@@ -216,7 +232,7 @@
                 }
                 width: 100%;
                 height: 100%;
-                aspect-ratio: unset;
+                aspect-ratio: 4 / 3;
 
                 .user-name {
                     position: absolute;
