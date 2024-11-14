@@ -214,10 +214,11 @@
                 }, TIME_TO_SHOW_CONNECTING)
             }
         }
-        if ($timeCallStarted) {
+        let timeCallStarted = $timeCallStarted
+        if (timeCallStarted !== null) {
             let timeCallStartedInterval = setInterval(() => {
                 let now = new Date()
-                let timeDifference = now.getTime() - $timeCallStarted.getTime()
+                let timeDifference = now.getTime() - timeCallStarted.getTime()
                 if (timeDifference > TIME_TO_SHOW_CONNECTING) {
                     showAnimation = false
                     noResponseVisible = true

@@ -28,6 +28,8 @@
     import Market from "$lib/components/market/Market.svelte"
     import { swipe } from "$lib/components/ui/Swipe"
 
+    log.debug("Initializing app, layout routes page.")
+
     TimeAgo.addDefaultLocale(en)
     let keybinds: Keybind[]
     let devmode: boolean = get(SettingsStore.state).devmode
@@ -273,10 +275,10 @@
     <div
         id="app"
         use:swipe
-        on:swipeleft={_ => {
+        on:swipeleft={() => {
             UIStore.closeSidebar()
         }}
-        on:swiperight={_ => {
+        on:swiperight={() => {
             UIStore.openSidebar()
         }}>
         {@html `<style>${style}</style>`}
