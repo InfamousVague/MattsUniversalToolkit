@@ -1,6 +1,6 @@
 <script lang="ts">
     import CallScreen from "$lib/components/calling/CallScreen.svelte"
-    import { callScreenVisible } from "$lib/media/Voice"
+    import { callScreenVisible, usersAcceptedTheCall } from "$lib/media/Voice"
     import { Store } from "$lib/state/Store"
     import { onMount } from "svelte"
     import { page } from "$app/stores"
@@ -17,7 +17,40 @@
 
     $: chat = get(Store.state.activeCall)?.chat
 
-    $: filteredUsers = chat?.users.filter(user => $userCache[user] && $userCache[user].key !== ownUser.key && $remoteStreams[user]) || []
+    function sortUsers(users: string[]) {
+        return users.sort((a, b) => {
+            const userA = $userCache[a]
+            const userB = $userCache[b]
+            if (userA.media.is_playing_audio && !userB.media.is_playing_audio) return -1
+            if (!userA.media.is_playing_audio && userB.media.is_playing_audio) return 1
+            return 0
+        })
+    }
+
+    $: filteredUsers = $usersAcceptedTheCall.length > 1 ? sortUsers($usersAcceptedTheCall) : $usersAcceptedTheCall
+    let lastSortedUsers: string[] = []
+
+    $: {
+        if ($usersAcceptedTheCall.length > 1) {
+            const usersPlayingAudio = filteredUsers.filter(user => $userCache[user].media.is_playing_audio)
+            if (usersPlayingAudio.length > 0 && !arraysEqual(usersPlayingAudio, lastSortedUsers)) {
+                filteredUsers = sortUsers($usersAcceptedTheCall)
+                lastSortedUsers = [...usersPlayingAudio]
+            }
+        }
+    }
+
+    function arraysEqual(a: any[], b: any[]) {
+        if (a === b) return true
+        if (a == null || b == null) return false
+        if (a.length !== b.length) return false
+
+        for (let i = 0; i < a.length; ++i) {
+            if (a[i] !== b[i]) return false
+        }
+        return true
+    }
+
     $: gridTemplateColumns = `repeat(${Math.min(filteredUsers.length, 3)}, 1fr)`
 
     Store.state.activeCall.subscribe(async activeCall => {
@@ -43,7 +76,6 @@
         }
     })
 
-    $: ownUser = get(Store.state.user)
     $: chats = UIStore.state.chats
     $: userCache = Store.getUsersLookup($chats.map(c => c.users).flat())
 
