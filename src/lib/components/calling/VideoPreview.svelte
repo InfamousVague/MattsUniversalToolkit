@@ -1,4 +1,5 @@
 <script lang="ts">
+    import CallScreen from "$lib/components/calling/CallScreen.svelte"
     import { callScreenVisible } from "$lib/media/Voice"
     import { Store } from "$lib/state/Store"
     import { onMount } from "svelte"
@@ -126,7 +127,7 @@
 
 <div id="video-preview" class={showVideoPreview ? "video-preview" : "hidden"}>
     <div id="preview-video" bind:this={previewVideo}>
-        {#if chat !== undefined && get(Store.state.activeCall) !== null && $callScreenVisible === false}
+        {#if chat !== undefined && get(Store.state.activeCall) !== null}
             {#each chat.users as user}
                 {#if $userCache[user] && $userCache[user].key !== ownUser.key && $remoteStreams[user]}
                     <div class="video-container {$userCache[user].media.is_playing_audio ? 'talking' : ''}" style={!$remoteStreams[user].user.videoEnabled ? "display: none" : ""} role="none">
@@ -167,6 +168,7 @@
         overflow: hidden;
         pointer-events: none;
     }
+
     #video-preview {
         position: fixed;
         top: 0;
@@ -193,10 +195,69 @@
             pointer-events: all;
             transition: transform 0.3s ease;
             margin: var(--padding);
-            display: inline-flex;
+            display: flex;
+            flex-direction: column;
             justify-content: center;
+            align-items: center;
+            padding: var(--padding);
+            box-sizing: border-box;
             overflow: hidden;
             align-items: center;
+
+            .video-container {
+                position: relative;
+                display: inline-block;
+                border-radius: 12px;
+                overflow: hidden;
+                border: 2px solid var(--color-muted);
+                cursor: pointer;
+                &.talking {
+                    border: 2px solid var(--success-color);
+                }
+                width: 100%;
+                height: 100%;
+                aspect-ratio: unset;
+
+                .user-name {
+                    position: absolute;
+                    bottom: 8px;
+                    left: 12px;
+                    background-color: rgba(0, 0, 0, 0.6);
+                    color: white;
+                    padding: 4px 8px;
+                    border-radius: 8px;
+                    font-size: 14px;
+                    z-index: 1;
+                }
+
+                .mute-status {
+                    position: absolute;
+                    display: flex;
+                    bottom: 8px;
+                    right: 12px;
+                    align-items: center;
+                    justify-content: center;
+                    background-color: rgba(0, 0, 0, 0.6);
+                    color: white;
+                    padding: 4px 8px;
+                    border-radius: 8px;
+                    font-size: 14px;
+                    z-index: 1;
+                }
+
+                video {
+                    object-fit: cover;
+                    border-radius: 12px;
+                    background-color: var(--black);
+                    width: 100%;
+                    height: 100%;
+
+                    &.disabled {
+                        width: 0;
+                        height: 0;
+                    }
+                }
+            }
         }
     }
 </style>
