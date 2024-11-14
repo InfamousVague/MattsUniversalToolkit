@@ -14,8 +14,10 @@
     let showVideoPreview = false
     let previewVideo: HTMLDivElement
     $: remoteStreams = Store.state.activeCallMeta
+    $: gridTemplateColumns = `repeat(${Math.min(filteredUsers.length, 3)}, 1fr)`
 
     $: chat = get(Store.state.activeCall)?.chat
+    let ownUserKey = get(Store.state.user).key
 
     function sortUsers(users: string[]) {
         return users.sort((a, b) => {
@@ -27,7 +29,7 @@
         })
     }
 
-    $: filteredUsers = $usersAcceptedTheCall.length > 1 ? sortUsers($usersAcceptedTheCall) : $usersAcceptedTheCall
+    $: filteredUsers = sortUsers($usersAcceptedTheCall.filter(user => $userCache[user] && $userCache[user].key !== ownUserKey && $remoteStreams[user]) || [])
     let lastSortedUsers: string[] = []
 
     $: {
@@ -35,6 +37,7 @@
             const usersPlayingAudio = filteredUsers.filter(user => $userCache[user].media.is_playing_audio)
             if (usersPlayingAudio.length > 0 && !arraysEqual(usersPlayingAudio, lastSortedUsers)) {
                 filteredUsers = sortUsers($usersAcceptedTheCall)
+                usersAcceptedTheCall.set(filteredUsers)
                 lastSortedUsers = [...usersPlayingAudio]
             }
         }
@@ -50,8 +53,6 @@
         }
         return true
     }
-
-    $: gridTemplateColumns = `repeat(${Math.min(filteredUsers.length, 3)}, 1fr)`
 
     Store.state.activeCall.subscribe(async activeCall => {
         log.debug(`VideoPreview: Page: ${$page.route.id}. activeCall: ${activeCall}`)
@@ -164,7 +165,7 @@
     <div id="preview-video" bind:this={previewVideo}>
         {#if chat !== undefined && get(Store.state.activeCall) !== null}
             <div class="video-grid" style="grid-template-columns: {gridTemplateColumns};">
-                {#each filteredUsers as user}
+                {#each filteredUsers.slice(0, 3) as user}
                     {#if $remoteStreams[user]}
                         <div class="video-container {$userCache[user].media.is_playing_audio ? 'talking' : ''}" style={!$remoteStreams[user].user.videoEnabled ? "display: none" : ""} role="none">
                             <video data-cy="remote-user-video" id="remote-user-video-{user}" class={$remoteStreams[user].user.videoEnabled ? "" : "disabled"} autoplay muted={false} use:attachStream={user}>
