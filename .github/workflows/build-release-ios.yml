@@ -65,7 +65,7 @@ jobs:
 
             - name: Run command to build iOS
               run: |
-                  npm run tauri ios dev
+                  cd src-tauri && cargo build --target aarch64-apple-ios-sim
                   
             - name: Create IPA for iOS
               run: |
