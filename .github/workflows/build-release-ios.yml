@@ -8,6 +8,10 @@ jobs:
     build:
         runs-on: macos-13
         name: Build iOS app
+        env:
+            DEVELOPMENT_TEAM: ${{ secrets.MACOS_NOTARIZATION_TEAM_ID }}
+            CODE_SIGN_IDENTITY: ${{ secrets.MACOS_CERTIFICATE_NAME }}
+
         steps:
             - name: Checkout source
               uses: actions/checkout@v4.2.2
@@ -69,9 +73,6 @@ jobs:
                   ls -lR ./
 
             - name: Create IPA for iOS
-              env:
-                  DEVELOPMENT_TEAM: ${{ secrets.MACOS_NOTARIZATION_TEAM_ID }}
-                  CODE_SIGN_IDENTITY: ${{ secrets.MACOS_CERTIFICATE_NAME }}
               run: |
                   # Use Xcode to create the .ipa file for distribution
                   xcodebuild -workspace ./ios/App/App.xcworkspace \
