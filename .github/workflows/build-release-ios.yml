@@ -8,12 +8,6 @@ jobs:
     build:
         runs-on: macos-13
         name: Build iOS app
-        env:
-            DEVELOPMENT_TEAM: ${{ secrets.MACOS_NOTARIZATION_TEAM_ID }}
-            CODE_SIGN_IDENTITY: ${{ secrets.MACOS_CERTIFICATE_NAME }}
-            APPLE_ID: ${{ secrets.MACOS_NOTARIZATION_APPLE_ID }}
-            APPLE_PASSWORD: ${{ secrets.MACOS_NOTARIZATION_PWD }}
-
         steps:
             - name: Checkout source
               uses: actions/checkout@v4.2.2
@@ -38,15 +32,10 @@ jobs:
                   # Give the codesign tool access to the keychain
                   security set-key-partition-list -S apple-tool:,apple: -k "" build.keychain
 
-            - name: Set up XCode
+            - name: Set up Xcode
               uses: maxim-lobanov/setup-xcode@v1
               with:
                   xcode-version: 14.3.1
-
-            - name: Sign into Apple Developer account
-              run: |
-                  # Authenticate with Xcode
-                  echo "$APPLE_PASSWORD" | xcrun altool --list-providers -u "$APPLE_ID" -p @env
 
             - name: Setup Node.js
               uses: actions/setup-node@v4.1.0
@@ -66,29 +55,22 @@ jobs:
                   rustup target add aarch64-apple-ios-sim
 
             - name: Run command to build iOS
-              run: |
-                  npm run tauri ios build -- --export-method app-store-connect
+              run: npm run tauri ios build -- --export-method app-store-connect
 
-            - name: List recursive files src-tauri
-              working-directory: src-tauri
+            - name: Install Fastlane
               run: |
-                  ls -lR ./
-
-            - name: List recursive files ios
-              working-directory: ios
-              run: |
-                  ls -lR ./
+                  echo "source 'https://rubygems.org'" > Gemfile
+                  echo "gem 'fastlane'" >> Gemfile
+                  bundle install
 
             - name: Create IPA for iOS
               run: |
-                  # Use Xcode to create the .ipa file for distribution
                   xcodebuild -workspace ./ios/App/App.xcworkspace \
                              -scheme App \
                              -destination generic/platform=iOS \
                              -archivePath App.xcarchive archive \
-                             CODE_SIGN_IDENTITY="$CODE_SIGN_IDENTITY" \
-                             DEVELOPMENT_TEAM="$DEVELOPMENT_TEAM" \
-                             PROVISIONING_PROFILE_SPECIFIER="satelliteprovisioning"
+                             DEVELOPMENT_TEAM="${{ secrets.MACOS_NOTARIZATION_TEAM_ID }}" \
+                             CODE_SIGN_IDENTITY="${{ secrets.MACOS_CERTIFICATE_NAME }}"
 
             - name: Export IPA
               run: |
@@ -97,12 +79,26 @@ jobs:
                              -exportPath output \
                              -allowProvisioningUpdates
 
-            - name: Notarize App with Apple
+            # Debugging steps to verify environment variables
+            - name: Debug Apple ID and Team ID
               run: |
-                  xcrun altool --notarize-app -f output/App.ipa \
-                               --primary-bundle-id "com.satellite.uplink.app" \
-                               -u "$APPLE_ID" \
-                               -p "$APPLE_PASSWORD"
+                  echo "Apple ID: $APPLE_ID"
+                  echo "Development Team: $DEVELOPMENT_TEAM"
+              env:
+                  APPLE_ID: ${{ secrets.MACOS_NOTARIZATION_APPLE_ID }}
+                  DEVELOPMENT_TEAM: ${{ secrets.MACOS_NOTARIZATION_TEAM_ID }}
+
+            # Notarize IPA with Fastlane
+            - name: Notarize App with Fastlane
+              run: |
+                  bundle exec fastlane run notarize_app \
+                      username:"$APPLE_ID" \
+                      app_password:"$APPLE_PASSWORD" \
+                      primary_bundle_id:"com.satellite.uplink.app" \
+                      ipa_path:"output/App.ipa"
+              env:
+                  APPLE_ID: ${{ secrets.MACOS_NOTARIZATION_APPLE_ID }}
+                  APPLE_PASSWORD: ${{ secrets.MACOS_NOTARIZATION_PWD }}
 
             - name: Upload release bundle
               uses: actions/upload-artifact@v4.4.3
