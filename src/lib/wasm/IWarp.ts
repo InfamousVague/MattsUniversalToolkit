@@ -12,7 +12,7 @@ const inititialized: Writable<boolean> = writable(false)
 
 export async function initWarp() {
     if (!get(inititialized)) {
-        await init()
+        await init({})
         inititialized.set(true)
     }
 }

@@ -25,7 +25,6 @@
     export let replyTo: MessageType | undefined = undefined
     export let emojiClickHook: (emoji: string) => boolean
     export let activeChat: Chat
-    export const typing: User[] = []
 
     const dispatch = createEventDispatcher()
 
