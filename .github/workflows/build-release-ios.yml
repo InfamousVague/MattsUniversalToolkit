@@ -66,6 +66,7 @@ jobs:
             - name: Create IPA for iOS
               run: |
                   # Use Xcode to create the .ipa file for distribution
+                  npm run tauri ios dev
                   xcodebuild -workspace ./ios/App/App.xcworkspace \
                              -scheme App \
                              -destination generic/platform=iOS \
