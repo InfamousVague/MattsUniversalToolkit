@@ -23,16 +23,19 @@ jobs:
                   # Create a temporary keychain
                   security create-keychain -p "" build.keychain
                   security set-keychain-settings -lut 21600 build.keychain
+
                   # Import the certificate
                   echo "$APPLE_CERTIFICATE" | base64 --decode > certificate.p12
                   security import certificate.p12 -k build.keychain -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+
                   # Set the keychain as default
                   security list-keychains -d user -s build.keychain
                   security unlock-keychain -p "" build.keychain
+
                   # Give the codesign tool access to the keychain
                   security set-key-partition-list -S apple-tool:,apple: -k "" build.keychain
 
-            - name: Set up Xcode
+            - name: Set up XCode
               uses: maxim-lobanov/setup-xcode@v1
               with:
                   xcode-version: 14.3.1
@@ -55,16 +58,12 @@ jobs:
                   rustup target add aarch64-apple-ios-sim
 
             - name: Run command to build iOS
-              run: npm run tauri ios build -- --export-method app-store-connect
-
-            - name: Install Fastlane
               run: |
-                  echo "source 'https://rubygems.org'" > Gemfile
-                  echo "gem 'fastlane'" >> Gemfile
-                  bundle install
+                  npm run tauri ios build -- --export-method app-store-connect
 
             - name: Create IPA for iOS
               run: |
+                  # Use Xcode to create the .ipa file for distribution
                   xcodebuild -workspace ./ios/App/App.xcworkspace \
                              -scheme App \
                              -destination generic/platform=iOS \
@@ -79,26 +78,15 @@ jobs:
                              -exportPath output \
                              -allowProvisioningUpdates
 
-            # Debugging steps to verify environment variables
-            - name: Debug Apple ID and Team ID
-              run: |
-                  echo "Apple ID: $APPLE_ID"
-                  echo "Development Team: $DEVELOPMENT_TEAM"
-              env:
-                  APPLE_ID: ${{ secrets.MACOS_NOTARIZATION_APPLE_ID }}
-                  DEVELOPMENT_TEAM: ${{ secrets.MACOS_NOTARIZATION_TEAM_ID }}
-
-            # Notarize IPA with Fastlane
-            - name: Notarize App with Fastlane
-              run: |
-                  bundle exec fastlane run notarize_app \
-                      username:"$APPLE_ID" \
-                      app_password:"$APPLE_PASSWORD" \
-                      primary_bundle_id:"com.satellite.uplink.app" \
-                      ipa_path:"output/App.ipa"
+            - name: Notarize App with Apple
               env:
                   APPLE_ID: ${{ secrets.MACOS_NOTARIZATION_APPLE_ID }}
                   APPLE_PASSWORD: ${{ secrets.MACOS_NOTARIZATION_PWD }}
+              run: |
+                  xcrun altool --notarize-app -f output/App.ipa \
+                           --primary-bundle-id "com.satellite.uplink.app" \
+                           -u "$APPLE_ID" \
+                           -p "$APPLE_PASSWORD"
 
             - name: Upload release bundle
               uses: actions/upload-artifact@v4.4.3
