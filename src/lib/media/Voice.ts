@@ -734,7 +734,6 @@ export class VoiceRTC {
     }
 
     async leaveCall(sendEndCallMessage = false) {
-        callScreenVisible.set(false)
         callInProgress.set(null)
         timeCallStarted.set(null)
         usersDeniedTheCall.set([])
@@ -759,6 +758,7 @@ export class VoiceRTC {
         if (get(Store.state.activeCall)) {
             Store.endCall()
         }
+        callScreenVisible.set(false)
 
         if (get(Store.state.pendingCall)) {
             Store.denyCall()

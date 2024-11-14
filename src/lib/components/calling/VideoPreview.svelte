@@ -1,53 +1,70 @@
 <script lang="ts">
-    import { VoiceRTCInstance } from "$lib/media/Voice"
+    import { callScreenVisible } from "$lib/media/Voice"
     import { Store } from "$lib/state/Store"
     import { onMount } from "svelte"
     import { page } from "$app/stores"
-    import { Route } from "$lib/enums"
+    import { Shape } from "$lib/enums"
     import { get } from "svelte/store"
     import Participant from "./Participant.svelte"
     import { UIStore } from "$lib/state/ui"
     import { log } from "$lib/utils/Logger"
+    import Icon from "$lib/elements/Icon.svelte"
 
-    export let show: boolean = false
+    let showVideoPreview = false
     let previewVideo: HTMLDivElement
-    let remoteVideoElement: HTMLVideoElement
-
-    Store.state.activeChat.subscribe(async activeChat => {
-        if (activeChat.id !== VoiceRTCInstance.channel && get(Store.state.activeCall)) {
-            show = true
-            if (VoiceRTCInstance.remoteVideoElement) {
-                remoteVideoElement.srcObject = VoiceRTCInstance.activeCall?.remoteStream!
-                remoteVideoElement.play()
-            }
-        }
-    })
+    $: remoteStreams = Store.state.activeCallMeta
 
     $: chat = get(Store.state.activeCall)?.chat
 
     Store.state.activeCall.subscribe(async activeCall => {
         log.debug(`VideoPreview: Page: ${$page.route.id}. activeCall: ${activeCall}`)
-        if ($page.route.id !== Route.Chat && activeCall != null) {
-            show = true
-            remoteVideoElement.srcObject = VoiceRTCInstance.activeCall?.remoteStream!
-            remoteVideoElement.play()
-        } else if (!activeCall && remoteVideoElement) {
-            show = false
-            remoteVideoElement.pause()
-            remoteVideoElement.srcObject = null
-        } else if ($page.route.id === Route.Chat && get(Store.state.activeChat).id === VoiceRTCInstance.channel) {
-            show = false
-            remoteVideoElement.pause()
-            remoteVideoElement.srcObject = null
+        if (activeCall) {
+            chat = activeCall.chat
+        } else {
+            chat = undefined
+            showVideoPreview = false
         }
-        otherUserSettingsInCall = VoiceRTCInstance.remoteVoiceUser
-        chat = activeCall?.chat
     })
 
-    $: otherUserSettingsInCall = VoiceRTCInstance.remoteVoiceUser
+    callScreenVisible.subscribe(visible => {
+        if (visible === true) {
+            showVideoPreview = false
+            return
+        }
+        if (visible === false && get(Store.state.activeCall) !== null) {
+            setTimeout(() => {
+                log.warn("Changing video preview visibility")
+                showVideoPreview = true
+            }, 100)
+        }
+    })
+
     $: ownUser = get(Store.state.user)
     $: chats = UIStore.state.chats
     $: userCache = Store.getUsersLookup($chats.map(c => c.users).flat())
+
+    function attachStream(node: HTMLMediaElement, user: string) {
+        const stream = $remoteStreams[user]?.stream
+
+        if (stream) {
+            node.srcObject = stream
+            stream.onremovetrack = () => {
+                log.dev("Stream removed: ", user)
+            }
+        }
+
+        return {
+            update(newUser: string) {
+                const newStream = $remoteStreams[newUser]?.stream
+                if (newStream && node.srcObject !== newStream) {
+                    node.srcObject = newStream
+                }
+            },
+            destroy() {
+                node.srcObject = null
+            },
+        }
+    }
 
     onMount(() => {
         const video = previewVideo
@@ -107,20 +124,32 @@
     })
 </script>
 
-<div id="video-preview" class={show ? "video-preview" : "hidden"}>
+<div id="video-preview" class={showVideoPreview ? "video-preview" : "hidden"}>
     <div id="preview-video" bind:this={previewVideo}>
-        <video id="remote-user-float-video" bind:this={remoteVideoElement} width={otherUserSettingsInCall?.videoEnabled ? 400 : 0} height={otherUserSettingsInCall?.videoEnabled ? 400 : 0} autoplay>
-            <track kind="captions" src="" />
-        </video>
-        {#if !otherUserSettingsInCall?.videoEnabled && chat !== undefined}
+        {#if chat !== undefined && get(Store.state.activeCall) !== null && $callScreenVisible === false}
             {#each chat.users as user}
-                {#if user !== ownUser.key}
-                    <Participant
-                        participant={$userCache[user]}
-                        hasVideo={$userCache[user].media.is_streaming_video}
-                        isMuted={$userCache[user].media.is_muted}
-                        isDeafened={$userCache[user].media.is_deafened}
-                        isTalking={$userCache[user].media.is_playing_audio} />
+                {#if $userCache[user] && $userCache[user].key !== ownUser.key && $remoteStreams[user]}
+                    <div class="video-container {$userCache[user].media.is_playing_audio ? 'talking' : ''}" style={!$remoteStreams[user].user.videoEnabled ? "display: none" : ""} role="none">
+                        <video data-cy="remote-user-video" id="remote-user-video-{user}" class={$remoteStreams[user].user.videoEnabled ? "" : "disabled"} autoplay muted={false} use:attachStream={user}>
+                            <track kind="captions" src="" />
+                        </video>
+                        <div class="user-name">{$userCache[user].name}</div>
+                        {#if !$remoteStreams[user].user.audioEnabled}
+                            <div class="mute-status">
+                                <Icon icon={Shape.MicrophoneSlash}></Icon>
+                            </div>
+                        {/if}
+                    </div>
+
+                    {#if !$remoteStreams[user].stream || !$remoteStreams[user].user.videoEnabled}
+                        <Participant
+                            participant={$userCache[user]}
+                            hasVideo={$userCache[user].media.is_streaming_video}
+                            isMuted={$remoteStreams[user] && !$remoteStreams[user].user.audioEnabled}
+                            isDeafened={$remoteStreams[user] && $remoteStreams[user].user.isDeafened}
+                            isTalking={$userCache[user].media.is_playing_audio}
+                            on:click={_ => {}} />
+                    {/if}
                 {/if}
             {/each}
         {/if}
