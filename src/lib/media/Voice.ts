@@ -5,12 +5,13 @@ import { create_cancellable_handler, type Cancellable } from "$lib/utils/Cancell
 import { log } from "$lib/utils/Logger"
 import { RaygunStoreInstance } from "$lib/wasm/RaygunStore"
 import Peer, { DataConnection } from "peerjs"
-import { _ } from "svelte-i18n"
+import { _, t } from "svelte-i18n"
 import { get, writable, type Writable } from "svelte/store"
 import type { Room } from "trystero"
 import { joinRoom } from "trystero"
 import { NoiseSuppressorWorklet_Name } from "@timephy/rnnoise-wasm"
 import NoiseSuppressorWorklet from "@timephy/rnnoise-wasm/NoiseSuppressorWorklet?worker&url"
+import vad from "voice-activity-detection"
 
 const CALL_ACK = "CALL_ACCEPT"
 
@@ -26,6 +27,21 @@ export const connectionOpened = writable(false)
 export const timeCallStarted: Writable<Date | null> = writable(null)
 export const callInProgress: Writable<string | null> = writable(null)
 export const makeCallSound = writable<SoundHandler | undefined>(undefined)
+export const callScreenVisible = writable(false)
+
+const relaysToTest = [
+    "wss://nostr-pub.wellorder.net",
+    "wss://brb.io",
+    "wss://relay.snort.social",
+    "wss://relay.damus.io",
+    "wss://nostr.mom",
+    "wss://relay.nostr.band",
+    "wss://nostr.oxtr.dev",
+    "wss://nostr.fmt.wiz.biz",
+    "wss://nostr-relay.digitalmob.ro",
+    "wss://nostr.openchain.fr",
+]
+const relaysAvailable: Writable<string[]> = writable(relaysToTest)
 
 export enum VoiceRTCMessageType {
     UpdateUser = "UPDATE_USER",
@@ -87,54 +103,67 @@ export type StreamMetaHandler = {
     remove(): void
 }
 
-function handleStreamMeta(did: string, stream: MediaStream): StreamMetaHandler {
+async function handleStreamMeta(did: string, stream: MediaStream): Promise<StreamMetaHandler> {
     const audioContext = new window.AudioContext()
     const analyser = audioContext.createAnalyser()
     analyser.fftSize = AUDIO_WINDOW_SIZE
     analyser.smoothingTimeConstant = 0.1
-    const dataArray = new Uint8Array(analyser.frequencyBinCount)
     let noiseSuppressionNode: AudioWorkletNode
-    let checker: NodeJS.Timeout
+    let voiceStopTimeout: NodeJS.Timeout | null = null
+    let speaking = false
 
-    audioContext.audioWorklet.addModule(NoiseSuppressorWorklet).then(() => {
-        noiseSuppressionNode = new AudioWorkletNode(audioContext, NoiseSuppressorWorklet_Name)
-        const mediaStreamSource = audioContext.createMediaStreamSource(stream)
-        mediaStreamSource.connect(noiseSuppressionNode).connect(analyser)
+    await audioContext.audioWorklet.addModule(NoiseSuppressorWorklet)
 
-        function volume() {
-            analyser.getByteFrequencyData(dataArray)
-            return dataArray.reduce((prev, value) => (prev && prev > value ? prev : value))
-        }
+    noiseSuppressionNode = new AudioWorkletNode(audioContext, NoiseSuppressorWorklet_Name)
+    const mediaStreamSource = audioContext.createMediaStreamSource(stream)
+    mediaStreamSource.connect(noiseSuppressionNode).connect(analyser)
 
-        function updateMeta(did: string) {
-            let muted = stream.getAudioTracks().some(track => !track.enabled || track.readyState === "ended")
-            let speaking = false
+    function updateMeta(did: string) {
+        let muted = stream.getAudioTracks().some(track => !track.enabled || track.readyState === "ended")
+        let user = Store.getUser(did)
+
+        user.update(u => ({
+            ...u,
+            media: {
+                ...u.media,
+                is_muted: muted,
+                is_playing_audio: speaking,
+            },
+        }))
+    }
+
+    const options = {
+        onVoiceStart: () => {
+            VoiceRTCInstance.localVideoCurrentSrc!.volume = 1
+            if (voiceStopTimeout) {
+                clearTimeout(voiceStopTimeout)
+                voiceStopTimeout = null
+            }
             let user = Store.getUser(did)
-            let current = get(user)
-            let vol = volume()
-            if (!muted && vol > VOLUME_THRESHOLD) {
-                speaking = true
-            }
-            if (current.media.is_muted !== muted || current.media.is_playing_audio !== speaking) {
-                user.update(u => ({
-                    ...u,
-                    media: {
-                        ...u.media,
-                        is_muted: muted,
-                        is_playing_audio: speaking,
-                    },
-                }))
-            }
-        }
+            log.debug(`Voice detected from ${get(user).name}.`)
+            speaking = true
 
-        checker = setInterval(() => updateMeta(did), 300)
-    })
+            updateMeta(did)
+        },
+        onVoiceStop: () => {
+            voiceStopTimeout = setTimeout(() => {
+                VoiceRTCInstance.localVideoCurrentSrc!.volume = 0
+                let user = Store.getUser(did)
+                log.debug(`Voice Stopped from ${get(user).name}.`)
+                speaking = false
+                updateMeta(did)
+            }, 200)
+        },
+    }
+    const voiceDetector = vad(audioContext, stream, options)
+    voiceDetector.connect()
 
     return {
         remove: () => {
             analyser.disconnect()
             if (noiseSuppressionNode) noiseSuppressionNode.disconnect()
-            if (checker) clearInterval(checker)
+            voiceDetector.disconnect()
+            voiceDetector.destroy()
         },
     }
 }
@@ -177,7 +206,7 @@ export class Participant {
         if (this.streamHandler) {
             this.streamHandler.remove()
         }
-        this.streamHandler = handleStreamMeta(this.did, stream)
+        this.streamHandler = await handleStreamMeta(this.did, stream)
         this.stream = stream
     }
 
@@ -219,6 +248,9 @@ export class CallRoom {
             if (!this.start) {
                 this.start = new Date()
             }
+        })
+        room.onPeerTrack((stream, peer, _meta) => {
+            log.debug(`Receiving track from ${peer}`)
         })
         room.onPeerLeave(peer => {
             log.debug(`Peer ${peer} left the room`)
@@ -409,6 +441,8 @@ export class VoiceRTC {
     }
 
     private async setupLocalPeer(reset?: boolean) {
+        // TODO(Lucas): Work on that in a next PR
+        // this.testGoodRelaysForCall()
         if ((reset && this.localPeer) || this.localPeer?.disconnected || this.localPeer?.destroyed) {
             this.localPeer.destroy()
             this.localPeer = null
@@ -604,14 +638,63 @@ export class VoiceRTC {
         return accepted
     }
 
+    /**
+     * Tests the connectivity of relay servers for initiating calls.
+     *
+     * This method iterates over a list of relay URLs specified in `relaysToTest` and attempts to establish a WebSocket
+     * connection with each one. It performs the following actions for each relay:
+     *
+     * - **On Successful Connection (`socket.onopen`):**
+     *   - Adds the relay URL to the `relaysWithSuccessfulConnection` array.
+     *   - Sends a "ping" message over the WebSocket connection.
+     *
+     * - **On Connection Error (`socket.onerror`):**
+     *   - Logs a warning message with the relay URL and error details.
+     *   - Removes the relay from the `remainingRelays` array.
+     *   - Closes the WebSocket connection.
+     *   - Updates the `relaysAvailable` store with the updated list of remaining relays.
+     *
+     * After testing all relays, it logs the list of relays with successful connections for debugging purposes.
+     *
+     * **Side Effects:**
+     * - Updates the `relaysAvailable` store by removing relays that failed to connect.
+     * - Logs warnings and debug information to assist with monitoring and troubleshooting.
+     *
+     * @private
+     */
+    private testGoodRelaysForCall() {
+        let remainingRelays: string[] = get(relaysAvailable)
+        let relaysWithSuccessfulConnection: string[] = []
+        for (let i = 0; i < relaysToTest.length; i++) {
+            let currentRelayUrl = relaysToTest[i]
+
+            const socket = new WebSocket(currentRelayUrl)
+
+            socket.onerror = error => {
+                remainingRelays = remainingRelays.filter(relay => relay !== currentRelayUrl)
+                socket.close()
+                relaysAvailable.set(remainingRelays)
+            }
+
+            socket.onopen = () => {
+                relaysWithSuccessfulConnection.push(currentRelayUrl)
+                socket.send("ping")
+            }
+        }
+        log.debug(`Relays connected: ${relaysWithSuccessfulConnection}`)
+    }
+
     private createAndSetRoom() {
         log.debug(`Creating/Joining room in channel ${this.channel}`)
+        log.info("Remaining relay urls to create room: ", get(relaysAvailable))
+
         Store.updateMuted(true)
+
         this.call = new CallRoom(
             joinRoom(
                 {
                     appId: "uplink",
-                    relayUrls: ["wss://nostr-pub.wellorder.net", "wss://relay.snort.social", "wss://nostr.oxtr.dev", "wss://relay.nostr.band", "wss://nostr.mom", "wss://nostr-relay.digitalmob.ro"],
+                    // relayUrls: get(relaysAvailable),
                     relayRedundancy: 3,
                 },
                 this.channel!
@@ -651,6 +734,7 @@ export class VoiceRTC {
     }
 
     async leaveCall(sendEndCallMessage = false) {
+        callScreenVisible.set(false)
         callInProgress.set(null)
         timeCallStarted.set(null)
         usersDeniedTheCall.set([])
@@ -696,7 +780,7 @@ export class VoiceRTC {
             if (this.localStreamHandler) {
                 this.localStreamHandler.remove()
             }
-            this.localStreamHandler = handleStreamMeta(get(Store.state.user).key, this.localStream)
+            this.localStreamHandler = await handleStreamMeta(get(Store.state.user).key, this.localStream)
             if (this.localVideoCurrentSrc) {
                 this.localVideoCurrentSrc.srcObject = this.localStream
                 await this.localVideoCurrentSrc.play()
@@ -711,10 +795,7 @@ export class VoiceRTC {
         let localStream
         localStream = await navigator.mediaDevices.getUserMedia({
             video: true,
-            audio: {
-                echoCancellation: true,
-                noiseSuppression: true,
-            },
+            audio: true,
         })
         localStream.getVideoTracks().forEach(track => {
             track.enabled = this.callOptions.video.enabled
