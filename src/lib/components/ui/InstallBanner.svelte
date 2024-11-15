@@ -34,11 +34,15 @@
         return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window
     }
 
+    function isCapacitor(): boolean {
+        return typeof window !== "undefined" && "Capacitor" in window
+    }
+
     function isBannerClosed(): boolean {
         return localStorage.getItem("install-banner-dismissed") === "true"
     }
 
-    let showBanner = !(isElectron() || isTauri() || isBannerClosed())
+    let showBanner = !(isElectron() || isTauri() || isCapacitor() || isBannerClosed())
     let platform = detectPlatform()
 
     function closeBanner() {

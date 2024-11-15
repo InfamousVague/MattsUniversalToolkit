@@ -66,33 +66,16 @@ jobs:
               if: matrix.platform == 'ubuntu-latest'
               uses: android-actions/setup-android@v3.2.1
 
-            - name: Setup NDK
+            - name: Sync Capacitor Assets 🔨
               if: matrix.platform == 'ubuntu-latest'
-              uses: nttld/setup-ndk@v1
-              with:
-                  ndk-version: r26d
-
-            - name: Setup Android Env Variables
-              if: matrix.platform == 'ubuntu-latest'
-              run: |
-                  export JAVA_HOME=/opt/android-studio/jbr
-                  export ANDROID_HOME="$HOME/Android/Sdk"
-                  export NDK_HOME="$ANDROID_HOME/ndk/$(ls -1 $ANDROID_HOME/ndk)"
-
-            - name: Install Android targets
-              if: matrix.platform == 'ubuntu-latest'
-              run: rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
-
-            - name: Build APK for Android
-              if: matrix.platform == 'ubuntu-latest'
-              run: npm run tauri android build -- --apk
+              run: npx cap sync && npx cap copy android && cd android && ./gradlew assembleDebug
 
             - name: Upload APK
               if: matrix.platform == 'ubuntu-latest'
               uses: actions/upload-artifact@v4.4.3
               with:
                   name: build-android
-                  path: src-tauri/gen/android/app/build/outputs/apk/arm64/debug/*.apk
+                  path: android/app/build/outputs/apk/debug/app-debug.apk
                   retention-days: 5
 
             - name: Upload macOS installer
