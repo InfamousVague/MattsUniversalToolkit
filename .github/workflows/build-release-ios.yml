@@ -39,11 +39,6 @@ jobs:
                   rustup target add x86_64-apple-ios
                   rustup target add aarch64-apple-ios-sim
 
-            # Set up Apple Developer account for Xcode without storing in keychain
-            - name: Set Up Xcode Account
-              run: |
-                  xcrun altool --authenticate -u "$APPLE_ID" -p "$APPLE_PASSWORD"
-
             # Set up keychain and import certificate
             - name: Set Up Keychain and Import Certificate
               env:
@@ -62,9 +57,9 @@ jobs:
                   security unlock-keychain -p "" build.keychain
                   security set-key-partition-list -S apple-tool:,apple: -k "" build.keychain
 
-            # Find and verify Xcode project
-            - name: Find and Verify Xcode Project
-              id: find_xcodeproj
+            # Find and verify Xcode project and extract project info
+            - name: Find and Extract Info from Xcode Project
+              id: extract_xcode_info
               run: |
                   PROJECT_PATH="./src-tauri/gen/apple/uplink.xcodeproj"
                   if [ ! -d "$PROJECT_PATH" ]; then
@@ -76,13 +71,20 @@ jobs:
                       fi
                       PROJECT_PATH="$ALTERNATE_PROJECT_PATH"
                   fi
+                  
+                  # Extract the available schemes in the Xcode project
+                  SCHEMES=$(xcodebuild -list -project "$PROJECT_PATH" | grep -E '^[A-Za-z0-9_]+$')
+                  echo "Available schemes in project: $SCHEMES"
                   echo "PROJECT_PATH=$PROJECT_PATH" >> $GITHUB_ENV
+                  echo "SCHEMES=$SCHEMES" >> $GITHUB_ENV
 
             # Build the iOS app
             - name: Build iOS App
               run: |
+                  # Use the first scheme (or specify a specific one from the extracted list)
+                  SCHEME="${{ env.SCHEMES }}"  # If you want to select a specific scheme, modify this line
                   xcodebuild -project "$PROJECT_PATH" \
-                             -scheme uplink_iOS \
+                             -scheme "$SCHEME" \
                              -destination generic/platform=iOS \
                              -archivePath App.xcarchive archive \
                              -allowProvisioningUpdates
