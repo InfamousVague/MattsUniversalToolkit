@@ -63,12 +63,13 @@ jobs:
             # Verify that the xcodeproj file exists in the generated path
             - name: Check if Xcode project exists
               run: |
-                  # Adjust path to the generated project
-                  if [ ! -f "/Users/runner/work/UplinkWeb/UplinkWeb/src-tauri/gen/apple/uplink.xcodeproj" ]; then
-                    echo "Xcode project not found at expected location: /Users/runner/work/UplinkWeb/UplinkWeb/src-tauri/gen/apple/uplink.xcodeproj";
+                  if [ ! -f "./src-tauri/gen/apple/uplink.xcodeproj" ]; then
+                    echo "Xcode project not found at expected location: ./src-tauri/gen/apple/uplink.xcodeproj";
                     echo "Listing contents of src-tauri/gen/apple/ for verification:";
-                    ls -la /Users/runner/work/UplinkWeb/UplinkWeb/src-tauri/gen/apple/
+                    ls -la ./src-tauri/gen/apple/
                     exit 1;
+                  else
+                    echo "Xcode project found: ./src-tauri/gen/apple/uplink.xcodeproj";
                   fi
 
             # Build the iOS app using the generated project path
@@ -78,8 +79,8 @@ jobs:
 
             - name: Create IPA for iOS
               run: |
-                  xcodebuild -project /Users/runner/work/UplinkWeb/UplinkWeb/src-tauri/gen/apple/uplink.xcodeproj \
-                             -scheme App \   # Replace "App" with the actual scheme name if different
+                  xcodebuild -project ./src-tauri/gen/apple/uplink.xcodeproj \
+                             -scheme uplink_iOS \  # Change this if the scheme name is different
                              -destination generic/platform=iOS \
                              -archivePath App.xcarchive archive \
                              DEVELOPMENT_TEAM="${{ secrets.MACOS_NOTARIZATION_TEAM_ID }}" \
@@ -89,7 +90,7 @@ jobs:
             - name: Export IPA
               run: |
                   xcodebuild -exportArchive -archivePath App.xcarchive \
-                             -exportOptionsPlist ./src-tauri/ios/exportOptions.plist \
+                             -exportOptionsPlist ./src-tauri/ios/ExportOptions.plist \
                              -exportPath output \
                              -allowProvisioningUpdates
 
