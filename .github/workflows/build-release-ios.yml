@@ -27,6 +27,8 @@ jobs:
                   # Import the certificate
                   echo "$APPLE_CERTIFICATE" | base64 --decode > certificate.p12
                   security import certificate.p12 -k build.keychain -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+                  # Ensure the provisioning profiles directory exists
+                  mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles/
                   # Import the provisioning profile
                   echo "$PROVISIONING_PROFILE" | base64 --decode > provisioning_profile.mobileprovision
                   cp provisioning_profile.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/
