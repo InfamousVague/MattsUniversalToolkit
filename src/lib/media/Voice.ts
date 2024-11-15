@@ -28,6 +28,7 @@ export const timeCallStarted: Writable<Date | null> = writable(null)
 export const callInProgress: Writable<string | null> = writable(null)
 export const makeCallSound = writable<SoundHandler | undefined>(undefined)
 export const callScreenVisible = writable(false)
+export const usersDidInActiveCall = writable<string[]>([])
 
 const relaysToTest = [
     "wss://nostr-pub.wellorder.net",
@@ -155,6 +156,7 @@ async function handleStreamMeta(did: string, stream: MediaStream): Promise<Strea
             }, 200)
         },
     }
+
     const voiceDetector = vad(audioContext, stream, options)
     voiceDetector.connect()
 
@@ -235,6 +237,9 @@ export class CallRoom {
         })
         let [did_ch, did_rv] = room.makeAction<string>("did_sync")
         did_rv((did, peer) => {
+            if (!get(usersDidInActiveCall).includes(did)) {
+                usersDidInActiveCall.update(u => [...u, did])
+            }
             this.participants[did] = new Participant(did, peer)
         })
         room.onPeerJoin(async peer => {
@@ -249,13 +254,14 @@ export class CallRoom {
                 this.start = new Date()
             }
         })
-        room.onPeerTrack((stream, peer, _meta) => {
+        room.onPeerTrack((_, peer, _meta) => {
             log.debug(`Receiving track from ${peer}`)
         })
         room.onPeerLeave(peer => {
             log.debug(`Peer ${peer} left the room`)
             let participant = Object.entries(this.participants).find(p => p[1].remotePeerId === peer)
             if (participant) {
+                usersDidInActiveCall.update(u => u.filter(did => did !== participant[0]))
                 VoiceRTCInstance.remoteVideoCreator.delete(participant[0])
                 delete this.participants[participant[0]]
             }
@@ -272,8 +278,6 @@ export class CallRoom {
                 participant[1].handleRemoteStream(stream)
             }
         })
-        room.onPeerTrack((stream, peer, _meta) => {})
-        // room.onPeerTrack((stream, peer, meta) => {})
     }
 
     toggleStreams(state: boolean, type: ToggleType) {

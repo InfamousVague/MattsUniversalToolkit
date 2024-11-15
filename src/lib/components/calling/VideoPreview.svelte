@@ -1,6 +1,5 @@
 <script lang="ts">
-    import CallScreen from "$lib/components/calling/CallScreen.svelte"
-    import { callScreenVisible, usersAcceptedTheCall } from "$lib/media/Voice"
+    import { callScreenVisible, usersDidInActiveCall } from "$lib/media/Voice"
     import { Store } from "$lib/state/Store"
     import { onMount } from "svelte"
     import { page } from "$app/stores"
@@ -10,6 +9,7 @@
     import { UIStore } from "$lib/state/ui"
     import { log } from "$lib/utils/Logger"
     import Icon from "$lib/elements/Icon.svelte"
+    import { _ } from "svelte-i18n"
 
     let showVideoPreview = false
     let previewVideo: HTMLDivElement
@@ -29,15 +29,15 @@
         })
     }
 
-    $: filteredUsers = sortUsers($usersAcceptedTheCall.filter(user => $userCache[user] && $userCache[user].key !== ownUserKey && $remoteStreams[user]) || [])
+    $: filteredUsers = sortUsers($usersDidInActiveCall.filter(user => $userCache[user] && $userCache[user].key !== ownUserKey && $remoteStreams[user]) || [])
     let lastSortedUsers: string[] = []
 
     $: {
-        if ($usersAcceptedTheCall.length > 1) {
+        if ($usersDidInActiveCall.length > 1) {
             const usersPlayingAudio = filteredUsers.filter(user => $userCache[user].media.is_playing_audio)
             if (usersPlayingAudio.length > 0 && !arraysEqual(usersPlayingAudio, lastSortedUsers)) {
-                filteredUsers = sortUsers($usersAcceptedTheCall)
-                usersAcceptedTheCall.set(filteredUsers)
+                filteredUsers = sortUsers($usersDidInActiveCall)
+                usersDidInActiveCall.set(filteredUsers)
                 lastSortedUsers = [...usersPlayingAudio]
             }
         }
@@ -163,7 +163,7 @@
 
 <div id="video-preview" class={showVideoPreview ? "video-preview" : "hidden"}>
     <div id="preview-video" bind:this={previewVideo}>
-        {#if chat !== undefined && get(Store.state.activeCall) !== null}
+        {#if chat !== undefined && get(Store.state.activeCall) !== null && filteredUsers.length > 0}
             <div class="video-grid" style="grid-template-columns: {gridTemplateColumns};">
                 {#each filteredUsers.slice(0, 3) as user}
                     {#if $remoteStreams[user]}
@@ -190,6 +190,11 @@
                         {/if}
                     {/if}
                 {/each}
+            </div>
+        {:else if chat !== undefined && get(Store.state.activeCall) !== null && filteredUsers.length === 0}
+            <div class="loading-when-no-answer">
+                <div class="spinner"></div>
+                <p>{$_("settings.calling.waitingOthersToJoin")}</p>
             </div>
         {/if}
     </div>
@@ -308,5 +313,36 @@
                 }
             }
         }
+    }
+
+    .spinner {
+        width: 48px;
+        height: 48px;
+        border: 8px solid #f3f3f3;
+        border-top: 8px solid #3498db;
+        border-radius: 50%;
+        animation: spin 2s linear infinite;
+    }
+
+    @keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    .loading-when-no-answer {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        text-align: center;
+        margin: 32px;
+    }
+
+    .loading-when-no-answer p {
+        margin-top: 16px;
     }
 </style>
