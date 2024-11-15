@@ -60,22 +60,22 @@ jobs:
             - name: Initialize Xcode Project for iOS
               run: npm run tauri ios init
 
-            # Verify that the xcodeproj file exists
+            # Verify that the xcodeproj file exists in the generated path
             - name: Check if Xcode project exists
               run: |
-                  if [ ! -f "./ios/uplink.xcodeproj" ]; then
-                    echo "Xcode project not found in ./ios/. Check your project setup.";
+                  if [ ! -f "./src-tauri/gen/apple/uplink.xcodeproj" ]; then
+                    echo "Xcode project not found in ./src-tauri/gen/apple/. Check your project setup.";
                     exit 1;
                   fi
 
-            # Run command to build iOS using the xcodeproj file
+            # Run command to build iOS using the generated xcodeproj file
             - name: Build iOS App
               run: |
                   npm run tauri ios build -- --export-method app-store-connect
 
             - name: Create IPA for iOS
               run: |
-                  xcodebuild -project ./ios/uplink.xcodeproj \
+                  xcodebuild -project ./src-tauri/gen/apple/uplink.xcodeproj \
                              -scheme App \   # Replace "App" with the actual scheme name if different
                              -destination generic/platform=iOS \
                              -archivePath App.xcarchive archive \
