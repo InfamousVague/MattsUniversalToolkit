@@ -12,14 +12,6 @@ jobs:
             - name: Checkout source
               uses: actions/checkout@v4.2.2
 
-            # Verify that the xcodeproj file exists in the generated path
-            - name: Check if Xcode project exists
-              run: |
-                  if [ ! -f "./src-tauri/gen/apple/uplink.xcodeproj" ]; then
-                    echo "Xcode project not found in ./src-tauri/gen/apple/. Check your project setup.";
-                    exit 1;
-                  fi
-                  
             - name: Install Rust Stable
               uses: dtolnay/rust-toolchain@stable
 
@@ -65,14 +57,28 @@ jobs:
                   rustup target add x86_64-apple-ios
                   rustup target add aarch64-apple-ios-sim
 
-            # Run command to build iOS using the generated xcodeproj file
+            - name: Initialize Xcode Project for iOS
+              run: npm run tauri ios init
+
+            # Verify that the xcodeproj file exists in the generated path
+            - name: Check if Xcode project exists
+              run: |
+                  # Adjust path to the generated project
+                  if [ ! -f "/Users/runner/work/UplinkWeb/UplinkWeb/src-tauri/gen/apple/uplink.xcodeproj" ]; then
+                    echo "Xcode project not found at expected location: /Users/runner/work/UplinkWeb/UplinkWeb/src-tauri/gen/apple/uplink.xcodeproj";
+                    echo "Listing contents of src-tauri/gen/apple/ for verification:";
+                    ls -la /Users/runner/work/UplinkWeb/UplinkWeb/src-tauri/gen/apple/
+                    exit 1;
+                  fi
+
+            # Build the iOS app using the generated project path
             - name: Build iOS App
               run: |
                   npm run tauri ios build -- --export-method app-store-connect
 
             - name: Create IPA for iOS
               run: |
-                  xcodebuild -project ./src-tauri/gen/apple/uplink.xcodeproj \
+                  xcodebuild -project /Users/runner/work/UplinkWeb/UplinkWeb/src-tauri/gen/apple/uplink.xcodeproj \
                              -scheme App \   # Replace "App" with the actual scheme name if different
                              -destination generic/platform=iOS \
                              -archivePath App.xcarchive archive \
