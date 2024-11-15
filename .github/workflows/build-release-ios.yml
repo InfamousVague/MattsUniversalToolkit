@@ -57,9 +57,6 @@ jobs:
                   rustup target add x86_64-apple-ios
                   rustup target add aarch64-apple-ios-sim
 
-            - name: Create XCode project
-              run: npm run tauri ios init
-
             - name: Run command to build iOS
               run: |
                   npm run tauri ios build -- --export-method app-store-connect
@@ -71,8 +68,8 @@ jobs:
                              -scheme App \
                              -destination generic/platform=iOS \
                              -archivePath App.xcarchive archive \
-                              DEVELOPMENT_TEAM="${{ secrets.MACOS_NOTARIZATION_TEAM_ID }}" \
-                             CODE_SIGN_IDENTITY="${{ secrets.MACOS_CERTIFICATE_NAME }}"
+                             DEVELOPMENT_TEAM="${{ secrets.MACOS_NOTARIZATION_TEAM_ID }}" \
+                             CODE_SIGN_IDENTITY="${{ secrets.MACOS_CERTIFICATE_NAME }}" \
                              PROVISIONING_PROFILE_SPECIFIER="signingprofileuplink"
 
             - name: Export IPA
@@ -83,11 +80,14 @@ jobs:
                              -allowProvisioningUpdates
 
             - name: Notarize App with Apple
+              env:
+                  APPLE_ID: ${{ secrets.MACOS_NOTARIZATION_APPLE_ID }}
+                  APPLE_PASSWORD: ${{ secrets.MACOS_NOTARIZATION_PWD }}
               run: |
                   xcrun altool --notarize-app -f output/App.ipa \
-                           --primary-bundle-id "com.satellite.uplink.app" \
-                           -u "sara@satellite.im" \
-                           -p "ljop-ijuy-fgyd-pamc"
+                               --primary-bundle-id "com.satellite.uplink.app" \
+                               -u "$APPLE_ID" \
+                               -p "$APPLE_PASSWORD"
 
             - name: Upload release bundle
               uses: actions/upload-artifact@v4.4.3
