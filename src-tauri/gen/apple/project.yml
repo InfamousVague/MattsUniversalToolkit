@@ -1,6 +1,6 @@
 name: uplink
 options:
-  bundleIdPrefix: im.satellite.uplink
+  bundleIdPrefix: com.satellite.uplink.app
   deploymentTarget:
     iOS: 13.0
 fileGroups: [../../src]
@@ -11,7 +11,7 @@ settingGroups:
   app:
     base:
       PRODUCT_NAME: Uplink
-      PRODUCT_BUNDLE_IDENTIFIER: im.satellite.uplink
+      PRODUCT_BUNDLE_IDENTIFIER: com.satellite.uplink.app
 targetTemplates:
   app:
     type: application
