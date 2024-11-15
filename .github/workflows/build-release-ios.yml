@@ -84,8 +84,6 @@ jobs:
                              -scheme uplink_iOS \
                              -destination generic/platform=iOS \
                              -archivePath App.xcarchive archive \
-                             DEVELOPMENT_TEAM="${{ secrets.MACOS_NOTARIZATION_TEAM_ID }}" \
-                             CODE_SIGN_IDENTITY="${{ secrets.MACOS_CERTIFICATE_NAME }}" \
                              -allowProvisioningUpdates
 
             # Export the IPA
