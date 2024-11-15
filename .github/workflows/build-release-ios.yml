@@ -86,7 +86,6 @@ jobs:
                              -archivePath App.xcarchive archive \
                              DEVELOPMENT_TEAM="${{ secrets.MACOS_NOTARIZATION_TEAM_ID }}" \
                              CODE_SIGN_IDENTITY="${{ secrets.MACOS_CERTIFICATE_NAME }}" \
-                             PROVISIONING_PROFILE_SPECIFIER="signingprofileuplink" \
                              -allowProvisioningUpdates
 
             # Export the IPA
