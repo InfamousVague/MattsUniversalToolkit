@@ -44,15 +44,11 @@ jobs:
               env:
                   APPLE_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
                   APPLE_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PWD }}
-                  PROVISIONING_PROFILE: ${{ secrets.PROVISIONING_PROFILE }}
               run: |
                   security create-keychain -p "" build.keychain
                   security set-keychain-settings -lut 21600 build.keychain
                   echo "$APPLE_CERTIFICATE" | base64 --decode > certificate.p12
                   security import certificate.p12 -k build.keychain -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
-                  mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles/
-                  echo "$PROVISIONING_PROFILE" | base64 --decode > provisioning_profile.mobileprovision
-                  cp provisioning_profile.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/
                   security list-keychains -d user -s build.keychain
                   security unlock-keychain -p "" build.keychain
                   security set-key-partition-list -S apple-tool:,apple: -k "" build.keychain
@@ -73,22 +69,36 @@ jobs:
                   fi
                   echo "PROJECT_PATH=$PROJECT_PATH" >> $GITHUB_ENV
 
-            # Build the iOS app
+            # Build the iOS app with manual signing
             - name: Build iOS App
+              env:
+                  DEVELOPMENT_TEAM: ${{ secrets.MACOS_NOTARIZATION_TEAM_ID }}  # Set Team ID
+                  CODE_SIGN_IDENTITY: ${{ secrets.MACOS_CERTIFICATE_NAME }}   # Set Code Signing Identity
               run: |
                   xcodebuild -project "$PROJECT_PATH" \
                              -scheme uplink_iOS \
                              -destination generic/platform=iOS \
                              -archivePath App.xcarchive archive \
-                             -allowProvisioningUpdates
+                             -allowProvisioningUpdates \
+                             -signingStyle manual \
+                             -codeSignIdentity "$CODE_SIGN_IDENTITY" \
+                             -developmentTeam "$DEVELOPMENT_TEAM" \
+                             -provisioningProfile ""  # Leave empty if no provisioning profile is needed
 
             # Export the IPA
             - name: Export IPA
+              env:
+                  DEVELOPMENT_TEAM: ${{ secrets.MACOS_NOTARIZATION_TEAM_ID }}  # Set Team ID
+                  CODE_SIGN_IDENTITY: ${{ secrets.MACOS_CERTIFICATE_NAME }}   # Set Code Signing Identity
               run: |
                   xcodebuild -exportArchive -archivePath App.xcarchive \
                              -exportOptionsPlist ./src-tauri/ios/ExportOptions.plist \
                              -exportPath output \
-                             -allowProvisioningUpdates
+                             -allowProvisioningUpdates \
+                             -signingStyle manual \
+                             -codeSignIdentity "$CODE_SIGN_IDENTITY" \
+                             -developmentTeam "$DEVELOPMENT_TEAM" \
+                             -provisioningProfile ""  # Leave empty if no provisioning profile is needed
 
             # Notarize the app
             - name: Notarize App
