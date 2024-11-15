@@ -69,7 +69,7 @@ jobs:
                   fi
                   echo "PROJECT_PATH=$PROJECT_PATH" >> $GITHUB_ENV
 
-            # Build the iOS app with manual signing
+            # Build the iOS app with manual signing (no signingStyle flag)
             - name: Build iOS App
               env:
                   DEVELOPMENT_TEAM: ${{ secrets.MACOS_NOTARIZATION_TEAM_ID }}  # Set Team ID
@@ -80,12 +80,11 @@ jobs:
                              -destination generic/platform=iOS \
                              -archivePath App.xcarchive archive \
                              -allowProvisioningUpdates \
-                             -signingStyle manual \
                              -codeSignIdentity "$CODE_SIGN_IDENTITY" \
                              -developmentTeam "$DEVELOPMENT_TEAM" \
                              -provisioningProfile ""  # Leave empty if no provisioning profile is needed
 
-            # Export the IPA
+            # Export the IPA with manual signing (no signingStyle flag)
             - name: Export IPA
               env:
                   DEVELOPMENT_TEAM: ${{ secrets.MACOS_NOTARIZATION_TEAM_ID }}  # Set Team ID
@@ -95,7 +94,6 @@ jobs:
                              -exportOptionsPlist ./src-tauri/ios/ExportOptions.plist \
                              -exportPath output \
                              -allowProvisioningUpdates \
-                             -signingStyle manual \
                              -codeSignIdentity "$CODE_SIGN_IDENTITY" \
                              -developmentTeam "$DEVELOPMENT_TEAM" \
                              -provisioningProfile ""  # Leave empty if no provisioning profile is needed
