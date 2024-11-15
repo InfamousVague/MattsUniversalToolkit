@@ -23,12 +23,15 @@ jobs:
                   # Create a temporary keychain
                   security create-keychain -p "" build.keychain
                   security set-keychain-settings -lut 21600 build.keychain
+
                   # Import the certificate
                   echo "$APPLE_CERTIFICATE" | base64 --decode > certificate.p12
                   security import certificate.p12 -k build.keychain -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+
                   # Set the keychain as default
                   security list-keychains -d user -s build.keychain
                   security unlock-keychain -p "" build.keychain
+
                   # Give the codesign tool access to the keychain
                   security set-key-partition-list -S apple-tool:,apple: -k "" build.keychain
 
@@ -54,29 +57,26 @@ jobs:
                   rustup target add x86_64-apple-ios
                   rustup target add aarch64-apple-ios-sim
 
-            # Enable automatic signing and allow provisioning updates
-            - name: Enable Automatic Signing
-              run: |
-                  xcodebuild -workspace ./ios/App/App.xcworkspace \
-                             -scheme App \
-                             -allowProvisioningUpdates
+            - name: Initialize Xcode Project for iOS
+              run: npm run tauri ios init
 
-            # Run a clean build to remove any cached settings
-            - name: Clean Xcode build
+            # Verify that the xcodeproj file exists
+            - name: Check if Xcode project exists
               run: |
-                  xcodebuild -workspace ./ios/App/App.xcworkspace \
-                             -scheme App \
-                             -configuration Release clean
+                  if [ ! -f "./ios/uplink.xcodeproj" ]; then
+                    echo "Xcode project not found in ./ios/. Check your project setup.";
+                    exit 1;
+                  fi
 
-            - name: Run command to build iOS
+            # Run command to build iOS using the xcodeproj file
+            - name: Build iOS App
               run: |
                   npm run tauri ios build -- --export-method app-store-connect
 
-            # Create IPA for iOS without specifying the provisioning profile, allowing automatic management
             - name: Create IPA for iOS
               run: |
-                  xcodebuild -workspace ./ios/App/App.xcworkspace \
-                             -scheme App \
+                  xcodebuild -project ./ios/uplink.xcodeproj \
+                             -scheme App \   # Replace "App" with the actual scheme name if different
                              -destination generic/platform=iOS \
                              -archivePath App.xcarchive archive \
                              DEVELOPMENT_TEAM="${{ secrets.MACOS_NOTARIZATION_TEAM_ID }}" \
