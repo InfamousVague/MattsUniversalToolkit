@@ -69,6 +69,15 @@ jobs:
                   fi
                   echo "PROJECT_PATH=$PROJECT_PATH" >> $GITHUB_ENV
 
+            # Build the iOS app without signing
+            - name: Build iOS App
+              run: |
+                  xcodebuild -project "$PROJECT_PATH" \
+                             -scheme uplink_iOS \
+                             -destination generic/platform=iOS \
+                             -archivePath App.xcarchive archive \
+                             -allowProvisioningUpdates
+
             # Build the iOS app with manual signing
             - name: Build iOS App
               env:
