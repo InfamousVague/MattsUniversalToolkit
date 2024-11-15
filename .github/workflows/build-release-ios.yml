@@ -23,15 +23,12 @@ jobs:
                   # Create a temporary keychain
                   security create-keychain -p "" build.keychain
                   security set-keychain-settings -lut 21600 build.keychain
-
                   # Import the certificate
                   echo "$APPLE_CERTIFICATE" | base64 --decode > certificate.p12
                   security import certificate.p12 -k build.keychain -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
-
                   # Set the keychain as default
                   security list-keychains -d user -s build.keychain
                   security unlock-keychain -p "" build.keychain
-
                   # Give the codesign tool access to the keychain
                   security set-key-partition-list -S apple-tool:,apple: -k "" build.keychain
 
@@ -60,27 +57,41 @@ jobs:
             - name: Initialize Xcode Project for iOS
               run: npm run tauri ios init
 
-            # Verify that the xcodeproj file exists in the generated path
-            - name: Check if Xcode project exists
+            # Check for the location of the Xcode project file and store it as a variable
+            - name: Find and Verify Xcode Project
+              id: find_xcodeproj
               run: |
-                  if [ ! -f "./src-tauri/gen/apple/uplink.xcodeproj" ]; then
-                    echo "Xcode project not found at expected location: ./src-tauri/gen/apple/uplink.xcodeproj";
-                    echo "Listing contents of src-tauri/gen/apple/ for verification:";
+                  # Check if the project is at the expected path
+                  PROJECT_PATH="./src-tauri/gen/apple/uplink.xcodeproj"
+                  if [ ! -d "$PROJECT_PATH" ]; then
+                    # List the contents for debug purposes
+                    echo "Xcode project not found at expected location: $PROJECT_PATH"
+                    echo "Attempting to find uplink.xcodeproj in ./src-tauri/gen/apple/"
                     ls -la ./src-tauri/gen/apple/
-                    exit 1;
-                  else
-                    echo "Xcode project found: ./src-tauri/gen/apple/uplink.xcodeproj";
-                  fi
 
-            # Build the iOS app using the generated project path
+                    # Check alternate paths in src-tauri/gen/apple
+                    ALTERNATE_PROJECT_PATH=$(find ./src-tauri/gen/apple -name "*.xcodeproj" | head -n 1)
+                    if [ -n "$ALTERNATE_PROJECT_PATH" ]; then
+                      PROJECT_PATH="$ALTERNATE_PROJECT_PATH"
+                      echo "Found project at alternative location: $PROJECT_PATH"
+                    else
+                      echo "Could not locate an Xcode project. Exiting."
+                      exit 1
+                    fi
+                  fi
+                  
+                  # Output path for use in future steps
+                  echo "PROJECT_PATH=$PROJECT_PATH" >> $GITHUB_ENV
+
+            # Build the iOS app using the found project path
             - name: Build iOS App
               run: |
                   npm run tauri ios build -- --export-method app-store-connect
 
             - name: Create IPA for iOS
               run: |
-                  xcodebuild -project ./src-tauri/gen/apple/uplink.xcodeproj \
-                             -scheme uplink_iOS \  # Change this if the scheme name is different
+                  xcodebuild -project "$PROJECT_PATH" \
+                             -scheme uplink_iOS \  # Change if scheme name differs
                              -destination generic/platform=iOS \
                              -archivePath App.xcarchive archive \
                              DEVELOPMENT_TEAM="${{ secrets.MACOS_NOTARIZATION_TEAM_ID }}" \
