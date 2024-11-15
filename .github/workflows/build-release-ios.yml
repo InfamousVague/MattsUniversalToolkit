@@ -1,103 +1,91 @@
-name: Build iOS
+name: Build iOS Release
 
 on:
     pull_request:
         types: [opened, synchronize, reopened, edited]
 
 jobs:
-    build:
-        runs-on: macos-13
-        name: Build iOS app
+    build-ios-release:
+        runs-on: macos-latest
+        permissions: write-all
+
         steps:
-            - name: Checkout source
+            # Checkout the code
+            - name: Checkout Source
               uses: actions/checkout@v4.2.2
 
-            - name: Install Rust Stable
-              uses: dtolnay/rust-toolchain@stable
-
-            - name: Set up keychain and import certificate
-              env:
-                  APPLE_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
-                  APPLE_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PWD }}
-                  PROVISIONING_PROFILE: ${{ secrets.PROVISIONING_PROFILE }}
-              run: |
-                  # Create a temporary keychain
-                  security create-keychain -p "" build.keychain
-                  security set-keychain-settings -lut 21600 build.keychain
-                  # Import the certificate
-                  echo "$APPLE_CERTIFICATE" | base64 --decode > certificate.p12
-                  security import certificate.p12 -k build.keychain -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
-                  # Ensure the provisioning profiles directory exists
-                  mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles/
-                  # Import the provisioning profile
-                  echo "$PROVISIONING_PROFILE" | base64 --decode > provisioning_profile.mobileprovision
-                  cp provisioning_profile.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/
-                  # Set the keychain as default
-                  security list-keychains -d user -s build.keychain
-                  security unlock-keychain -p "" build.keychain
-                  # Give the codesign tool access to the keychain
-                  security set-key-partition-list -S apple-tool:,apple: -k "" build.keychain
-
-            - name: Set up XCode
-              uses: maxim-lobanov/setup-xcode@v1
-              with:
-                  xcode-version: 14.3.1
-
+            # Set up Node.js
             - name: Setup Node.js
               uses: actions/setup-node@v4.1.0
               with:
                   node-version: lts/*
 
-            - name: Install dependencies
+            # Install Rust
+            - name: Install Rust Stable
+              uses: dtolnay/rust-toolchain@stable
+
+            # Install dependencies
+            - name: Install Frontend Dependencies
               run: npm install
 
+            # Install Tauri CLI
             - name: Install Tauri CLI
               run: npm install -g @tauri-apps/cli
 
-            - name: Set Rust target for iOS
+            # Install CocoaPods
+            - name: Install CocoaPods
+              run: pod install --project-directory=src-tauri/ios
+
+            # Set Rust targets for iOS
+            - name: Set Rust Target for iOS
               run: |
                   rustup target add aarch64-apple-ios
                   rustup target add x86_64-apple-ios
                   rustup target add aarch64-apple-ios-sim
 
-            - name: Initialize Xcode Project for iOS
+            # Initialize Xcode Project for iOS
+            - name: Initialize Xcode Project
               run: npm run tauri ios init
 
-            # Check for the location of the Xcode project file and store it as a variable
+            # Set up keychain and import certificate
+            - name: Set Up Keychain and Import Certificate
+              env:
+                  APPLE_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
+                  APPLE_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PWD }}
+                  PROVISIONING_PROFILE: ${{ secrets.PROVISIONING_PROFILE }}
+              run: |
+                  security create-keychain -p "" build.keychain
+                  security set-keychain-settings -lut 21600 build.keychain
+                  echo "$APPLE_CERTIFICATE" | base64 --decode > certificate.p12
+                  security import certificate.p12 -k build.keychain -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+                  mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles/
+                  echo "$PROVISIONING_PROFILE" | base64 --decode > provisioning_profile.mobileprovision
+                  cp provisioning_profile.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/
+                  security list-keychains -d user -s build.keychain
+                  security unlock-keychain -p "" build.keychain
+                  security set-key-partition-list -S apple-tool:,apple: -k "" build.keychain
+
+            # Find and verify Xcode project
             - name: Find and Verify Xcode Project
               id: find_xcodeproj
               run: |
-                  # Check if the project is at the expected path
                   PROJECT_PATH="./src-tauri/gen/apple/uplink.xcodeproj"
                   if [ ! -d "$PROJECT_PATH" ]; then
-                    # List the contents for debug purposes
-                    echo "Xcode project not found at expected location: $PROJECT_PATH"
-                    echo "Attempting to find uplink.xcodeproj in ./src-tauri/gen/apple/"
-                    ls -la ./src-tauri/gen/apple/
-
-                    # Check alternate paths in src-tauri/gen/apple
-                    ALTERNATE_PROJECT_PATH=$(find ./src-tauri/gen/apple -name "*.xcodeproj" | head -n 1)
-                    if [ -n "$ALTERNATE_PROJECT_PATH" ]; then
+                      echo "Xcode project not found at $PROJECT_PATH"
+                      ALTERNATE_PROJECT_PATH=$(find ./src-tauri/gen/apple -name "*.xcodeproj" | head -n 1)
+                      if [ -z "$ALTERNATE_PROJECT_PATH" ]; then
+                          echo "No Xcode project found, exiting."
+                          exit 1
+                      fi
                       PROJECT_PATH="$ALTERNATE_PROJECT_PATH"
-                      echo "Found project at alternative location: $PROJECT_PATH"
-                    else
-                      echo "Could not locate an Xcode project. Exiting."
-                      exit 1
-                    fi
                   fi
-                  
-                  # Output path for use in future steps
                   echo "PROJECT_PATH=$PROJECT_PATH" >> $GITHUB_ENV
 
-            # Build the iOS app using the found project path
+            # Build the iOS app
             - name: Build iOS App
               run: |
-                  npm run tauri ios build -- --export-method app-store-connect
-
-            - name: Create IPA for iOS
-              run: |
                   xcodebuild -project "$PROJECT_PATH" \
-                             -scheme uplink_iOS \  # Change if scheme name differs
+                             -scheme uplink_iOS \
                              -destination generic/platform=iOS \
                              -archivePath App.xcarchive archive \
                              DEVELOPMENT_TEAM="${{ secrets.MACOS_NOTARIZATION_TEAM_ID }}" \
@@ -105,6 +93,7 @@ jobs:
                              PROVISIONING_PROFILE_SPECIFIER="signingprofileuplink" \
                              -allowProvisioningUpdates
 
+            # Export the IPA
             - name: Export IPA
               run: |
                   xcodebuild -exportArchive -archivePath App.xcarchive \
@@ -112,7 +101,8 @@ jobs:
                              -exportPath output \
                              -allowProvisioningUpdates
 
-            - name: Notarize App with Apple
+            # Notarize the app
+            - name: Notarize App
               env:
                   APPLE_ID: ${{ secrets.MACOS_NOTARIZATION_APPLE_ID }}
                   APPLE_PASSWORD: ${{ secrets.MACOS_NOTARIZATION_PWD }}
@@ -122,13 +112,21 @@ jobs:
                                -u "$APPLE_ID" \
                                -p "$APPLE_PASSWORD"
 
-            - name: Upload release bundle
+            # Rename and prepare the IPA
+            - name: Rename and Prepare IPA
+              run: |
+                  IPA_FILE="output/App.ipa"
+                  NEW_IPA_FILE="output/Uplink_1.0.0.ipa"
+                  mv "$IPA_FILE" "$NEW_IPA_FILE"
+
+            # Upload the IPA as an artifact
+            - name: Upload iOS IPA Artifact
               uses: actions/upload-artifact@v4.4.3
               with:
                   name: app-ios
-                  path: output/
+                  path: output/Uplink_1.0.0.ipa
                   retention-days: 60
 
-            - name: Remove temporary keychain
-              run: |
-                  security delete-keychain build.keychain
+            # Clean up the keychain
+            - name: Remove Temporary Keychain
+              run: security delete-keychain build.keychain
