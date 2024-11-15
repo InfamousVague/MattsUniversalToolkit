@@ -39,11 +39,6 @@ jobs:
                   rustup target add x86_64-apple-ios
                   rustup target add aarch64-apple-ios-sim
 
-            # Set up Apple Developer account for Xcode without storing in keychain
-            - name: Set Up Xcode Account
-              run: |
-                  xcrun altool --authenticate -u "$APPLE_ID" -p "$APPLE_PASSWORD"
-
             # Set up keychain and import certificate
             - name: Set Up Keychain and Import Certificate
               env:
