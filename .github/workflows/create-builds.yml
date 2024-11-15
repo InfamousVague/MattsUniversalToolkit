@@ -68,7 +68,7 @@ jobs:
 
             - name: Sync Capacitor Assets 🔨
               if: matrix.platform == 'ubuntu-latest'
-              run: npx cap sync && npx cap copy android && cd android && ./gradlew assembleDebug
+              run: npx cap sync android && npx cap copy android && cd android && ./gradlew assembleDebug
 
             - name: Upload APK
               if: matrix.platform == 'ubuntu-latest'

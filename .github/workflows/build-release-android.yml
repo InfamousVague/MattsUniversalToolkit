@@ -46,7 +46,7 @@ jobs:
               uses: android-actions/setup-android@v3.2.1
 
             - name: Sync Capacitor Assets 🔨
-              run: npx cap sync && npx cap copy android
+              run: npx cap sync android && npx cap copy android
 
             - name: Build APK with Dynamic Version Name
               run: |
