@@ -39,10 +39,6 @@ jobs:
                   rustup target add x86_64-apple-ios
                   rustup target add aarch64-apple-ios-sim
 
-            # Initialize Xcode Project for iOS
-            - name: Initialize Xcode Project
-              run: npm run tauri ios init
-
             # Set up keychain and import certificate
             - name: Set Up Keychain and Import Certificate
               env:
