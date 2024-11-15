@@ -12,6 +12,14 @@ jobs:
             - name: Checkout source
               uses: actions/checkout@v4.2.2
 
+            # Verify that the xcodeproj file exists in the generated path
+            - name: Check if Xcode project exists
+              run: |
+                  if [ ! -f "./src-tauri/gen/apple/uplink.xcodeproj" ]; then
+                    echo "Xcode project not found in ./src-tauri/gen/apple/. Check your project setup.";
+                    exit 1;
+                  fi
+                  
             - name: Install Rust Stable
               uses: dtolnay/rust-toolchain@stable
 
@@ -56,17 +64,6 @@ jobs:
                   rustup target add aarch64-apple-ios
                   rustup target add x86_64-apple-ios
                   rustup target add aarch64-apple-ios-sim
-
-            - name: Initialize Xcode Project for iOS
-              run: npm run tauri ios init
-
-            # Verify that the xcodeproj file exists in the generated path
-            - name: Check if Xcode project exists
-              run: |
-                  if [ ! -f "./src-tauri/gen/apple/uplink.xcodeproj" ]; then
-                    echo "Xcode project not found in ./src-tauri/gen/apple/. Check your project setup.";
-                    exit 1;
-                  fi
 
             # Run command to build iOS using the generated xcodeproj file
             - name: Build iOS App
