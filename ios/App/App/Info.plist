@@ -22,6 +22,10 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>UIFileSharingEnabled</key>
+	<true/>
+	<key>UISupportsDocumentBrowser</key>
+	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>We need access to your camera to select files.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
