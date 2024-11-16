@@ -661,46 +661,47 @@
                     {/if}
                 </div>
                 <svelte:fragment slot="controls">
-                    <Button
-                        hook="button-chat-call"
-                        tooltip={$_("chat.call")}
-                        tooltipPosition={TooltipPosition.BOTTOM}
-                        loading={loading}
-                        icon
-                        appearance={Appearance.Alt}
-                        disabled={$activeChat.users.length === 0}
-                        on:click={async _ => {
-                            if ($callInProgress !== null) {
-                                notificationThereIsACallInProgress()
-                                return
-                            } else {
-                                Store.setActiveCall($activeChat)
-                                await VoiceRTCInstance.startToMakeACall($activeChat.users, $activeChat.id, true)
-                                activeCallInProgress = true
-                            }
-                        }}>
-                        <Icon icon={Shape.PhoneCall} />
-                    </Button>
-                    <Button
-                        icon
-                        hook="button-chat-video"
-                        tooltip={$_("chat.videocall")}
-                        tooltipPosition={TooltipPosition.BOTTOM}
-                        appearance={Appearance.Alt}
-                        disabled={$activeChat.users.length === 0}
-                        loading={loading}
-                        on:click={async _ => {
-                            if ($callInProgress !== null) {
-                                notificationThereIsACallInProgress()
-                                return
-                            } else {
-                                await VoiceRTCInstance.startToMakeACall($activeChat.users, $activeChat.id)
-                                activeCallInProgress = true
-                                Store.setActiveCall($activeChat)
-                            }
-                        }}>
-                        <Icon icon={Shape.VideoCamera} />
-                    </Button>
+                
+<Button
+    hook="button-chat-call"
+    tooltip={$_("chat.call")}
+    tooltipPosition={TooltipPosition.BOTTOM}
+    loading={loading}
+    icon
+    appearance={Appearance.Alt}
+    disabled={$activeChat.users.length === 0}
+    on:click={async _ => {
+        if ($callInProgress !== null) {
+            notificationThereIsACallInProgress()
+            return
+        } else {
+            Store.setActiveCall($activeChat)
+            await VoiceRTCInstance.startToMakeACall($activeChat.users, $activeChat.id, true)
+            activeCallInProgress = true
+        }
+    }}>
+    <Icon icon={Shape.PhoneCall} />
+</Button>
+<Button
+    icon
+    hook="button-chat-video"
+    tooltip={$_("chat.videocall")}
+    tooltipPosition={TooltipPosition.BOTTOM}
+    appearance={Appearance.Alt}
+    disabled={$activeChat.users.length === 0}
+    loading={loading}
+    on:click={async _ => {
+        if ($callInProgress !== null) {
+            notificationThereIsACallInProgress()
+            return
+        } else {
+            await VoiceRTCInstance.startToMakeACall($activeChat.users, $activeChat.id)
+            activeCallInProgress = true
+            Store.setActiveCall($activeChat)
+        }
+    }}>
+    <Icon icon={Shape.VideoCamera} />
+</Button>
                     <Button
                         icon
                         hook="button-chat-favorite"
@@ -1030,9 +1031,9 @@
                                 },
                             },
                         ]}>
-                        <Button hook="button-chat-add-attachment" slot="content" let:open on:click={open} on:contextmenu={open} icon appearance={Appearance.Alt} tooltip={$_("chat.add_attachment")}>
+                      <!--- <Button hook="button-chat-add-attachment" slot="content" let:open on:click={open} on:contextmenu={open} icon appearance={Appearance.Alt} tooltip={$_("chat.add_attachment")}>
                             <Icon icon={Shape.Plus} />
-                        </Button>
+                        </Button> --> 
                     </ContextMenu>
                 </svelte:fragment>
 

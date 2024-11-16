@@ -26,6 +26,8 @@
 	<true/>
 	<key>UISupportsDocumentBrowser</key>
 	<true/>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>We need access to your microphone to make voice and video calls.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>We need access to your camera to select files.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
