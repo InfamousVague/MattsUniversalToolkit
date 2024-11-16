@@ -163,6 +163,10 @@
 
 <div id="video-preview" class={showVideoPreview ? "video-preview" : "hidden"}>
     <div id="preview-video" bind:this={previewVideo}>
+        <div class="users-in-call">
+            <Icon icon={Shape.Users}></Icon>
+            {filteredUsers.length}
+        </div>
         {#if chat !== undefined && get(Store.state.activeCall) !== null && filteredUsers.length > 0}
             <div class="video-grid" style="grid-template-columns: {gridTemplateColumns};">
                 {#each filteredUsers.slice(0, 3) as user}
@@ -246,6 +250,22 @@
             box-sizing: border-box;
             overflow: hidden;
             align-items: center;
+
+            .users-in-call {
+                position: absolute;
+                display: flex;
+                gap: 4px;
+                bottom: 8px;
+                right: 12px;
+                align-items: center;
+                justify-content: center;
+                background-color: rgba(14, 13, 13, 0.5);
+                color: white;
+                padding: 4px 8px;
+                border-radius: 8px;
+                font-size: 14px;
+                z-index: 1;
+            }
 
             .video-grid {
                 display: grid;
