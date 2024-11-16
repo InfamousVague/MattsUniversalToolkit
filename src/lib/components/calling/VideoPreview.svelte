@@ -230,7 +230,7 @@
             height: 225px;
             background: var(--background-alt);
             border-radius: var(--border-radius);
-            border: var(--border-width) solid var(--border-color);
+            border: var(--border-width) solid var(--color-muted);
             position: absolute;
             top: 0;
             right: 0;
