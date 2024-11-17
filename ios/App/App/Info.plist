@@ -29,9 +29,9 @@
 	<key>NSMicrophoneUsageDescription</key>
 	<string>We need access to your microphone to make voice and video calls.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>We need access to your camera to select files.</string>
+	<string>We need access to your photo library to upload a profile picture and personalize your account.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>We need access to your photo library to select files.</string>
+	<string>We need access to your photo library so you can choose existing photos or videos to use in the app, for sharing with your friends or personalize your profile.</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
