@@ -23,9 +23,9 @@
 <div id="page">
     <SettingSection hook="section-about-header" name={$_("settings.about.name")} description="Uplink"></SettingSection>
     <SettingSection hook="section-about-version" name={$_("settings.about.version")} description="0.2.5">
-      <!---  <Button hook="button-check-for-update" text={$_("settings.about.checkUpdate")} appearance={Appearance.Alt}>
+       <Button hook="button-check-for-update" text={$_("settings.about.checkUpdate")} appearance={Appearance.Alt}>
             <Icon icon={Shape.Refresh} />
-        </Button> -->
+        </Button>
     </SettingSection>
     <SettingSection hook="section-about-website" name={$_("settings.about.website")} description={$_("settings.about.websiteDescription")}>
         <Button hook="button-open-website" text={$_("settings.about.openWebsite")} appearance={Appearance.Alt} on:click={() => window.open("https://satellite.im/", "_blank")}>
