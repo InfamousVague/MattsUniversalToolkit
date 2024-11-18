@@ -1031,9 +1031,9 @@
                                 },
                             },
                         ]}>
-                      <!--- <Button hook="button-chat-add-attachment" slot="content" let:open on:click={open} on:contextmenu={open} icon appearance={Appearance.Alt} tooltip={$_("chat.add_attachment")}>
+                       <Button hook="button-chat-add-attachment" slot="content" let:open on:click={open} on:contextmenu={open} icon appearance={Appearance.Alt} tooltip={$_("chat.add_attachment")}>
                             <Icon icon={Shape.Plus} />
-                        </Button> --> 
+                        </Button> 
                     </ContextMenu>
                 </svelte:fragment>
 
