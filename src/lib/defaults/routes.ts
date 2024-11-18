@@ -8,11 +8,11 @@ export let routes: NavRoute[] = [
     //     icon: Shape.Wallet,
     //     name: "Wallet",
     // },
-   // {
-    //    to: Route.Files,
-    //    icon: Shape.Folder,
-    //    name: "Files",
-   // },
+    {
+        to: Route.Files,
+        icon: Shape.Folder,
+        name: "Files",
+    },
     {
         to: Route.Chat,
         icon: Shape.ChatBubble,
