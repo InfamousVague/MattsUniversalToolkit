@@ -1,4 +1,4 @@
-import type { CapacitorConfig } from "@capacitor/cli";
+import type { CapacitorConfig } from "@capacitor/cli"
 
 const config: CapacitorConfig = {
   appId: "com.satellite.uplink.app",
@@ -6,4 +6,4 @@ const config: CapacitorConfig = {
   webDir: "build",
 };
 
-export default config;
+export default config
