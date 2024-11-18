@@ -23,7 +23,7 @@
 <div id="page">
     <SettingSection hook="section-about-header" name={$_("settings.about.name")} description="Uplink"></SettingSection>
     <SettingSection hook="section-about-version" name={$_("settings.about.version")} description="0.2.5">
-       <Button hook="button-check-for-update" text={$_("settings.about.checkUpdate")} appearance={Appearance.Alt}>
+        <Button hook="button-check-for-update" text={$_("settings.about.checkUpdate")} appearance={Appearance.Alt}>
             <Icon icon={Shape.Refresh} />
         </Button>
     </SettingSection>

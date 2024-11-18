@@ -386,7 +386,7 @@
             on:change={v => {
                 SettingsStore.update({ ...settings, messaging: { ...settings.messaging, identiconStyle: v.detail } })
             }} />
-      <Button
+        <Button
             hook="button-identicon-open-folder"
             on:click={async event => {
                 identiconUpload?.click()

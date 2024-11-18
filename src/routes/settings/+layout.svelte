@@ -35,7 +35,7 @@
             icon: Shape.Speaker,
             name: $_("settings.audio.name"),
         },
-       {
+        {
             to: SettingsRoute.Extensions,
             icon: Shape.Beaker,
             name: $_("settings.extensions.name"),
