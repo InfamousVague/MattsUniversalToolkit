@@ -10,7 +10,7 @@
         Windows = "Windows",
         MacOS = "MacOS",
         Android = "Android",
-        /* iOS = "iOS", */
+        iOS = "iOS",
         Linux = "Linux",
         Other = "Other",
     }
