@@ -236,7 +236,7 @@
         if (short) {
             await navigator.clipboard.writeText(`${userReference.name}#${userReference.id.short}`)
         } else {
-            await navigator.clipboard.writeText(`${userReference.key}`)
+            await navigator.clipboard.writeText(`${userReference.key.replace("did:key:", "")}`)
         }
     }
 

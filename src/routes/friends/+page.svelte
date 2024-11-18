@@ -69,7 +69,9 @@
         if (!isValidFriendDid) {
             return
         }
-        let requestSent = await MultipassStoreInstance.sendFriendRequest(requestString)
+        let requestStringWithDidKey = `did:key:${requestString}`
+
+        let requestSent = await MultipassStoreInstance.sendFriendRequest(requestStringWithDidKey)
         requestSent.fold(
             (e: WarpError) => {
                 requestString = ""
@@ -154,7 +156,7 @@
         if (short) {
             await navigator.clipboard.writeText(`${user.name}#${user.id.short}`)
         } else {
-            await navigator.clipboard.writeText(`${user.key}`)
+            await navigator.clipboard.writeText(`${user.key.replace("did:key:", "")}`)
         }
     }
 </script>
