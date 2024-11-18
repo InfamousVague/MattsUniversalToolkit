@@ -35,21 +35,21 @@
             icon: Shape.Speaker,
             name: $_("settings.audio.name"),
         },
-     //   {
-     //       to: SettingsRoute.Extensions,
-     //       icon: Shape.Beaker,
-     //       name: $_("settings.extensions.name"),
-     //   },
+       {
+            to: SettingsRoute.Extensions,
+            icon: Shape.Beaker,
+            name: $_("settings.extensions.name"),
+        },
         {
             to: SettingsRoute.Keybinds,
             icon: Shape.Keybind,
             name: $_("settings.keybinds.name"),
         },
-       // {
-      //      to: SettingsRoute.Gamepad,
-       //     icon: Shape.Gamepad,
-       //     name: $_("settings.gamepad.name"),
-      //  },
+        {
+            to: SettingsRoute.Gamepad,
+            icon: Shape.Gamepad,
+            name: $_("settings.gamepad.name"),
+        },
         {
             to: SettingsRoute.Accessibility,
             icon: Shape.Eye,
@@ -60,11 +60,11 @@
             icon: Shape.BellAlert,
             name: $_("settings.notifications.name"),
         },
-      //  {
-      //      to: SettingsRoute.Network,
-      //      icon: Shape.Relay,
-      //      name: $_("settings.network.name"),
-     //   },
+        {
+            to: SettingsRoute.Network,
+            icon: Shape.Relay,
+            name: $_("settings.network.name"),
+        },
         {
             to: SettingsRoute.About,
             icon: Shape.Info,
