@@ -1,28 +1,40 @@
 PODS:
   - Capacitor (6.1.2):
     - CapacitorCordova
+  - CapacitorCamera (6.1.0):
+    - Capacitor
   - CapacitorCordova (6.1.2)
+  - CapacitorFilesystem (6.0.1):
+    - Capacitor
   - CapacitorSplashScreen (6.0.2):
     - Capacitor
 
 DEPENDENCIES:
   - "Capacitor (from `../../node_modules/@capacitor/ios`)"
+  - "CapacitorCamera (from `../../node_modules/@capacitor/camera`)"
   - "CapacitorCordova (from `../../node_modules/@capacitor/ios`)"
+  - "CapacitorFilesystem (from `../../node_modules/@capacitor/filesystem`)"
   - "CapacitorSplashScreen (from `../../node_modules/@capacitor/splash-screen`)"
 
 EXTERNAL SOURCES:
   Capacitor:
     :path: "../../node_modules/@capacitor/ios"
+  CapacitorCamera:
+    :path: "../../node_modules/@capacitor/camera"
   CapacitorCordova:
     :path: "../../node_modules/@capacitor/ios"
+  CapacitorFilesystem:
+    :path: "../../node_modules/@capacitor/filesystem"
   CapacitorSplashScreen:
     :path: "../../node_modules/@capacitor/splash-screen"
 
 SPEC CHECKSUMS:
   Capacitor: 679f9673fdf30597493a6362a5d5bf233d46abc2
+  CapacitorCamera: 81ce64062cd82b82cc75a79616fda4bd09d7f643
   CapacitorCordova: f48c89f96c319101cd2f0ce8a2b7449b5fb8b3dd
+  CapacitorFilesystem: 37fb3aa5c945b4539ab11c74a5c57925a302bf24
   CapacitorSplashScreen: 250df9ef8014fac5c7c1fd231f0f8b1d8f0b5624
 
-PODFILE CHECKSUM: d641883bb20843cf484024fa8ccc257a419b4040
+PODFILE CHECKSUM: 46011c4258f4c76d658cc7d9721149c3759c52d7
 
 COCOAPODS: 1.16.1
