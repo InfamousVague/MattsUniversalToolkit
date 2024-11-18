@@ -342,7 +342,7 @@
                     }
                 }
             }} />
-      <!---  <Button
+        <Button
             hook="button-font-open-folder"
             on:click={async event => {
                 fontUpload?.click()
@@ -351,7 +351,7 @@
             appearance={Appearance.Alt}
             tooltip={$_("generic.openFolder")}>
             <Icon icon={Shape.FolderOpen} />
-        </Button> --->
+        </Button>
         <input data-cy="input=upload-files" style="display:none" multiple type="file" on:change={e => saveFile(e)} bind:this={fontUpload} />
     </SettingSection>
     <SettingSection hook="section-emoji-font" name={$_("settings.preferences.emojiFont")} description={$_("settings.preferences.emojiFontDescription")}>
@@ -364,7 +364,7 @@
             on:change={v => {
                 UIStore.setEmojiFont(v.detail)
             }} />
-      <!---  <Button
+        <Button
             hook="button-emoji-font-open-folder"
             on:click={async event => {
                 emojiUpload?.click()
@@ -373,7 +373,7 @@
             appearance={Appearance.Alt}
             tooltip={$_("generic.openFolder")}>
             <Icon icon={Shape.FolderOpen} />
-        </Button> --->
+        </Button>
         <input data-cy="input=upload-files" style="display:none" multiple type="file" on:change={e => saveFile(e)} bind:this={emojiUpload} />
     </SettingSection>
     <SettingSection hook="section-identicon" name={$_("settings.preferences.identiconStyle")} description={$_("settings.preferences.identiconStyleDescription")}>
@@ -386,7 +386,7 @@
             on:change={v => {
                 SettingsStore.update({ ...settings, messaging: { ...settings.messaging, identiconStyle: v.detail } })
             }} />
-      <!--- <Button
+      <Button
             hook="button-identicon-open-folder"
             on:click={async event => {
                 identiconUpload?.click()
@@ -395,7 +395,7 @@
             appearance={Appearance.Alt}
             tooltip={$_("generic.openFolder")}>
             <Icon icon={Shape.FolderOpen} />
-        </Button>--> 
+        </Button>
         <input data-cy="input=upload-files" style="display:none" multiple type="file" on:change={e => saveFile(e)} bind:this={identiconUpload} />
     </SettingSection>
     <SettingSection hook="section-font-scaling" name={$_("settings.preferences.fontScaling")} description={$_("settings.preferences.fontScalingDescription")}>
