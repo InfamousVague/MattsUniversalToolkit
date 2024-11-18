@@ -29,6 +29,12 @@
     <div class="header">
         <Title hook="title-new-account">{$_("pages.auth.new_account.title")}</Title>
         <Text hook="text-new-account-secondary" muted>{$_("pages.auth.new_account.subtext")}</Text>
+        <Text class="terms">
+            By using this application, you agree with our 
+            <a href="https://uplink.satellite.im/terms.html" target="_blank" rel="noopener noreferrer">
+                terms and conditions
+            </a>.
+        </Text>
     </div>
     <div class="main">
         <div class="left">
@@ -141,6 +147,22 @@
             display: inline-flex;
             flex-direction: column;
             gap: var(--gap);
+
+            .terms {
+                font-size: 0.875rem;
+                color: var(--text-muted);
+                margin-top: var(--gap-small);
+                text-align: center;
+
+                a {
+                    color: var(--link-color);
+                    text-decoration: none;
+
+                    &:hover {
+                        text-decoration: underline;
+                    }
+                }
+            }
         }
 
         :global(.controls) {

@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from "@capacitor/cli"
 
 const config: CapacitorConfig = {
-    appId: "com.uplink.app",
+    appId: "com.satellite.uplink.app",
     appName: "Uplink",
     webDir: "build",
 }
