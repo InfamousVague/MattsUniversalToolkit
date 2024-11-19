@@ -92,7 +92,6 @@
                 {#if settings && settings.widgets && settings.widgets.show}
                     <WidgetBar />
                 {/if}
-                
                 <slot></slot>
             </div>
 
