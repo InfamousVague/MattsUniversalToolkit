@@ -153,7 +153,7 @@
                 color: var(--text-muted);
                 margin-top: var(--gap-small);
                 text-align: center;
-
+                display: inline-block;
                 a {
                     color: var(--link-color);
                     text-decoration: none;
@@ -168,5 +168,9 @@
         :global(.controls) {
             width: 100%;
         }
+    }
+
+    #auth-recover .header .terms {
+        display: block;
     }
 </style>
