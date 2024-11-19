@@ -156,7 +156,8 @@
         if (short) {
             await navigator.clipboard.writeText(`${user.name}#${user.id.short}`)
         } else {
-            await navigator.clipboard.writeText(`${user.key.replace("did:key:", "")}`)
+            const updatedKey = user.key.replace("did:key:", "")
+            await navigator.clipboard.writeText(updatedKey)
         }
     }
 </script>
