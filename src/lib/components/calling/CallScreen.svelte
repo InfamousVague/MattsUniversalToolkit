@@ -241,6 +241,7 @@
         }
         if (get(Store.state.activeCall) === null) {
             Store.setActiveCall(chat)
+            Store.state.devices.screenShare.set(false)
         }
         window.addEventListener("resize", updateUserListSplit)
         updateUserListSplit()
@@ -265,6 +266,9 @@
             clearTimeout(hideNoResponseUsersTimeout)
         }
         stopMakeCallSound()
+        if (get(Store.state.activeCall) === null && get(Store.state.devices.screenShare) === true) {
+            Store.state.devices.screenShare.set(false)
+        }
     })
 
     function updateUserListSplit() {

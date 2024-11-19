@@ -529,7 +529,7 @@ export class VoiceRTC {
             }
             this.call?.notify(VoiceRTCMessageType.UpdateUser)
         } catch (err) {
-            Store.updateScreenShareEnabled(false)
+            Store.state.devices.screenShare.set(false)
             this.callOptions.video.screenShareEnabled = false
             log.error("Error starting screen share:", err)
         }
@@ -948,6 +948,7 @@ export class VoiceRTC {
         this.call?.room.leave()
         this.call = null
         Store.state.activeCallMeta.set({})
+        Store.state.devices.screenShare.set(false)
     }
 
     handleError(error: Error) {
