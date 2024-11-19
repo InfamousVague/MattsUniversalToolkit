@@ -22,7 +22,7 @@
     }
     let transfer = new Transfer()
     let sendCoin = ViewMode.None
-    async function sendMessage(text: string) {
+    async function sendMessage(text: string, type: string) {
         let chat = get(Store.state.activeChat)
         let txt = text.split("\n")
         let result = await RaygunStoreInstance.send(chat.id, txt, [])
@@ -134,7 +134,7 @@
             <Button
                 disabled={!transfer.isValid()}
                 on:click={async () => {
-                    await sendMessage(transfer.toDisplayString())
+                    await sendMessage(transfer.toDisplayString(), `/${sendCoin}`)
                     onClose()
                 }}>{$_("payments.create_transaction")}</Button>
         </div>
@@ -185,7 +185,7 @@
             <Button
                 disabled={!transfer.isValid()}
                 on:click={async () => {
-                    await sendMessage(transfer.toCmdString())
+                    await sendMessage(transfer.toCmdString(), `/${sendCoin}`)
                     onClose()
                 }}>{$_("payments.create_transaction")}</Button>
         </div>

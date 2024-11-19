@@ -498,9 +498,8 @@ export class Transfer {
     }
 
     toDisplayString(): string {
-        let id = this.asset.id === "n/a" ? "" : this.asset.id
         let transfer = JSON.stringify(this, (k, v) => (k === "amount" && typeof v === "bigint" ? v.toString() : v))
-        console.log(id, "HERE DISPLAY")
+        console.log(transfer, "HERE DISPLAY")
         return `/send ${this.amountPreview} to ${shortenAddr(this.toAddress, 6)}  ${transfer}`
     }
 
@@ -513,6 +512,7 @@ export class Transfer {
 
 export function getValidPaymentRequest(msg: string, msgId?: string): Transfer | undefined {
     let transfer = new Transfer()
+    // console.log(msg)
     if (msg.startsWith(PaymentRequestsEnum.Request)) {
         let json = msg.substring(PaymentRequestsEnum.Request.length, msg.length).trim()
 
@@ -552,10 +552,10 @@ export function getValidPaymentRequest(msg: string, msgId?: string): Transfer | 
     } else if (msg.startsWith(PaymentRequestsEnum.Send)) {
         let json = msg.substring(PaymentRequestsEnum.Send.length, msg.length).trim()
 
-        // Find the position of the first `{` to locate the JSON portion
+        console.log("Catch send", msg)
         let jsonStartIndex = json.indexOf("{")
         if (jsonStartIndex !== -1) {
-            json = json.substring(jsonStartIndex).trim() // Extract only the JSON part
+            json = json.substring(jsonStartIndex).trim()
 
             try {
                 let parsed = JSON.parse(json, (k, v) => (k === "amount" && typeof v === "string" ? BigInt(v) : v))
@@ -572,6 +572,7 @@ export function getValidPaymentRequest(msg: string, msgId?: string): Transfer | 
         }
 
         if (transfer.asset.kind !== AssetType.None && transfer.isValid()) {
+            console.log("tranfer botrtom", transfer)
             return transfer
         }
     }

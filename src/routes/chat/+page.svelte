@@ -344,9 +344,9 @@
     async function sendPaymentMessage(message: MessageType, paymentType: string) {
         let transfer = new Transfer()
         let chat = get(Store.state.activeChat)
-        let rejectTranser = transfer.toRejectString(message.id)
-        let txt = rejectTranser.split("\n")
         if (paymentType === PaymentRequestsEnum.Request) {
+            let rejectTranfser = transfer.toCmdString()
+            let txt = rejectTranfser.split("\n")
             let result = await RaygunStoreInstance.send(chat.id, txt, [])
             result.onSuccess(res => {
                 if (getValidPaymentRequest(message.text[0])) {
@@ -367,6 +367,8 @@
             })
         }
         if (paymentType === PaymentRequestsEnum.Reject) {
+            let rejectTranfser = transfer.toRejectString(message.id)
+            let txt = rejectTranfser.split("\n")
             let result = await RaygunStoreInstance.send(chat.id, txt, [])
             result.onSuccess(res => {
                 Store.state.paymentTracker.update(payments => {
@@ -384,24 +386,37 @@
             })
         }
         if (paymentType === PaymentRequestsEnum.Send) {
+            console.log("FUCK THIS SHIT", message.text[0])
+            let chat = get(Store.state.activeChat)
+            let txt = message.text[0].split("\n")
+            console.log(txt)
             let result = await RaygunStoreInstance.send(chat.id, txt, [])
             result.onSuccess(res => {
-                if (getValidPaymentRequest(message.text[0])) {
-                    getValidPaymentRequest(message.text[0])?.execute()
-                }
-                Store.state.paymentTracker.update(payments => {
-                    const alreadyRejected = payments.some(payment => payment.messageId === message.id)
-
-                    if (!alreadyRejected) {
-                        return [...payments, { messageId: message.id, senderId: message.details.origin, rejectedPayment: false }]
-                    } else {
-                        console.log(`MessageId ${message.id} is already in the rejected payments list`)
-                        return payments
-                    }
-                })
-                transfer.toCmdString()
+                console.log(res)
+                transfer.toDisplayString()
                 ConversationStore.addPendingMessages(chat.id, res.message, txt)
             })
+            //     let sendTranfser = transfer.toDisplayString()
+            //     let txt = sendTranfser.split("\n")
+            //     let result = await RaygunStoreInstance.send(chat.id, txt, [])
+            //     result.onSuccess(res => {
+            //         if (getValidPaymentRequest(message.text[0])) {
+            //             getValidPaymentRequest(message.text[0])?.execute()
+            //         }
+            //         console.log(txt)
+            //         Store.state.paymentTracker.update(payments => {
+            //             const alreadyRejected = payments.some(payment => payment.messageId === message.id)
+
+            //             if (!alreadyRejected) {
+            //                 return [...payments, { messageId: message.id, senderId: message.details.origin, rejectedPayment: false }]
+            //             } else {
+            //                 console.log(`MessageId ${message.id} is already in the rejected payments list`)
+            //                 return payments
+            //             }
+            //         })
+            //         transfer.toDisplayString()
+            //         ConversationStore.addPendingMessages(chat.id, message.text[0], txt)
+            //     })
         }
     }
 
@@ -915,7 +930,10 @@
                                                                             hook="text-chat-message"
                                                                             class="send_coin"
                                                                             text={sanitizePaymentRequest(line, resolved.name)}
-                                                                            on:click={async () => getValidPaymentRequest(line, message.id)?.execute()}>
+                                                                            on:click={async () => {
+                                                                                sendPaymentMessage(message, PaymentRequestsEnum.Send)
+                                                                                // getValidPaymentRequest(line, message.id)?.execute()
+                                                                            }}>
                                                                             <Icon icon={Shape.DollarOut}></Icon></Button>
                                                                         <Button
                                                                             hook="text-chat-message"
