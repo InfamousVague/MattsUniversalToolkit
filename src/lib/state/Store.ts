@@ -38,6 +38,7 @@ class GlobalStore {
                 output: createPersistentState("uplink.devices.output", "default"),
                 muted: createPersistentState("uplink.devices.muted", false),
                 deafened: createPersistentState("uplink.devices.deafened", false),
+                screenShare: createPersistentState("uplink.devices.screenShare", false),
             },
             friends: createPersistentState("uplink.friends", []),
             blocked: createPersistentState("uplink.blocked", []),
@@ -189,6 +190,11 @@ class GlobalStore {
 
     updateCameraEnabled(enabled: boolean) {
         this.state.devices.cameraEnabled.set(enabled)
+        if (get(SettingsStore.state).audio.controlSounds) playSound(enabled ? Sounds.Off : Sounds.On)
+    }
+
+    updateScreenShareEnabled(enabled: boolean) {
+        this.state.devices.screenShare.set(enabled)
         if (get(SettingsStore.state).audio.controlSounds) playSound(enabled ? Sounds.Off : Sounds.On)
     }
 
