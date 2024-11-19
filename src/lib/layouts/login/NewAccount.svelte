@@ -33,7 +33,7 @@
             By using this application, you agree with our 
             <a href="https://uplink.satellite.im/terms.html" target="_blank" rel="noopener noreferrer">
                 terms and conditions
-            </a>.
+            </a>
         </Text>
     </div>
     <div class="main">
