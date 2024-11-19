@@ -6,8 +6,11 @@ on:
     tags:
       - "*"
 
+permissions:
+    contents: write
+
 jobs:
-  check_pages_status:
+  github_pages:
     runs-on: ubuntu-latest
 
     steps:
