@@ -1,0 +1,11 @@
+# Mac Stuff
+.DS_Store
+
+# Yew
+yew/dist
+yew/target
+
+build
+node_modules
+.svelte-kit
+src/commit-hash.ts
