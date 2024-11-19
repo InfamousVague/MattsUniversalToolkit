@@ -488,7 +488,7 @@
                                         <track kind="captions" src="" />
                                     </video>
                                     <div class="user-name">
-                                        {$remoteStreams[user].user.screenShareEnabled ? $userCache[user].name + " is sharing screen" : $userCache[user].name}
+                                        {$userCache[user].name}
                                     </div>
                                     {#if !$remoteStreams[user].user.audioEnabled}
                                         <div class="mute-status">
