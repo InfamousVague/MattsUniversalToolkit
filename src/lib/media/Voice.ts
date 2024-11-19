@@ -423,9 +423,11 @@ export class VoiceRTC {
 
     async toggleVideo(state: boolean) {
         this.callOptions.video.enabled = state
-        this.localStream?.getVideoTracks().forEach(track => (track.enabled = state))
+        if (!this.isScreenSharing) {
+            this.localStream?.getVideoTracks().forEach(track => (track.enabled = state))
+            this.call?.toggleStreams(state, ToggleType.Video)
+        }
 
-        this.call?.toggleStreams(state, ToggleType.Video)
         this.call?.notify(VoiceRTCMessageType.UpdateUser)
     }
 
@@ -550,6 +552,9 @@ export class VoiceRTC {
             this.screenStream.getTracks().forEach(track => track.stop())
             this.screenStream = null
             this.isScreenSharing = false
+            if (this.callOptions.video.enabled) {
+                Store.updateCameraEnabled(true)
+            }
             this.call?.notify(VoiceRTCMessageType.UpdateUser)
         }
     }

@@ -38,7 +38,7 @@ class GlobalStore {
                 output: createPersistentState("uplink.devices.output", "default"),
                 muted: createPersistentState("uplink.devices.muted", false),
                 deafened: createPersistentState("uplink.devices.deafened", false),
-                screenShare: createPersistentState("uplink.devices.screenShare", false),
+                screenShare: writable(false),
             },
             friends: createPersistentState("uplink.friends", []),
             blocked: createPersistentState("uplink.blocked", []),
