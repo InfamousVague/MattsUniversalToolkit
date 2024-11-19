@@ -7,7 +7,7 @@ on:
       - "*"
 
 permissions:
-    contents: write
+  contents: write
 
 jobs:
   github_pages:
@@ -17,10 +17,21 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4.2.2
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Build Project
+        run: npm run build
+
       - name: Deploy to GitHub Pages
         id: gh-pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: .
+          publish_dir: ./build
           publish_branch: gh-pages
