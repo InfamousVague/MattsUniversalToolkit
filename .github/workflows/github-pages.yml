@@ -1,0 +1,23 @@
+name: GitHub Pages
+
+on:
+  pull_request:
+  push:
+    tags:
+      - "*"
+
+jobs:
+  check_pages_status:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4.2.2
+
+      - name: Deploy to GitHub Pages
+        id: gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: .
+          publish_branch: gh-pages
