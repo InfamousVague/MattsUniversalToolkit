@@ -154,6 +154,7 @@
                 margin-top: var(--gap-small);
                 text-align: center;
                 display: inline-block;
+
                 a {
                     color: var(--link-color);
                     text-decoration: none;
@@ -170,7 +171,7 @@
         }
     }
 
-    #auth-recover .header .terms {
+    :global(#auth-recover .header .terms) {
         display: block;
     }
 </style>
