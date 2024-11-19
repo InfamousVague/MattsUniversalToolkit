@@ -1,7 +1,7 @@
 <script lang="ts">
     import { ProfilePicture } from "$lib/components"
     import Controls from "$lib/layouts/Controls.svelte"
-    import { Button, Icon, Input, Label, Spacer, Text, Title } from "$lib/elements"
+    import { Button, Icon, Input, Label, Title } from "$lib/elements"
     import { Appearance, Shape, Size } from "$lib/enums"
 
     import { _ } from "svelte-i18n"
@@ -29,12 +29,12 @@
     <div class="header">
         <Title hook="title-new-account">{$_("pages.auth.new_account.title")}</Title>
         <Text hook="text-new-account-secondary" muted>{$_("pages.auth.new_account.subtext")}</Text>
-        <Text class="terms">
+        <div class="terms">
             By using this application, you agree with our 
             <a href="https://uplink.satellite.im/terms.html" target="_blank" rel="noopener noreferrer">
                 terms and conditions
             </a>
-        </Text>
+        </div>
     </div>
     <div class="main">
         <div class="left">
@@ -171,7 +171,7 @@
         }
     }
 
-    :global(#auth-recover .header .terms) {
+    .terms {
         display: block;
     }
 </style>
