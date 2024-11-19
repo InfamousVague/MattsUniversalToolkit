@@ -407,16 +407,12 @@ export class VoiceRTC {
         Store.state.devices.muted.subscribe(async value => this.toggleMute(value))
         Store.state.devices.cameraEnabled.subscribe(async value => this.toggleVideo(value))
         Store.state.devices.deafened.subscribe(async value => this.toggleDeafen(value))
-        Store.state.devices.screenShare.subscribe(async value => this.toggleScreenShare(value))
     }
 
     async toggleScreenShare(state: boolean) {
         if (!state) {
-            this.callOptions.video.screenShareEnabled = false
-            this.stopScreenShare()
+            await this.stopScreenShare()
         } else {
-            console.log("Starting screen share")
-            this.callOptions.video.screenShareEnabled = true
             await this.startScreenShare()
         }
     }
@@ -517,6 +513,7 @@ export class VoiceRTC {
 
             const screenTrack = screenStream.getVideoTracks()[0]
             const videoTrack = this.localStream?.getVideoTracks()[0]
+            this.callOptions.video.screenShareEnabled = true
 
             if (this.localStream && videoTrack) {
                 this.localStream.removeTrack(videoTrack)
@@ -529,8 +526,11 @@ export class VoiceRTC {
 
                 screenTrack.onended = () => this.stopScreenShare()
             }
+            Store.updateScreenShareEnabled(true)
             this.call?.notify(VoiceRTCMessageType.UpdateUser)
         } catch (err) {
+            Store.updateScreenShareEnabled(false)
+            this.callOptions.video.screenShareEnabled = false
             log.error("Error starting screen share:", err)
         }
     }
@@ -552,9 +552,11 @@ export class VoiceRTC {
             this.screenStream.getTracks().forEach(track => track.stop())
             this.screenStream = null
             this.isScreenSharing = false
+            this.callOptions.video.screenShareEnabled = false
             if (this.callOptions.video.enabled) {
                 Store.updateCameraEnabled(true)
             }
+            Store.updateScreenShareEnabled(false)
             this.call?.notify(VoiceRTCMessageType.UpdateUser)
         }
     }
@@ -928,6 +930,11 @@ export class VoiceRTC {
             this.localVideoCurrentSrc.srcObject = null
             this.localVideoCurrentSrc = null
         }
+        if (this.screenStream) {
+            this.screenStream.getTracks().forEach(track => track.stop())
+        }
+        this.screenStream = null
+        this.isScreenSharing = false
         if (this.localStream) this.localStream.getTracks().forEach(track => track.stop())
         this.localStream = null
         if (this.localStreamHandler) {

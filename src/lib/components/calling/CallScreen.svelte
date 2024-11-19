@@ -487,7 +487,9 @@
                                         use:attachStream={user}>
                                         <track kind="captions" src="" />
                                     </video>
-                                    <div class="user-name">{$userCache[user].name}</div>
+                                    <div class="user-name">
+                                        {$remoteStreams[user].user.screenShareEnabled ? $userCache[user].name + " is sharing screen" : $userCache[user].name}
+                                    </div>
                                     {#if !$remoteStreams[user].user.audioEnabled}
                                         <div class="mute-status">
                                             <Icon icon={Shape.MicrophoneSlash}></Icon>
@@ -597,7 +599,9 @@
                 icon
                 tooltip={$_("call.stream")}
                 on:click={async _ => {
-                    Store.updateScreenShareEnabled(!screenShareEnabled)
+                    // This component handles the call screen UI. In this specific case, the user has the option to cancel screen sharing.
+                    // The UI should not be updated until the user decides whether to share their screen or not.
+                    await VoiceRTCInstance.toggleScreenShare(!screenShareEnabled)
                 }}>
                 <Icon icon={Shape.Stream} />
             </Button>
