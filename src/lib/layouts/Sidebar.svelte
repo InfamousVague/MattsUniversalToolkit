@@ -1,26 +1,26 @@
 <script lang="ts">
-    import { routes } from "$lib/defaults/routes"
+    import { routes as allRoutes } from "$lib/defaults/routes"
+    import { Route, Shape } from "$lib/enums"
     import Navigation from "./Navigation.svelte"
-    import { Input, Icon, Button } from "$lib/elements"
-    import { CallControls } from "$lib/components"
-    import { Appearance, Route, Shape } from "$lib/enums"
     import { createEventDispatcher } from "svelte"
     import { goto } from "$app/navigation"
-
     import { _ } from "svelte-i18n"
     import { get } from "svelte/store"
     import { Store } from "$lib/state/Store"
-    import type { Call } from "$lib/types"
     import { Slimbar } from "."
-    import WidgetBar from "$lib/components/widgets/WidgetBar.svelte"
     import { SettingsStore, type ISettingsState } from "$lib/state"
+    import { CallControls } from "$lib/components"
+    import WidgetBar from "$lib/components/widgets/WidgetBar.svelte"
+    import { Appearance } from "$lib/enums"
+    import { Input, Icon, Button } from "$lib/elements"
+    import type { Call } from "$lib/types"
 
     export let activeRoute: Route = Route.Chat
     export let open: boolean = true
     export let loading: boolean = true
     export let activeCall: Call | null = get(Store.state.activeCall)
-
     export let search: string = ""
+    
     let settings: ISettingsState = get(SettingsStore.state)
     SettingsStore.state.subscribe((s: ISettingsState) => {
         settings = s
@@ -40,6 +40,24 @@
     }
 
     Store.state.activeCall.subscribe(c => (activeCall = c))
+
+    function detectPlatform() {
+        const userAgent = navigator.userAgent.toLowerCase()
+        if (/iphone|ipad|ipod/.test(userAgent)) return "iOS"
+        if (userAgent.includes("windows")) return "Windows"
+        if (userAgent.includes("mac")) return "MacOS"
+        if (userAgent.includes("android")) return "Android"
+        if (userAgent.includes("linux")) return "Linux"
+        return "Other"
+    }
+
+    let filteredRoutes = allRoutes.filter(route => {
+        if (route.name === "Files" && detectPlatform() === "iOS") {
+            return false // Don't include "Files" route for iOS
+        }
+        return true
+    })
+
 </script>
 
 <div class="sidebar-layout {open ? 'open' : 'closed'}" data-cy="sidebar">
@@ -74,14 +92,16 @@
                 {#if settings && settings.widgets && settings.widgets.show}
                     <WidgetBar />
                 {/if}
-
+                
                 <slot></slot>
             </div>
 
             <div class="popups">
                 <CallControls activeRoute={activeRoute} />
             </div>
-            <Navigation icons routes={routes} activeRoute={activeRoute} on:navigate={e => goto(e.detail)} />
+
+            <!-- Pass filtered routes to Navigation component -->
+            <Navigation icons routes={filteredRoutes} activeRoute={activeRoute} on:navigate={e => goto(e.detail)} />
         </div>
     {/if}
 </div>
