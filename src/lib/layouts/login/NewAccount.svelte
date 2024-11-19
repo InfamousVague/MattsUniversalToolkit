@@ -1,7 +1,7 @@
 <script lang="ts">
     import { ProfilePicture } from "$lib/components"
     import Controls from "$lib/layouts/Controls.svelte"
-    import { Button, Icon, Input, Label, Title } from "$lib/elements"
+    import { Button, Icon, Input, Label, Spacer, Text, Title } from "$lib/elements"
     import { Appearance, Shape, Size } from "$lib/enums"
 
     import { _ } from "svelte-i18n"
