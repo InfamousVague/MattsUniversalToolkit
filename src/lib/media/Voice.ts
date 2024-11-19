@@ -506,27 +506,27 @@ export class VoiceRTC {
 
     async startScreenShare() {
         try {
-            const screenStream = await navigator.mediaDevices.getDisplayMedia({
+            this.screenStream = await navigator.mediaDevices.getDisplayMedia({
                 video: true,
                 audio: true,
             })
 
-            const screenTrack = screenStream.getVideoTracks()[0]
+            const screenTrack = this.screenStream?.getVideoTracks()[0]
             const videoTrack = this.localStream?.getVideoTracks()[0]
             this.callOptions.video.screenShareEnabled = true
 
-            if (this.localStream && videoTrack) {
+            if (this.localStream && videoTrack && screenTrack) {
                 this.localStream.removeTrack(videoTrack)
                 this.localStream.addTrack(screenTrack)
 
                 this.call?.room.replaceTrack(videoTrack, screenTrack, this.localStream)
-
-                this.screenStream = screenStream
                 this.isScreenSharing = true
 
                 screenTrack.onended = () => this.stopScreenShare()
             }
-            Store.updateScreenShareEnabled(true)
+            if (!get(Store.state.devices.screenShare)) {
+                Store.updateScreenShareEnabled(true)
+            }
             this.call?.notify(VoiceRTCMessageType.UpdateUser)
         } catch (err) {
             Store.updateScreenShareEnabled(false)
@@ -844,6 +844,9 @@ export class VoiceRTC {
     }
 
     async getLocalStream(replace = false) {
+        if (this.isScreenSharing && this.screenStream) {
+            return this.screenStream
+        }
         if (!this.localStream || replace) {
             if (this.localStream) {
                 this.localStream.getTracks().forEach(track => track.stop())
@@ -860,6 +863,7 @@ export class VoiceRTC {
                 this.localVideoCurrentSrc.srcObject = this.localStream
                 await this.localVideoCurrentSrc.play()
             }
+
             this.call?.room.addStream(this.localStream)
         }
 
