@@ -98,7 +98,6 @@
             <div class="popups">
                 <CallControls activeRoute={activeRoute} />
             </div>
-
             <!-- Pass filtered routes to Navigation component -->
             <Navigation icons routes={filteredRoutes} activeRoute={activeRoute} on:navigate={e => goto(e.detail)} />
         </div>
