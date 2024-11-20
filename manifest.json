@@ -6,7 +6,7 @@
   "start_url": "/UplinkWeb/",
   "icons": [
     {
-      "src": "/assets/logo/logo.png",
+      "src": "/UplinkWeb/assets/logo/logo.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
