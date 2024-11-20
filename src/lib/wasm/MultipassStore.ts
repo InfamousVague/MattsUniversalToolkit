@@ -662,6 +662,7 @@ class MultipassStore {
                         },
                     }
                 } catch (error) {
+                    log.error(`Couldn't fetch identity ${id}: ${error}`)
                     lastErr = error
                     await new Promise(resolve => setTimeout(resolve, 3000))
                 }

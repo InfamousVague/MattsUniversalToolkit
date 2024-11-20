@@ -15,6 +15,8 @@
         updateTypingIndicators()
         await MultipassStoreInstance.fetchAllFriendsAndRequests(!get(callScreenVisible))
 
+        await MultipassStoreInstance.getOwnIdentity()
+
         // Increase the interval exponentially until it reaches the provided rate
         if (currentInterval < rate) {
             currentInterval = Math.min(currentInterval * 2, rate)
