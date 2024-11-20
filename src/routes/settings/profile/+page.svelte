@@ -653,7 +653,6 @@
                 text={$_("settings.profile.delete_title")}
                 on:click={_ => {
                     isDeleteAccountModalOpened.set(true)
-                    // clearAllData()
                 }}>
                 <Icon icon={Shape.Trash} />
             </Button>

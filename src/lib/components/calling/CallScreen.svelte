@@ -593,7 +593,6 @@
                 soundSource={undefined}
                 on:click={_ => {
                     Store.updateDeafened(!deafened)
-                    // VoiceRTCInstance.turnOnOffDeafened()
                 }}>
                 <Icon icon={deafened ? Shape.HeadphoneSlash : Shape.Headphones} />
             </Button>
