@@ -91,14 +91,14 @@ export const enum EmojiFont {
 }
 
 export const enum Route {
-    Home = "/",
-    Chat = "/chat",
-    Files = "/files",
-    Friends = "/friends",
-    Wallet = "/wallet",
-    Settings = "/settings/profile",
-    Unlock = "/auth",
-    Pre = "/pre",
+    Home = "/UplinkWeb/",
+    Chat = "/UplinkWeb/chat",
+    Files = "/UplinkWeb/files",
+    Friends = "/UplinkWeb/friends",
+    Wallet = "/UplinkWeb/wallet",
+    Settings = "/UplinkWeb/settings/profile",
+    Unlock = "/UplinkWeb/auth",
+    Pre = "/UplinkWeb/pre",
 }
 
 export const enum FilesItemKind {
