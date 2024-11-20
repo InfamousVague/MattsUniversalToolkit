@@ -494,28 +494,21 @@ export class Transfer {
     }
 
     toRejectString(id: string) {
-        let transfer = JSON.stringify(this, (k, v) => (k === "amount" && typeof v === "bigint" ? v.toString() : v))
         return `/reject ${id}`
     }
 
-    toDisplayString(): string {
-        // Match and extract "kind" and "amountPreview" from the input JSON
-        // console.log(message)
-        // const kindMatch = message.match(/"kind":"(.*?)"/)
-        // const amountPreviewMatch = message.match(/"amountPreview":"(.*?)"/)
-        // const toAddressMatch = message.match(/"toAddress":"(.*?)"/)
+    toDisplayString(kind: string, amount: string): string {
+        // Serialize the `this` object with custom handling for `amount` as `bigint`
+        const transfer = JSON.stringify(this, (key, value) => (key === "amount" && typeof value === "bigint" ? value.toString() : value))
+        console.log(transfer)
 
-        // // Extract values, defaulting to an empty string if not found
-        // // const kind = kindMatch ? kindMatch[1] : ""
-        // const amountPreview = amountPreviewMatch ? amountPreviewMatch[1] : ""
-        // const toAddress = toAddressMatch ? toAddressMatch[1] : ""
-        let transfer = JSON.stringify(this, (k, v) => (k === "amount" && typeof v === "bigint" ? v.toString() : v))
-        // Return the formatted string using extracted values
-        return `/send ${transfer}`
+        // Return a well-structured JSON-like string
+        return `/send {"kind":"${kind}", "amount":"${amount}", "details":${transfer}}`
     }
 
     async execute() {
         if (this.isValid()) {
+            console.log("EXECUTE SEND BACK", this.asset, this.amount, this.toAddress)
             await wallet.transfer(this.asset, this.amount, this.toAddress)
         }
     }
@@ -523,10 +516,8 @@ export class Transfer {
 
 export function getValidPaymentRequest(msg: string, msgId?: string): Transfer | undefined {
     let transfer = new Transfer()
-    // console.log(msg)
     if (msg.startsWith(PaymentRequestsEnum.Request)) {
         let json = msg.substring(PaymentRequestsEnum.Request.length, msg.length).trim()
-
         try {
             let parsed = JSON.parse(json, (k, v) => (k === "amount" && typeof v === "string" ? BigInt(v) : v))
             transfer.asset = parsed.asset

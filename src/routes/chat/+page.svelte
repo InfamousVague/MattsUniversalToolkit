@@ -153,19 +153,50 @@
         return `Send ${amountPreview} ${kind}`
     }
 
-    function sanitizePaymentSent(message: string, sender: string, reciever: string): string {
-        const kindMatch = message.match(/"kind":"(.*?)"/)
-        const amountPreviewMatch = message.match(/"amountPreview":"(.*?)"/)
-        const kind = kindMatch ? kindMatch[1] : ""
-        let amountPreview = amountPreviewMatch ? amountPreviewMatch[1] : ""
-        if (amountPreview.includes(kind)) {
-            amountPreview = amountPreview.replace(kind, "").trim()
+    function sanitizePaymentSent(message: string, sender: string, receiver: string): string {
+        const jsonStartIndex = message.indexOf("{")
+        const jsonEndIndex = message.lastIndexOf("}")
+
+        if (jsonStartIndex === -1 || jsonEndIndex === -1 || jsonStartIndex > jsonEndIndex) {
+            return "Invalid message format"
         }
-        amountPreview = amountPreview.replace(/(\.\d*?[1-9])0+$|\.0*$/, "$1")
+
+        const jsonPart = message.slice(jsonStartIndex, jsonEndIndex + 1)
+
+        let parsedMessage
+        try {
+            parsedMessage = JSON.parse(jsonPart)
+        } catch (error) {
+            console.error("Error parsing JSON:", error, message)
+            return "Invalid message format"
+        }
+
+        const kind = parsedMessage.kind || "unknown"
+        const amount = parsedMessage.amount || "unknown"
+        const amountPreview = parsedMessage.details?.amountPreview || "unknown"
+        const toAddress = parsedMessage.details?.toAddress || "unknown address"
+
+        let cleanedAmountPreview = amountPreview
+        if (amountPreview.includes(kind)) {
+            cleanedAmountPreview = amountPreview.replace(kind, "").trim()
+        }
+
+        cleanedAmountPreview = cleanedAmountPreview.replace(/(\.\d*?[1-9])0+$|\.0*$/, "$1")
+
+        if (cleanedAmountPreview === "unknown" && amount !== "unknown") {
+            cleanedAmountPreview = amount.replace(kind, "").trim()
+            cleanedAmountPreview = cleanedAmountPreview.replace(/(\.\d*?[1-9])0+$|\.0*$/, "$1")
+        }
+        // let recieverName = get(Store.state.friends).find(f => f === receiver)
+        console.log($users, receiver)
+        let receiverName = $users[receiver]?.name || "Unknown"
+        const formattedAmount = cleanedAmountPreview
         if (sender !== "") {
-            return `${sender} sent you ${amountPreview} ${kind}`
+            console.log(formattedAmount, kind, message)
+            return `${sender} sent you ${formattedAmount}`
         } else {
-            return `You sent ${amountPreview} ${kind} to ${reciever}`
+            console.log(formattedAmount, kind, message)
+            return `You sent ${formattedAmount} to ${$users[$activeChat.users[1]]?.name}`
         }
     }
 
@@ -326,9 +357,6 @@
             let txt = rejectTranfser.split("\n")
             let result = await RaygunStoreInstance.send(chat.id, txt, [])
             result.onSuccess(res => {
-                if (getValidPaymentRequest(message.text[0])) {
-                    getValidPaymentRequest(message.text[0])?.execute()
-                }
                 Store.state.paymentTracker.update(payments => {
                     const alreadyRejected = payments.some(payment => payment.messageId === message.id)
 
@@ -363,21 +391,54 @@
             })
         }
         if (paymentType === PaymentRequestsEnum.Send) {
-            console.log("Extracting payment details", message.text[0])
+            try {
+                console.log("Extracting payment details", message.text[0])
 
-            // Use the toDisplayString function to format the message
-            const formattedMessage = transfer.toDisplayString()
+                // Identify the start of the JSON part
+                const jsonStartIndex = message.text[0].indexOf("{")
+                if (jsonStartIndex === -1) {
+                    throw new Error("No JSON part found in message")
+                }
 
-            let chat = get(Store.state.activeChat)
-            let txt = formattedMessage.split("\n")
+                // Extract and parse the JSON part
+                const jsonPart = message.text[0].slice(jsonStartIndex)
+                const paymentDetails = JSON.parse(jsonPart)
 
-            console.log("Formatted Transfer Message", formattedMessage)
+                // Extract `kind` and `amount` from the parsed JSON
+                const kind = paymentDetails.asset?.kind || "unknown"
+                const amount = paymentDetails.amountPreview || "0"
 
-            let result = await RaygunStoreInstance.send(chat.id, txt, [])
-            result.onSuccess(res => {
-                console.log("Message Sent Successfully", res)
-                ConversationStore.addPendingMessages(chat.id, res.message, txt)
-            })
+                console.log("Extracted payment details:", { kind, amount })
+
+                // Use the `toDisplayString` function to format the message with `kind` and `amount`
+                const formattedMessage = transfer.toDisplayString(kind, amount)
+
+                let chat = get(Store.state.activeChat)
+                let txt = formattedMessage.split("\n")
+
+                console.log("Formatted Transfer Message", formattedMessage)
+
+                let result = await RaygunStoreInstance.send(chat.id, txt, [])
+                result.onSuccess(res => {
+                    // if (getValidPaymentRequest(message.text[0])) {
+                    //     getValidPaymentRequest(message.text[0])?.execute()
+                    // }
+                    Store.state.paymentTracker.update(payments => {
+                        const alreadyRejected = payments.some(payment => payment.messageId === message.id)
+
+                        if (!alreadyRejected) {
+                            return [...payments, { messageId: message.id, senderId: message.details.origin, rejectedPayment: true }]
+                        } else {
+                            console.log(`MessageId ${message.id} is already in the rejected payments list`)
+                            return payments
+                        }
+                    })
+                    console.log("Message Sent Successfully", res)
+                    ConversationStore.addPendingMessages(chat.id, res.message, txt)
+                })
+            } catch (error) {
+                console.error("Error extracting payment details or sending message:", error)
+            }
         }
     }
 
@@ -880,7 +941,7 @@
                                                                 {#if $own_user.key !== message.details.origin}
                                                                     <Text hook="text-chat-message" markdown={sanitizePaymentSent(line, resolved.name, "")} appearance={group.details.remote ? Appearance.Default : Appearance.Alt} />
                                                                 {:else}
-                                                                    <Text hook="text-chat-message" markdown={sanitizePaymentSent(line, "", resolved.name)} appearance={group.details.remote ? Appearance.Default : Appearance.Alt} />
+                                                                    <Text hook="text-chat-message" markdown={sanitizePaymentSent(line, "", message.details.origin)} appearance={group.details.remote ? Appearance.Default : Appearance.Alt} />
                                                                 {/if}
                                                             {/if}
                                                         {:else if getValidPaymentRequest(line) !== undefined}
@@ -893,7 +954,6 @@
                                                                             text={sanitizePaymentRequest(line, resolved.name)}
                                                                             on:click={async () => {
                                                                                 sendPaymentMessage(message, PaymentRequestsEnum.Send)
-                                                                                // getValidPaymentRequest(line, message.id)?.execute()
                                                                             }}>
                                                                             <Icon icon={Shape.DollarOut}></Icon></Button>
                                                                         <Button
