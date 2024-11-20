@@ -3,7 +3,7 @@
   "short_name": "Uplink",
   "description": "Privacy first, modular, universal messaging client.",
   "display": "standalone",
-  "start_url": "/",
+  "start_url": "/UplinkWeb/",
   "icons": [
     {
       "src": "/assets/logo/logo.png",
