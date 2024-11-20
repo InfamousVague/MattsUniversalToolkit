@@ -66,7 +66,7 @@
                             }
                             goto(Route.Chat)
                         }}>
-                        <ChatIcon chat={favorite} profileHook={"favorite-profile-pictur"} />
+                        <ChatIcon chat={favorite} profileHook={"favorite-profile-picture"} />
                     </div>
                 </StoreResolver>
             {/each}
