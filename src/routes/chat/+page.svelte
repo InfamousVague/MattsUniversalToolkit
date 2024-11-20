@@ -154,40 +154,17 @@
     }
 
     function sanitizePaymentSent(message: string, sender: string, reciever: string): string {
-        // Match and extract "kind", "amountPreview", and "toAddress" from the input string
+        const kindMatch = message.match(/"kind":"(.*?)"/)
+        const amountPreviewMatch = message.match(/"amountPreview":"(.*?)"/)
+        const kind = kindMatch ? kindMatch[1] : ""
+        let amountPreview = amountPreviewMatch ? amountPreviewMatch[1] : ""
+        if (amountPreview.includes(kind)) {
+            amountPreview = amountPreview.replace(kind, "").trim()
+        }
+        amountPreview = amountPreview.replace(/(\.\d*?[1-9])0+$|\.0*$/, "$1")
         if (sender !== "") {
-            const kindMatch = message.match(/"kind":"(.*?)"/)
-            const amountPreviewMatch = message.match(/"amountPreview":"(.*?)"/)
-            // const toAddressMatch = message.match(/"toAddress":"(.*?)"/)
-
-            // Extract the values from the match results, defaulting to an empty string if not found
-            const kind = kindMatch ? kindMatch[1] : ""
-            let amountPreview = amountPreviewMatch ? amountPreviewMatch[1] : ""
-            // const toAddress = toAddressMatch ? toAddressMatch[1] : ""
-
-            // Remove any extra occurrence of the currency symbol in `amountPreview`
-            if (amountPreview.includes(kind)) {
-                amountPreview = amountPreview.replace(kind, "").trim()
-            }
-            amountPreview = amountPreview.replace(/(\.\d*?[1-9])0+$|\.0*$/, "$1")
-            // Return the formatted string
             return `${sender} sent you ${amountPreview} ${kind}`
         } else {
-            const kindMatch = message.match(/"kind":"(.*?)"/)
-            const amountPreviewMatch = message.match(/"amountPreview":"(.*?)"/)
-            // const toAddressMatch = message.match(/"toAddress":"(.*?)"/)
-
-            // Extract the values from the match results, defaulting to an empty string if not found
-            const kind = kindMatch ? kindMatch[1] : ""
-            let amountPreview = amountPreviewMatch ? amountPreviewMatch[1] : ""
-            // const toAddress = toAddressMatch ? toAddressMatch[1] : ""
-
-            // Remove any extra occurrence of the currency symbol in `amountPreview`
-            if (amountPreview.includes(kind)) {
-                amountPreview = amountPreview.replace(kind, "").trim()
-            }
-            amountPreview = amountPreview.replace(/(\.\d*?[1-9])0+$|\.0*$/, "$1")
-            // Return the formatted string
             return `You sent ${amountPreview} ${kind} to ${reciever}`
         }
     }
@@ -389,7 +366,7 @@
             console.log("Extracting payment details", message.text[0])
 
             // Use the toDisplayString function to format the message
-            const formattedMessage = transfer.toDisplayString(message.text[0])
+            const formattedMessage = transfer.toDisplayString()
 
             let chat = get(Store.state.activeChat)
             let txt = formattedMessage.split("\n")
