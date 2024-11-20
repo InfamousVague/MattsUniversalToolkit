@@ -7,14 +7,12 @@ const config = {
     preprocess: [vitePreprocess({})],
     kit: {
         paths: {
-            base: '/UplinkWeb'  // Replace with your GitHub repository name
+            base: '/UplinkWeb/build'
         },
         // Static adapter for GitHub Pages
         adapter: adapter({
-            // This ensures that client-side routing works properly on GitHub Pages
             fallback: '404.html'
         }),
-        // Uncomment this section if you need to set custom alias for modules
         // vite: {
         //   resolve: {
         //     alias: {
