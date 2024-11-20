@@ -24,12 +24,13 @@
 
     let unsavedChanges = false
     let shakeSaveControls = false
-    let groupPicture = ""
     let user = get(Store.state.user)
 
     $: isAdmin = $groupChatToBeChanged.creator !== undefined ? $groupChatToBeChanged.creator === user.key : false
     $: canAdd = isAdmin || $groupChatToBeChanged.settings.permissions[user.key]?.includes(GroupPermission.AddParticipants)
-    $: canRename = isAdmin || $groupChatToBeChanged.settings.permissions[user.key]?.includes(GroupPermission.SetGroupName)
+    $: canRemove = isAdmin || $groupChatToBeChanged.settings.permissions[user.key]?.includes(GroupPermission.RemoveParticipants)
+    $: canRename = isAdmin || $groupChatToBeChanged.settings.permissions[user.key]?.includes(GroupPermission.EditGroupInfo)
+    $: canChangePic = isAdmin || $groupChatToBeChanged.settings.permissions[user.key]?.includes(GroupPermission.EditGroupImages)
 
     $: users = Store.getUsersLookup(activeChat.users)
 
@@ -73,6 +74,9 @@
         }
         if (propertiesChangedList.membersPermission) {
             RaygunStoreInstance.setGroupPermissions($groupChatToBeChanged.id, $groupChatToBeChanged.settings.permissions)
+        }
+        if (propertiesChangedList.pictureChanged && $groupChatToBeChanged.icon) {
+            RaygunStoreInstance.updateConversationPicture($groupChatToBeChanged.id, $groupChatToBeChanged.icon)
         }
         propertiesChangedList = {
             groupName: false,
@@ -132,14 +136,13 @@
 <div class="settings" data-cy="group-settings">
     <Label hook="group-settings-change-photo-label" text={$_("chat.group.settings.photo")} />
     <div class="profile-picture-container">
-        <ProfilePicture hook="group-settings-profile-picture" noIndicator image={groupPicture} size={Size.Large} />
+        <ProfilePicture hook="group-settings-profile-picture" noIndicator image={$groupChatToBeChanged.icon || ""} size={Size.Large} />
         <FileUploadButton
             icon
-            disabled={!isAdmin}
+            disabled={!canChangePic}
             tooltip={$_("chat.group.settings.photo")}
             on:upload={async picture => {
-                /// TODO(Lucas): It is not implemented in warp yet
-                groupPicture = picture.detail
+                $groupChatToBeChanged.icon = picture.detail
                 propertiesChangedList.pictureChanged = true
             }} />
     </div>
@@ -202,7 +205,7 @@
                     <Text size={Size.Smaller}>{$_("chat.group.kick")}</Text>
                     <Text muted size={Size.Smallest}>{$_("chat.group.kick.description")}</Text>
                 </div>
-                <Button disabled={!isAdmin} appearance={Appearance.Error} on:click={remove_member}>
+                <Button disabled={!canRemove} appearance={Appearance.Error} on:click={remove_member}>
                     <Text size={Size.Smallest}>{$_("chat.group.kick")}</Text>
                 </Button>
             </div>
@@ -219,17 +222,32 @@
                                     togglePermission(GroupPermission.AddParticipants)
                                 }} />
                         </SettingSection>
+                        <SettingSection small hook="settings-section-remove-members" name={$_("chat.group.settings.remove")} description={$_("chat.group.settings.remove.description")}>
+                            <Switch
+                                small
+                                hook="switch-add-members"
+                                on={$groupChatToBeChanged.settings.permissions[user.key]?.includes(GroupPermission.RemoveParticipants)}
+                                on:toggle={_ => {
+                                    togglePermission(GroupPermission.RemoveParticipants)
+                                }} />
+                        </SettingSection>
                         <SettingSection small hook="settings-section-change-details" name={$_("chat.group.settings.details")} description={$_("chat.group.settings.details.description")}>
                             <Switch
                                 small
                                 hook="switch-change-details"
-                                on={$groupChatToBeChanged.settings.permissions[user.key]?.includes(GroupPermission.SetGroupName)}
+                                on={$groupChatToBeChanged.settings.permissions[user.key]?.includes(GroupPermission.EditGroupInfo)}
                                 on:toggle={_ => {
-                                    togglePermission(GroupPermission.SetGroupName)
+                                    togglePermission(GroupPermission.EditGroupInfo)
                                 }} />
                         </SettingSection>
                         <SettingSection small hook="settings-section-change-photo" name={$_("chat.group.settings.photo")} description={$_("chat.group.settings.photo.description")}>
-                            <Switch small hook="switch-change-photo" on={false} disabled={true} on:toggle={_ => {}} />
+                            <Switch
+                                small
+                                hook="switch-change-photo"
+                                on={$groupChatToBeChanged.settings.permissions[user.key]?.includes(GroupPermission.EditGroupImages)}
+                                on:toggle={_ => {
+                                    togglePermission(GroupPermission.EditGroupImages)
+                                }} />
                         </SettingSection>
                     </div>
                 </div>

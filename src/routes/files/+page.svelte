@@ -8,7 +8,7 @@
     import Text from "$lib/elements/Text.svelte"
     import Label from "$lib/elements/Label.svelte"
     import prettyBytes from "pretty-bytes"
-    import { ChatPreview, ImageEmbed, ImageFile, Modal, FileFolder, ProgressButton, ContextMenu, ChatFilter, ProfilePicture, ProfilePictureMany } from "$lib/components"
+    import { ChatPreview, ImageEmbed, ImageFile, Modal, FileFolder, ProgressButton, ContextMenu, ChatFilter, ProfilePicture, ProfilePictureMany, ChatIcon } from "$lib/components"
     import Controls from "$lib/layouts/Controls.svelte"
     import { onMount } from "svelte"
     import type { FileInfo, User } from "$lib/types"
@@ -710,21 +710,13 @@
                             </ContextMenu>
                         {:else if item.type === "folder"}
                             {#if item.chat}
-                                {#if item.chat.kind === ChatType.DirectMessage}
+                                {#if item.chat.kind === ChatType.DirectMessage || item.chat.icon}
                                     <div class="profile-picture-folder">
-                                        <ProfilePicture
-                                            hook="chat-topbar-profile-picture"
-                                            typing={item.chat.typing_indicator.size > 0}
-                                            id={$users[item.chat.users[1]]?.key}
-                                            image={$users[item.chat.users[1]]?.profile.photo.image}
-                                            frame={$users[item.chat.users[1]]?.profile.photo.frame}
-                                            size={Size.Smaller}
-                                            noIndicator={true}
-                                            loading={loading} />
+                                        <ChatIcon chat={item.chat} profileHook={"profile-picture-folder"} loading={loading} noIndicator size={Size.Smaller} forceSize />
                                     </div>
                                 {:else}
                                     <div class="profile-picture-many-folder">
-                                        <ProfilePictureMany users={Object.values($users)} size={Size.Smaller} forceSize={true} />
+                                        <ChatIcon chat={item.chat} profileHook={"profile-picture-folder"} loading={loading} noIndicator size={Size.Smaller} forceSize />
                                     </div>
                                 {/if}
                             {/if}

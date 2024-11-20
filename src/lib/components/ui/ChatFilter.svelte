@@ -10,6 +10,7 @@
     import { RaygunStoreInstance } from "$lib/wasm/RaygunStore"
     import { goto } from "$app/navigation"
     import StoreResolver from "../utils/StoreResolver.svelte"
+    import ChatIcon from "./ChatIcon.svelte"
 
     export let filter: string
 
@@ -109,18 +110,7 @@
                 <div class="searchbar-entry searchbar-entry-group">
                     <div class="group" role="none" on:click={() => select_chat(chat, undefined)}>
                         <div class="profile-picture-wrap">
-                            {#if chat.users.length === 2}
-                                <ProfilePicture
-                                    typing={chat.typing_indicator.size > 0}
-                                    image={$userCache[chat.users[0]].profile.photo.image}
-                                    status={$userCache[chat.users[0]].profile.status}
-                                    size={Size.Medium}
-                                    loading={loading}
-                                    id={$userCache[chat.users[0]].key}
-                                    frame={$userCache[chat.users[0]].profile.photo.frame} />
-                            {:else}
-                                <ProfilePictureMany users={chat.users.map(u => $userCache[u])} />
-                            {/if}
+                            <ChatIcon chat={chat} profileHook={"chat-filter-picture"} loading={loading} />
                         </div>
                         {#if name.startsWith(filter.toLocaleLowerCase())}
                             <span class="entry-title">

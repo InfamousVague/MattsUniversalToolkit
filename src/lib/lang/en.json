@@ -110,6 +110,8 @@
                 "description.placeholder": "Group description goes here",
                 "add": "Add Members",
                 "add.description": "Allows user to add members to the group",
+                "remove": "Remove Members",
+                "remove.description": "Allows user to add remove from the group",
                 "edit": "Edit Members",
                 "details": "Change Details",
                 "details.description": "Allows user to change the name and MOTD of the group",
