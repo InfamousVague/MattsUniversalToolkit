@@ -4,6 +4,7 @@ import path from "node:path"
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
+preprocess: [vitePreprocess({})],
   kit: {
     paths: {
       base: '/UplinkWeb', // Ensure this is set for GitHub Pages deployment
