@@ -7,7 +7,7 @@ const config = {
     preprocess: [vitePreprocess({})],
     kit: {
         paths: {
-            base: '/UplinkWeb/build'
+            base: '/UplinkWeb'
         },
         // Static adapter for GitHub Pages
         adapter: adapter({
