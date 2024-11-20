@@ -36,7 +36,6 @@ jobs:
           publish_dir: ./build
           publish_branch: gh-pages
           enable_jekyll: false
-          # Optionally add this if you need to avoid any previous files being included
-          clean: false
-          # Optionally set this if your base path is non-root (e.g., /UplinkWeb/)
+          exclude_assets: false
+          keep_files: true
           cname: 'UplinkWeb'
