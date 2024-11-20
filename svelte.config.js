@@ -6,10 +6,15 @@ import path from "node:path"
 const config = {
     preprocess: [vitePreprocess({})],
     kit: {
-        // adapter-auto only supports some environments, see https://kit.svelte.dev/docs/adapter-auto for a list.
-        // If your environment is not supported or you settled on a specific environment, switch out the adapter.
-        // See https://kit.svelte.dev/docs/adapters for more information about adapters.
-        adapter: adapter(),
+        paths: {
+            base: '/UplinkWeb'  // Replace with your GitHub repository name
+        },
+        // Static adapter for GitHub Pages
+        adapter: adapter({
+            // This ensures that client-side routing works properly on GitHub Pages
+            fallback: '404.html'
+        }),
+        // Uncomment this section if you need to set custom alias for modules
         // vite: {
         //   resolve: {
         //     alias: {
@@ -17,7 +22,7 @@ const config = {
         //     }
         //   }
         // }
-    },
+    }
 }
 
 export default config
