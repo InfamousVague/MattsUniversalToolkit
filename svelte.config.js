@@ -14,6 +14,7 @@ const config = {
     appDir: 'build/_app', // Custom app directory to control build structure
     prerender: {
       entries: [
+        '/',
         '/auth', 
         '/chat', 
         '/community/chat', 
