@@ -134,22 +134,14 @@
     }
 
     function sanitizePaymentRequest(message: string, sender: string): string {
-        // Match and extract "kind", "amountPreview", and "toAddress" from the input string
         const kindMatch = message.match(/"kind":"(.*?)"/)
         const amountPreviewMatch = message.match(/"amountPreview":"(.*?)"/)
-        // const toAddressMatch = message.match(/"toAddress":"(.*?)"/)
-
-        // Extract the values from the match results, defaulting to an empty string if not found
         const kind = kindMatch ? kindMatch[1] : ""
         let amountPreview = amountPreviewMatch ? amountPreviewMatch[1] : ""
-        // const toAddress = toAddressMatch ? toAddressMatch[1] : ""
-
-        // Remove any extra occurrence of the currency symbol in `amountPreview`
         if (amountPreview.includes(kind)) {
             amountPreview = amountPreview.replace(kind, "").trim()
         }
         amountPreview = amountPreview.replace(/(\.\d*?[1-9])0+$|\.0*$/, "$1")
-        // Return the formatted string
         return `Send ${amountPreview} ${kind}`
     }
 
@@ -174,7 +166,6 @@
         const kind = parsedMessage.kind || "unknown"
         const amount = parsedMessage.amount || "unknown"
         const amountPreview = parsedMessage.details?.amountPreview || "unknown"
-        const toAddress = parsedMessage.details?.toAddress || "unknown address"
 
         let cleanedAmountPreview = amountPreview
         if (amountPreview.includes(kind)) {
@@ -187,9 +178,6 @@
             cleanedAmountPreview = amount.replace(kind, "").trim()
             cleanedAmountPreview = cleanedAmountPreview.replace(/(\.\d*?[1-9])0+$|\.0*$/, "$1")
         }
-        // let recieverName = get(Store.state.friends).find(f => f === receiver)
-        console.log($users, receiver)
-        let receiverName = $users[receiver]?.name || "Unknown"
         const formattedAmount = cleanedAmountPreview
         if (sender !== "") {
             console.log(formattedAmount, kind, message)
