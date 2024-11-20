@@ -85,7 +85,7 @@
             console.log("Cookies cleared.")
 
             // Redirect to '/auth' with cache busting to prevent stale cache loading
-            window.location.href = "/auth?cacheBust=" + new Date().getTime()
+            window.location.href = "/UplinkWeb/auth?cacheBust=" + new Date().getTime()
         } catch (error) {
             console.error("Error clearing data:", error)
         }
