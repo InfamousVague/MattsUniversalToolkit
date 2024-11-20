@@ -14,7 +14,7 @@
     <div class="purchase">
         <div class="purchase-bulk">
             <Label text="$4.99" />
-            <img src="/assets/market/starlight/starlight.png" alt="Starlight" class="starlight-logo" />
+            <img src="/UplinkWeb/assets/market/starlight/starlight.png" alt="Starlight" class="starlight-logo" />
             <Label text="5,000 Starlight" />
             <Text>+0 Bonus Starlight</Text>
             <Controls>
@@ -25,7 +25,7 @@
         </div>
         <div class="purchase-bulk">
             <Label text="$9.99" />
-            <img src="/assets/market/starlight/starlight.png" alt="Starlight" class="starlight-logo" />
+            <img src="/UplinkWeb/assets/market/starlight/starlight.png" alt="Starlight" class="starlight-logo" />
             <Label text="10,500 Starlight" />
             <Text>+500 Bonus Starlight</Text>
             <Controls>
@@ -36,7 +36,7 @@
         </div>
         <div class="purchase-bulk">
             <Label text="$24.99" />
-            <img src="/assets/market/starlight/starlight.png" alt="Starlight" class="starlight-logo" />
+            <img src="/UplinkWeb/assets/market/starlight/starlight.png" alt="Starlight" class="starlight-logo" />
             <Label text="27,500 Starlight" />
             <Text>+2,500 Bonus Starlight</Text>
             <Controls>
@@ -47,7 +47,7 @@
         </div>
         <div class="purchase-bulk">
             <Label text="$49.99" />
-            <img src="/assets/market/starlight/starlight.png" alt="Starlight" class="starlight-logo" />
+            <img src="/UplinkWeb/assets/market/starlight/starlight.png" alt="Starlight" class="starlight-logo" />
             <Label text="57,500 Starlight" />
             <Text>+7,500 Bonus Starlight</Text>
             <Controls>
@@ -59,7 +59,7 @@
 
         <div class="purchase-bulk">
             <Label text="$74.99" />
-            <img src="/assets/market/starlight/starlight.png" alt="Starlight" class="starlight-logo" />
+            <img src="/UplinkWeb/assets/market/starlight/starlight.png" alt="Starlight" class="starlight-logo" />
             <Label text="90,000 Starlight" />
             <Text>+15,000 Bonus Starlight</Text>
             <Controls>
@@ -70,7 +70,7 @@
         </div>
         <div class="purchase-bulk">
             <Label text="$99.99" />
-            <img src="/assets/market/starlight/starlight.png" alt="Starlight" class="starlight-logo" />
+            <img src="/UplinkWeb/assets/market/starlight/starlight.png" alt="Starlight" class="starlight-logo" />
             <Label text="120,000 Starlight" />
             <Text>+20,000 Bonus Starlight</Text>
             <Controls>

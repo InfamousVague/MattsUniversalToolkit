@@ -21,7 +21,7 @@
 
 <div data-cy={hook} class="market-item">
     {#if empty}
-        <img src="/assets/frames/empty.png" alt="" class="preview" />
+        <img src="/UplinkWeb/assets/frames/empty.png" alt="" class="preview" />
     {:else}
         {#if !loaded}
             <Loader />

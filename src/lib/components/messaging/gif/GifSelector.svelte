@@ -164,7 +164,7 @@
         <Spacer less />
         <div class="tools">
             <!-- svelte-ignore a11y-missing-attribute -->
-            <img src="/assets/brand/giphy_attr.png" width="150" />
+            <img src="/UplinkWeb/assets/brand/giphy_attr.png" width="150" />
             <div class="slider-container">
                 <Label hook="giphy-selector-label-size" text="Size" />
                 <RangeSelector min={100} max={200} bind:value={$gifHeight} />

@@ -105,16 +105,16 @@
     <Text>{score}</Text>
     <div class="arrows">
         <div class="arrow" id="up" class:active={activeArrow === "up"}>
-            <img src="/assets/arrow.png" alt="Up Arrow" />
+            <img src="/UplinkWeb/assets/arrow.png" alt="Up Arrow" />
         </div>
         <div class="arrow" id="down" class:active={activeArrow === "down"}>
-            <img src="/assets/arrow.png" alt="Down Arrow" />
+            <img src="/UplinkWeb/assets/arrow.png" alt="Down Arrow" />
         </div>
         <div class="arrow" id="left" class:active={activeArrow === "left"}>
-            <img src="/assets/arrow.png" alt="Left Arrow" />
+            <img src="/UplinkWeb/assets/arrow.png" alt="Left Arrow" />
         </div>
         <div class="arrow" id="right" class:active={activeArrow === "right"}>
-            <img src="/assets/arrow.png" alt="Right Arrow" />
+            <img src="/UplinkWeb/assets/arrow.png" alt="Right Arrow" />
         </div>
     </div>
     {#if gameOver}

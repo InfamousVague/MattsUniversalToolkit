@@ -532,7 +532,7 @@
 
 {#if $controllerConnected && !gui}
     <div id="virtual-mouse">
-        <img src="/assets/controller/virtual_cursor.png" alt="virtual mouse" />
+        <img src="/UplinkWeb/assets/controller/virtual_cursor.png" alt="virtual mouse" />
     </div>
 {/if}
 

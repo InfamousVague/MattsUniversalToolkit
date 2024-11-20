@@ -932,7 +932,7 @@
                 {/if}
             {:else}
                 <div class="add-someone" data-cy="section-add-someone">
-                    <img src="/assets/mascot/better_with_friends.webp" class="better-with-friends" alt="Better with friends!" />
+                    <img src="/UplinkWeb/assets/mascot/better_with_friends.webp" class="better-with-friends" alt="Better with friends!" />
                     <Text>{$_("chat.getStarted")}</Text>
                     <Text muted centered>{$_("chat.noChat")}</Text>
                     <Button hook="button-add-friends" appearance={Appearance.Primary} text="Add Friends" on:click={_ => goto(Route.Friends)}>
