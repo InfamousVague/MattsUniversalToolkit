@@ -13,7 +13,7 @@ const config = {
     }),
     appDir: 'build/_app', // Custom app directory
     prerender: {
-      entries: [], // Disable all pre-rendering
+      entries: ['/auth'], // Pre-render the /auth route
     },
   },
 };
