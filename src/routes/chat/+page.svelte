@@ -386,37 +386,21 @@
             })
         }
         if (paymentType === PaymentRequestsEnum.Send) {
-            console.log("FUCK THIS SHIT", message.text[0])
+            console.log("Extracting payment details", message.text[0])
+
+            // Use the toDisplayString function to format the message
+            const formattedMessage = transfer.toDisplayString(message.text[0])
+
             let chat = get(Store.state.activeChat)
-            let txt = message.text[0].split("\n")
-            console.log(txt)
+            let txt = formattedMessage.split("\n")
+
+            console.log("Formatted Transfer Message", formattedMessage)
+
             let result = await RaygunStoreInstance.send(chat.id, txt, [])
             result.onSuccess(res => {
-                console.log(res)
-                transfer.toDisplayString()
+                console.log("Message Sent Successfully", res)
                 ConversationStore.addPendingMessages(chat.id, res.message, txt)
             })
-            //     let sendTranfser = transfer.toDisplayString()
-            //     let txt = sendTranfser.split("\n")
-            //     let result = await RaygunStoreInstance.send(chat.id, txt, [])
-            //     result.onSuccess(res => {
-            //         if (getValidPaymentRequest(message.text[0])) {
-            //             getValidPaymentRequest(message.text[0])?.execute()
-            //         }
-            //         console.log(txt)
-            //         Store.state.paymentTracker.update(payments => {
-            //             const alreadyRejected = payments.some(payment => payment.messageId === message.id)
-
-            //             if (!alreadyRejected) {
-            //                 return [...payments, { messageId: message.id, senderId: message.details.origin, rejectedPayment: false }]
-            //             } else {
-            //                 console.log(`MessageId ${message.id} is already in the rejected payments list`)
-            //                 return payments
-            //             }
-            //         })
-            //         transfer.toDisplayString()
-            //         ConversationStore.addPendingMessages(chat.id, message.text[0], txt)
-            //     })
         }
     }
 

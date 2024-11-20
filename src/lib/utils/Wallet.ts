@@ -2,6 +2,7 @@ import Wallet, { AddressPurpose, AddressType, RpcErrorCode } from "sats-connect"
 import { ethers } from "ethers"
 import { log } from "./Logger"
 import { PaymentRequestsEnum } from "$lib/enums"
+import type { MessageType } from "warp-wasm"
 
 export type Account = {
     address: string
@@ -498,9 +499,19 @@ export class Transfer {
     }
 
     toDisplayString(): string {
+        // Match and extract "kind" and "amountPreview" from the input JSON
+        // console.log(message)
+        // const kindMatch = message.match(/"kind":"(.*?)"/)
+        // const amountPreviewMatch = message.match(/"amountPreview":"(.*?)"/)
+        // const toAddressMatch = message.match(/"toAddress":"(.*?)"/)
+
+        // // Extract values, defaulting to an empty string if not found
+        // // const kind = kindMatch ? kindMatch[1] : ""
+        // const amountPreview = amountPreviewMatch ? amountPreviewMatch[1] : ""
+        // const toAddress = toAddressMatch ? toAddressMatch[1] : ""
         let transfer = JSON.stringify(this, (k, v) => (k === "amount" && typeof v === "bigint" ? v.toString() : v))
-        console.log(transfer, "HERE DISPLAY")
-        return `/send ${this.amountPreview} to ${shortenAddr(this.toAddress, 6)}  ${transfer}`
+        // Return the formatted string using extracted values
+        return `/send ${transfer}`
     }
 
     async execute() {

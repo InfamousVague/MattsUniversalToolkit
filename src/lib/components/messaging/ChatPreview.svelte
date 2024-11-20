@@ -58,6 +58,7 @@
                     ? $_("message_previews.coin_requested", { values: { username: sendingUserDetails.name, amount: amountPreview } })
                     : $_("message_previews.request_sent", { values: { amount: amountPreview } })
             } catch (error) {
+                console.log(chat.last_message_preview)
                 return "Invalid message format"
             }
         }
@@ -71,6 +72,7 @@
                     return $_("message_previews.coin_canceled")
                 }
             } catch (error) {
+                console.log(chat.last_message_preview)
                 return "Invalid message format"
             }
         }
@@ -79,21 +81,34 @@
                 const sendingUserId = ConversationStore.getMessage(chat.id, chat.last_message_id)?.details.origin
                 const sendingUserDetails = get(Store.getUser(sendingUserId!))
                 const jsonStartIndex = chat.last_message_preview.indexOf("{")
+
                 if (jsonStartIndex === -1) {
                     console.error("No JSON found in last_message_preview:", chat.last_message_preview)
                     return "Invalid message format"
                 }
+
                 const jsonPart = chat.last_message_preview.slice(jsonStartIndex)
-                let amountPreview
+                let parsedMessage
                 try {
-                    amountPreview = JSON.parse(jsonPart)
+                    parsedMessage = JSON.parse(jsonPart)
                 } catch (error) {
+                    console.error("Error parsing JSON:", error, chat.last_message_preview)
                     return "Invalid message format"
                 }
+
+                const kind = parsedMessage.asset?.kind || ""
+                let amountPreview = parsedMessage.amountPreview || ""
+
+                if (amountPreview.includes(kind)) {
+                    amountPreview = amountPreview.replace(kind, "").trim()
+                }
+                amountPreview = amountPreview.replace(/(\.\d*?[1-9])0+$|\.0*$/, "$1")
+
                 if (get(Store.getUser(sendingUserId!)).key !== ownId.key) {
-                    return $_("payments.recievedPayment", { values: { user: sendingUserDetails.name, amount: amountPreview.amountPreview } })
+                    return `${sendingUserDetails.name} sent you ${amountPreview} ${kind}`
                 } else {
-                    return $_("payments.sentPayment", { values: { amount: amountPreview.amountPreview } })
+                    const recipientId = parsedMessage.toAddress || "unknown address"
+                    return `You sent ${amountPreview} ${kind} to ${recipientId}`
                 }
             } catch (error) {
                 console.error("Error in PaymentRequestsEnum.Send condition:", error)
