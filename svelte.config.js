@@ -11,7 +11,7 @@ const config = {
     adapter: adapter({
       fallback: '404.html', // Fallback for unmatched routes
     }),
-    appDir: '/build/_app', // Custom app directory
+    appDir: 'build/_app', // Custom app directory
     prerender: {
       entries: [], // Disable all pre-rendering
     },
