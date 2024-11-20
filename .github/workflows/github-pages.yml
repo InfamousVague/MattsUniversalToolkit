@@ -38,4 +38,3 @@ jobs:
           enable_jekyll: false
           exclude_assets: false
           keep_files: true
-          cname: 'UplinkWeb'
