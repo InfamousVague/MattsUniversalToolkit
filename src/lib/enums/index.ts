@@ -108,21 +108,21 @@ export const enum FilesItemKind {
 }
 
 export const enum SettingsRoute {
-    Profile = "/settings/profile",
-    Preferences = "/settings/preferences",
-    Messages = "/settings/messages",
-    AudioVideo = "/settings/audio_video",
-    Extensions = "/settings/extensions",
-    Keybinds = "/settings/keybinds",
-    Accessibility = "/settings/accessibility",
-    Notifications = "/settings/notifications",
-    About = "/settings/about",
-    Licenses = "/settings/licenses",
-    Developer = "/settings/developer",
-    Inventory = "/settings/inventory",
-    Network = "/settings/network",
-    Realms = "/settings/realms",
-    Gamepad = "/settings/gamepad",
+    Profile = "/UplinkWeb/settings/profile",
+    Preferences = "/UplinkWeb/settings/preferences",
+    Messages = "/UplinkWeb/settings/messages",
+    AudioVideo = "/UplinkWeb/settings/audio_video",
+    Extensions = "/UplinkWeb/settings/extensions",
+    Keybinds = "/UplinkWeb/settings/keybinds",
+    Accessibility = "/UplinkWeb/settings/accessibility",
+    Notifications = "/UplinkWeb/settings/notifications",
+    About = "/UplinkWeb/settings/about",
+    Licenses = "/UplinkWeb/settings/licenses",
+    Developer = "/UplinkWeb/settings/developer",
+    Inventory = "/UplinkWeb/settings/inventory",
+    Network = "/UplinkWeb/settings/network",
+    Realms = "/UplinkWeb/settings/realms",
+    Gamepad = "/UplinkWeb/settings/gamepad",
 }
 
 export const enum CommunitySettingsRoute {
