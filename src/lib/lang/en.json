@@ -170,7 +170,7 @@
         "add": "Add",
         "add_someone": "Add Someone",
         "search_friends_placeholder": "Search friends",
-        "find_placeholder": "Find Username#xxxxxx ...",
+        "find_placeholder": "Enter Friend ID",
         "incoming_requests": "Incoming Requests",
         "outgoing_requests": "Outgoing Requests",
         "noOutgoing": "No outbound requests.",
@@ -334,6 +334,16 @@
                 "label": "Log Out",
                 "description": "Log out of the current account and return to the unlock page."
             },
+            "support": {
+                "label": "Support",
+                "description": "Contact us for support.",
+                "button": "Email us"
+            },
+            "delete_title": "Delete Account",
+            "delete_subtitle": "Click here to delete your account",
+            "delete_account_action_description": "This action will delete your account permanently",
+            "delete_account_confirm_pin": "Enter your pin to confirm",
+            "delete_account_wrong_pin": "Incorrect PIN. Please try again to delete your account.",
             "change_profile_photo": "Change profile photo",
             "reveal_phrase": {
                 "label": "Reveal recovery phrase",

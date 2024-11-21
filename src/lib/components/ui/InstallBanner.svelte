@@ -10,7 +10,7 @@
         Windows = "Windows",
         MacOS = "MacOS",
         Android = "Android",
-       /* iOS = "iOS", */
+        iOS = "iOS",
         Linux = "Linux",
         Other = "Other",
     }
@@ -31,7 +31,7 @@
     }
 
     function isTauri(): boolean {
-        return typeof window !== "undefined" && "__TAURI__" in window
+        return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window
     }
 
     function isCapacitor(): boolean {
@@ -66,11 +66,11 @@
             icon: Shape.Android,
             download: DOWNLOAD_LINKS.Android,
         },
-      /*  [Platform.iOS]: {
+        [Platform.iOS]: {
             text: "iPhone",
             icon: Shape.Apple,
             download: DOWNLOAD_LINKS.iOS,
-        }, */
+        },
         [Platform.Linux]: {
             text: "Linux",
             icon: Shape.Code,

@@ -3,7 +3,6 @@ import { derived, get, writable, type Writable } from "svelte/store"
 import { createPersistentState } from ".."
 import { EmojiFont, Font, Identicon, Route } from "$lib/enums"
 import { Store as MainStore } from "../Store"
-import { mchats } from "$lib/mock/users"
 import { page } from "$app/stores"
 
 export interface IUIState {

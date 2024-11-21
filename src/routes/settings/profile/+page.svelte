@@ -22,6 +22,7 @@
     import { identityColor, toIntegrationIconSrc, toIntegrationKind } from "$lib/utils/ProfileUtils"
     import { log } from "$lib/utils/Logger"
     import Modal from "$lib/components/ui/Modal.svelte"
+    import PinInput from "$lib/components/PinInput.svelte"
 
     enum SeedState {
         Hidden,
@@ -33,6 +34,8 @@
     let isValidUsernameToUpdate = false
     let isValidStatusMessageToUpdate = true
     let seedPhrase = TesseractStoreInstance.fetchSeed()?.split(" ")
+    let isDeleteAccountModalOpened = writable(false)
+    let wrongPinToDeleteAccountMessage = $_("settings.profile.delete_account_wrong_pin")
 
     function toggleSeedPhrase() {
         if (showSeed === SeedState.Missing) return
@@ -98,6 +101,68 @@
         unsavedChanges = changeList.username || changeList.statusMessage
         isValidStatusMessageToUpdate = false
         isValidUsernameToUpdate = false
+    }
+
+    // Function to delete IndexedDB database by name
+    function deleteIndexedDB(dbName: string) {
+        return new Promise<string>((resolve, reject) => {
+            const request = indexedDB.deleteDatabase(dbName)
+
+            request.onsuccess = function () {
+                console.log(`Database '${dbName}' deleted successfully.`)
+                resolve("Success")
+            }
+
+            request.onerror = function () {
+                console.error(`Failed to delete database '${dbName}':`, request.error)
+                reject(request.error)
+            }
+
+            request.onblocked = function () {
+                console.warn(`Database deletion for '${dbName}' is blocked. Close other tabs that use it and try again.`)
+                // Continue even if blocked, but mark as incomplete
+                resolve("Blocked")
+            }
+        })
+    }
+
+    // Function to clear all IndexedDB data, localStorage, sessionStorage, and cookies
+    async function clearAllData() {
+        try {
+            // Clear localStorage and sessionStorage first
+            localStorage.clear()
+            console.log("localStorage cleared.")
+
+            sessionStorage.clear()
+            console.log("sessionStorage cleared.")
+
+            // Attempt to delete specific database 'tesseract' and all other IndexedDB databases
+            await deleteIndexedDB("tesseract")
+            console.log("Database 'tesseract' cleared if it existed.")
+
+            const dbNames = await indexedDB.databases()
+            for (let dbInfo of dbNames) {
+                if (dbInfo.name) {
+                    const result = await deleteIndexedDB(dbInfo.name)
+                    if (result === "Blocked") {
+                        console.warn(`Could not delete database '${dbInfo.name}' due to blocking issues.`)
+                    }
+                }
+            }
+            console.log("All IndexedDB data cleared, where not blocked.")
+
+            // Clear cookies
+            document.cookie.split(";").forEach(cookie => {
+                const cookieName = cookie.split("=")[0].trim()
+                document.cookie = cookieName + "=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/"
+            })
+            console.log("Cookies cleared.")
+
+            // Redirect to '/auth' with cache busting to prevent stale cache loading
+            window.location.href = "/auth?cacheBust=" + new Date().getTime()
+        } catch (error) {
+            console.error("Error clearing data:", error)
+        }
     }
 
     $: auth = AuthStore.state
@@ -171,7 +236,8 @@
         if (short) {
             await navigator.clipboard.writeText(`${userReference.name}#${userReference.id.short}`)
         } else {
-            await navigator.clipboard.writeText(`${userReference.key}`)
+            const updatedKey = userReference.key.replace("did:key:", "")
+            await navigator.clipboard.writeText(updatedKey)
         }
     }
 
@@ -558,21 +624,76 @@
                     </Checkbox>
                 </div>
             {/if}
+
             <div class="section">
-                <SettingSection hook="section-log-out" name={$_("settings.profile.log_out.label")} description={$_("settings.profile.log_out.description")}>
-                    <Button
-                        hook="button-log-out"
-                        appearance={Appearance.Alt}
-                        text={$_("settings.profile.log_out.label")}
-                        on:click={_ => {
-                            logOut()
-                        }}>
-                        <Icon icon={Shape.Lock} />
-                    </Button>
+                <SettingSection hook="section-support" name={$_("settings.profile.support.label")} description={$_("settings.profile.support.description")}>
+                    <a href="mailto:support@satellite.com">
+                        <Button hook="button-support" appearance={Appearance.Alt} text={$_("settings.profile.support.button")}>
+                            <Icon icon={Shape.Email} />
+                        </Button>
+                    </a>
                 </SettingSection>
             </div>
+
+            <SettingSection hook="section-log-out" name={$_("settings.profile.log_out.label")} description={$_("settings.profile.log_out.description")}>
+                <Button
+                    hook="button-log-out"
+                    appearance={Appearance.Alt}
+                    text={$_("settings.profile.log_out.label")}
+                    on:click={_ => {
+                        logOut()
+                    }}>
+                    <Icon icon={Shape.Lock} />
+                </Button>
+            </SettingSection>
         </div>
+        <SettingSection hook="section-delete-account" name={$_("settings.profile.delete_title")} description={$_("settings.profile.delete_subtitle")}>
+            <Button
+                hook="button-delete-account"
+                appearance={Appearance.Error}
+                text={$_("settings.profile.delete_title")}
+                on:click={_ => {
+                    isDeleteAccountModalOpened.set(true)
+                }}>
+                <Icon icon={Shape.Trash} />
+            </Button>
+        </SettingSection>
     </div>
+    {#if $isDeleteAccountModalOpened}
+        <Modal
+            on:close={_ => {
+                isDeleteAccountModalOpened.set(false)
+            }}>
+            <div class="delete-account-pin">
+                <Text hook="text-delete-account-pin-first-message" class="delete-account-pin-first-message" appearance={Appearance.Error}>
+                    {$_("settings.profile.delete_account_action_description")}
+                </Text>
+                <Text>
+                    {$_("settings.profile.delete_account_confirm_pin")}
+                </Text>
+                <PinInput
+                    min={4}
+                    max={8}
+                    loading={false}
+                    scramble={false}
+                    stayLoggedIn={false}
+                    showSettings={false}
+                    showButtonSettings={false}
+                    on:submit={async e => {
+                        let pin = e.detail
+                        await new Promise(async _ => {
+                            let result = await TesseractStoreInstance.unlock(pin)
+                            result.onFailure(_ => {
+                                Store.addToastNotification(new ToastMessage("", wrongPinToDeleteAccountMessage, 3))
+                            })
+                            result.onSuccess(async _ => {
+                                await clearAllData()
+                            })
+                        })
+                    }} />
+            </div>
+        </Modal>
+    {/if}
 </div>
 
 <style lang="scss">
@@ -739,6 +860,14 @@
             overflow: hidden;
             align-items: center;
             gap: var(--gap);
+            padding: var(--padding);
+        }
+
+        .delete-account-pin {
+            display: flex;
+            flex-direction: column;
+            gap: var(--gap);
+            align-items: center;
             padding: var(--padding);
         }
     }

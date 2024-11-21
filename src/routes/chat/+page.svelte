@@ -1052,7 +1052,6 @@
             <Chatbar
                 replyTo={replyTo}
                 activeChat={$activeChat}
-                typing={$activeChat.typing_indicator.users && $activeChat.typing_indicator.users().map(u => $users[u])}
                 emojiClickHook={emoji => {
                     if (reactingTo) {
                         reactTo(reactingTo, emoji, true)

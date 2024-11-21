@@ -18,6 +18,7 @@ export interface IState {
         output: Writable<string>
         cameraEnabled: Writable<boolean>
         video: Writable<string>
+        screenShare: Writable<boolean>
     }
     activeChat: Writable<Chat>
     chatMessagesToSend: Writable<{ [key: string]: string }>
