@@ -384,6 +384,7 @@
             "acceptedCall": "Joined, loading...",
             "connecting": "Connecting...",
             "noResponse": "No response",
+            "live": "LIVE",
             "join": "Join"
         },
         "notifications": {
