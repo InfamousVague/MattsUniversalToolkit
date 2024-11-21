@@ -6,8 +6,6 @@
     import { Input, Label, Button } from "$lib/elements"
     import Stream from "$lib/elements/Stream.svelte"
     import { onDestroy, onMount } from "svelte"
-    import { log } from "$lib/utils/Logger"
-    import BatteryIndicator from "$lib/components/widgets/BatteryIndicator.svelte"
     import { _ } from "svelte-i18n"
 
     let loading: boolean = false
@@ -34,42 +32,11 @@
         }
         try {
             localStream = await navigator.mediaDevices.getUserMedia(constraints)
-            // initPeer()
         } catch (err) {
             console.error("Accessing the microphone failed:", err)
         }
     }
-
-    // function initPeer(): void {
-    //     peer = new SimplePeer({
-    //         initiator: location.hash === "#init",
-    //         trickle: false,
-    //         stream: localStream,
-    //     })
-
-    //     peer.on("signal", (_data: any) => {
-    //         // log.info("SIGNAL", JSON.stringify(data))
-    //         // Send this data to the remote peer via signaling server
-    //     })
-
-    //     peer.on("connect", () => {
-    //         log.info("CONNECT")
-    //         peer?.send("whatever" + Math.random())
-    //     })
-
-    //     peer.on("data", (data: any) => {
-    //         log.info("data: " + data)
-    //     })
-
-    //     peer.on("stream", (stream: MediaStream) => {
-    //         remoteStream = stream
-    //     })
-    // }
-
-    // function connectToPeer(signalData: any): void {
-    //     peer?.signal(signalData)
-    // }
-
+    
     onMount(() => {
         startVideoTest()
     })

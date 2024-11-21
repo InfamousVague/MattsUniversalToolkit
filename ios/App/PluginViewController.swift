@@ -1,4 +1,3 @@
-// PluginViewController.swift
 import UIKit
 import Capacitor
 
