@@ -1272,9 +1272,6 @@
                 max-width: 100%;
             }
         }
-        .payment_buttons .button .error {
-            padding-top: var(--gap-more);
-        }
     }
 
     .sticker {

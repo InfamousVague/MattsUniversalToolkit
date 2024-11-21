@@ -145,15 +145,6 @@
         padding: var(--gap-less);
         max-width: 300px;
     }
-    .address_QR {
-        display: flex;
-        width: 100%;
-        align-items: center;
-        justify-content: center;
-        .address_button {
-            margin-left: 10px;
-        }
-    }
     .title {
         gap: var(--gap-less);
         display: flex;
@@ -176,13 +167,6 @@
         padding: 0 5%;
     }
     .amount {
-        display: block;
-        width: 100%;
-        align-items: center;
-        justify-content: center;
-        padding: var(--gap-less);
-    }
-    .note {
         display: block;
         width: 100%;
         align-items: center;
