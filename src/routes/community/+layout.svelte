@@ -1,19 +1,13 @@
 <script lang="ts">
-    import { Appearance, CommunityChannelKind, Route, Shape, Size } from "$lib/enums"
+    import { Route } from "$lib/enums"
 
     import { _ } from "svelte-i18n"
     import { Sidebar } from "$lib/layouts"
     import { ImageEmbed, Modal } from "$lib/components"
     import { get } from "svelte/store"
     import { UIStore } from "$lib/state/ui"
-    import type { CommunityChannel, CommunityChannelGroup } from "$lib/types"
-    import Channel from "$lib/components/community/channel/Channel.svelte"
-    import Label from "$lib/elements/Label.svelte"
     import { communityChannelGroups } from "$lib/mock/community"
-    import Icon from "$lib/elements/Icon.svelte"
-    import Button from "$lib/elements/Button.svelte"
     import ChannelGroup from "$lib/components/community/channel/ChannelGroup.svelte"
-    import Spacer from "$lib/elements/Spacer.svelte"
 
     let loading = false
     let sidebarOpen: boolean = get(UIStore.state.sidebarOpen)
@@ -29,7 +23,6 @@
 
 <div id="page">
     <!-- Context Menu-->
-    <!-- Unused atm -->
     <!-- <ContextMenu visible={contextData.length > 0} items={contextData} coords={contextPosition} on:close={_ => (contextData = [])} /> -->
 
     <!-- Modals -->

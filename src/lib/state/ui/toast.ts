@@ -8,7 +8,6 @@ export class ToastMessage {
     icon: Shape | undefined
     appearance: Appearance = Appearance.Default
     onclick?: () => void
-    // internal. used for resetting the timer
     initial_time: number
 
     constructor(title: string, content: string, remaining_time: number, icon?: Shape, appearance?: Appearance, onclick?: () => void) {

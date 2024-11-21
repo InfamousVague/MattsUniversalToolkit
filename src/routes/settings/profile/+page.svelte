@@ -236,7 +236,8 @@
         if (short) {
             await navigator.clipboard.writeText(`${userReference.name}#${userReference.id.short}`)
         } else {
-            await navigator.clipboard.writeText(`${userReference.key}`)
+            const updatedKey = userReference.key.replace("did:key:", "")
+            await navigator.clipboard.writeText(updatedKey)
         }
     }
 
@@ -653,7 +654,6 @@
                 text={$_("settings.profile.delete_title")}
                 on:click={_ => {
                     isDeleteAccountModalOpened.set(true)
-                    // clearAllData()
                 }}>
                 <Icon icon={Shape.Trash} />
             </Button>
