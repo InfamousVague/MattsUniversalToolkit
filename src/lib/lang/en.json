@@ -170,7 +170,7 @@
         "add": "Add",
         "add_someone": "Add Someone",
         "search_friends_placeholder": "Search friends",
-        "find_placeholder": "Find Username#xxxxxx ...",
+        "find_placeholder": "Enter Friend ID",
         "incoming_requests": "Incoming Requests",
         "outgoing_requests": "Outgoing Requests",
         "noOutgoing": "No outbound requests.",
