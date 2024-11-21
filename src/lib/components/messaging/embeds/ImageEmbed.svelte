@@ -72,8 +72,6 @@
 
         :global(.controls) {
             position: absolute;
-            // top: var(--padding-less);
-            // right: var(--padding-less);
         }
     }
 </style>

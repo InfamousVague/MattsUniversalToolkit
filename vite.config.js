@@ -39,8 +39,10 @@ export default defineConfig({
         nodePolyfills(),
     ],
     optimizeDeps: {
+        include: ["voice-activity-detection"],
         exclude: ["warp-wasm"],
     },
+
     css: {
         preprocessorOptions: {
             scss: {

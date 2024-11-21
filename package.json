@@ -35,8 +35,10 @@
     "type": "module",
     "dependencies": {
         "@capacitor/android": "^6.1.2",
+        "@capacitor/camera": "^6.1.0",
         "@capacitor/cli": "^6.1.2",
         "@capacitor/core": "^6.1.2",
+        "@capacitor/filesystem": "^6.0.1",
         "@capacitor/ios": "^6.1.2",
         "@capacitor/splash-screen": "^6.0.2",
         "@dicebear/collection": "^9.0.1",
@@ -65,6 +67,7 @@
         "trystero": "^0.20.0",
         "uuid": "^9.0.1",
         "vite-plugin-node-polyfills": "^0.21.0",
+        "voice-activity-detection": "^0.0.5",
         "warp-wasm": "1.5.1"
     }
 }

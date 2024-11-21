@@ -9,6 +9,7 @@ declare global {
         // interface Platform {}
     }
 }
+
 declare const __COMMIT_HASH__: string
 
 export {}

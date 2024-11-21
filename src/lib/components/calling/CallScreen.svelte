@@ -13,9 +13,9 @@
     import type { Chat } from "$lib/types"
     import VolumeMixer from "./VolumeMixer.svelte"
     import { createEventDispatcher, onDestroy, onMount } from "svelte"
-    import { callInProgress, callTimeout, makeCallSound, TIME_TO_SHOW_CONNECTING, TIME_TO_SHOW_END_CALL_FEEDBACK, timeCallStarted, usersAcceptedTheCall, usersDeniedTheCall, VoiceRTCInstance } from "$lib/media/Voice"
+    import { callInProgress, callScreenVisible, callTimeout, makeCallSound, TIME_TO_SHOW_CONNECTING, TIME_TO_SHOW_END_CALL_FEEDBACK, timeCallStarted, usersAcceptedTheCall, usersDeniedTheCall, VoiceRTCInstance } from "$lib/media/Voice"
     import { log } from "$lib/utils/Logger"
-    import { playSound, SoundHandler, Sounds } from "../utils/SoundHandler"
+    import { playSound, Sounds } from "../utils/SoundHandler"
     import { MultipassStoreInstance } from "$lib/wasm/MultipassStore"
     import { debounce } from "$lib/utils/Functions"
 
@@ -30,6 +30,7 @@
     let showCallSettings = false
     let muted: boolean = !VoiceRTCInstance.callOptions.audio.enabled
     let cameraEnabled: boolean = get(Store.state.devices.cameraEnabled)
+    let screenShareEnabled: boolean = get(Store.state.devices.screenShare)
     let isFullScreen = false
     $: localVideoCurrentSrc = writable<HTMLVideoElement | undefined>(undefined)
     $: {
@@ -127,6 +128,12 @@
         userCallOptions = VoiceRTCInstance.callOptions
     })
 
+    let subscribeFive = Store.state.devices.screenShare.subscribe(state => {
+        screenShareEnabled = state
+        userCallOptions = VoiceRTCInstance.callOptions
+        userCallOptions.video.screenShareEnabled = screenShareEnabled
+    })
+
     function handleClickOutside(event: MouseEvent) {
         const callSettingsElement = document.getElementById("call-settings")
         const showVolumeElement = document.getElementById("volume-mixer")
@@ -188,6 +195,7 @@
     }
 
     onMount(async () => {
+        callScreenVisible.set(true)
         if ($makeCallSound) {
             stopMakeCallSound()
         }
@@ -213,10 +221,11 @@
                 }, TIME_TO_SHOW_CONNECTING)
             }
         }
-        if ($timeCallStarted) {
+        let timeCallStarted = $timeCallStarted
+        if (timeCallStarted !== null) {
             let timeCallStartedInterval = setInterval(() => {
                 let now = new Date()
-                let timeDifference = now.getTime() - $timeCallStarted.getTime()
+                let timeDifference = now.getTime() - timeCallStarted.getTime()
                 if (timeDifference > TIME_TO_SHOW_CONNECTING) {
                     showAnimation = false
                     noResponseVisible = true
@@ -232,12 +241,14 @@
         }
         if (get(Store.state.activeCall) === null) {
             Store.setActiveCall(chat)
+            Store.state.devices.screenShare.set(false)
         }
         window.addEventListener("resize", updateUserListSplit)
         updateUserListSplit()
     })
 
     onDestroy(() => {
+        callScreenVisible.set(false)
         window.removeEventListener("keydown", handleKeyDown)
         window.removeEventListener("keyup", handleKeyUp)
         callTimeout.set(false)
@@ -247,6 +258,7 @@
         subscribeTwo()
         subscribeThree()
         subscribeFour()
+        subscribeFive()
         if (timeout) {
             clearTimeout(timeout)
         }
@@ -254,6 +266,9 @@
             clearTimeout(hideNoResponseUsersTimeout)
         }
         stopMakeCallSound()
+        if (get(Store.state.activeCall) === null && get(Store.state.devices.screenShare) === true) {
+            Store.state.devices.screenShare.set(false)
+        }
     })
 
     function updateUserListSplit() {
@@ -343,8 +358,18 @@
                     {@const user = $highlightUser}
                     <div class="highlight-user">
                         {#if user === get(Store.state.user).key}
-                            <div class="video-container {isFullScreen ? 'fullscreen' : ''}" style={!userCallOptions.video.enabled ? "display: none" : ""} role="none" on:click={_ => setHighlightUser(user)}>
-                                <video data-cy="local-user-video" id="local-user-video" bind:this={$localVideoCurrentSrc} style="display: {userCallOptions.video.enabled ? 'block' : 'none'}" muted autoplay>
+                            <div
+                                class="video-container {isFullScreen ? 'fullscreen' : ''}"
+                                style={!userCallOptions.video.enabled && !userCallOptions.video.screenShareEnabled ? "display: none" : ""}
+                                role="none"
+                                on:click={_ => setHighlightUser(user)}>
+                                <video
+                                    data-cy="local-user-video"
+                                    id="local-user-video"
+                                    bind:this={$localVideoCurrentSrc}
+                                    style="display: {userCallOptions.video.enabled || userCallOptions.video.screenShareEnabled ? 'block' : 'none'}"
+                                    muted
+                                    autoplay>
                                     <track kind="captions" src="" />
                                 </video>
                                 <div class="user-name">{ownUserName}</div>
@@ -354,7 +379,7 @@
                                     </div>
                                 {/if}
                             </div>
-                            {#if !userCallOptions.video.enabled}
+                            {#if !userCallOptions.video.enabled && !userCallOptions.video.screenShareEnabled}
                                 <Participant
                                     participant={$userCache[user]}
                                     hasVideo={$userCache[user].media.is_streaming_video}
@@ -366,10 +391,16 @@
                         {:else if $remoteStreams[user]}
                             <div
                                 class="video-container {$userCache[get(Store.state.user).key].media.is_playing_audio ? 'talking' : ''} {isFullScreen ? 'fullscreen' : ''}"
-                                style={!$remoteStreams[user].user.videoEnabled ? "display: none" : ""}
+                                style={!$remoteStreams[user].user.videoEnabled && !$remoteStreams[user].user.screenShareEnabled ? "display: none" : ""}
                                 role="none"
                                 on:click={_ => setHighlightUser(user)}>
-                                <video data-cy="remote-user-video" id="remote-user-video-{user}" class={$remoteStreams[user].user.videoEnabled ? "" : "disabled"} autoplay muted={false} use:attachStream={user}>
+                                <video
+                                    data-cy="remote-user-video"
+                                    id="remote-user-video-{user}"
+                                    class={$remoteStreams[user].user.videoEnabled || $remoteStreams[user].user.screenShareEnabled ? "" : "disabled"}
+                                    autoplay
+                                    muted={false}
+                                    use:attachStream={user}>
                                     <track kind="captions" src="" />
                                 </video>
                                 <div class="user-name">{$userCache[user].name}</div>
@@ -380,7 +411,7 @@
                                 {/if}
                             </div>
 
-                            {#if !$remoteStreams[user].stream || !$remoteStreams[user].user.videoEnabled}
+                            {#if !$remoteStreams[user].stream || (!$remoteStreams[user].user.videoEnabled && !$remoteStreams[user].user.screenShareEnabled)}
                                 <Participant
                                     participant={$userCache[user]}
                                     hasVideo={$userCache[user].media.is_streaming_video}
@@ -398,10 +429,16 @@
                             {#if user === get(Store.state.user).key}
                                 <div
                                     class="video-container {$userCache[user].media.is_playing_audio ? 'talking' : ''} {isFullScreen ? 'fullscreen' : ''}"
-                                    style={!userCallOptions.video.enabled ? "display: none" : ""}
+                                    style={!userCallOptions.video.enabled && !userCallOptions.video.screenShareEnabled ? "display: none" : ""}
                                     role="none"
                                     on:click={_ => setHighlightUser(user)}>
-                                    <video data-cy="local-user-video" id="local-user-video" bind:this={$localVideoCurrentSrc} style="display: {userCallOptions.video.enabled ? 'block' : 'none'}" muted autoplay>
+                                    <video
+                                        data-cy="local-user-video"
+                                        id="local-user-video"
+                                        bind:this={$localVideoCurrentSrc}
+                                        style="display: {userCallOptions.video.enabled || userCallOptions.video.screenShareEnabled ? 'block' : 'none'}"
+                                        muted
+                                        autoplay>
                                         <track kind="captions" src="" />
                                     </video>
                                     <div class="user-name">{ownUserName}</div>
@@ -411,7 +448,7 @@
                                         </div>
                                     {/if}
                                 </div>
-                                {#if !userCallOptions.video.enabled}
+                                {#if !userCallOptions.video.enabled && !userCallOptions.video.screenShareEnabled}
                                     <Participant
                                         participant={$userCache[user]}
                                         hasVideo={$userCache[user].media.is_streaming_video}
@@ -442,13 +479,21 @@
                             {:else if $userCache[user] && $userCache[user].key !== get(Store.state.user).key && $remoteStreams[user]}
                                 <div
                                     class="video-container {$userCache[user].media.is_playing_audio ? 'talking' : ''} {isFullScreen ? 'fullscreen' : ''}"
-                                    style={!$remoteStreams[user].user.videoEnabled ? "display: none" : ""}
+                                    style={!$remoteStreams[user].user.videoEnabled && !$remoteStreams[user].user.screenShareEnabled ? "display: none" : ""}
                                     role="none"
                                     on:click={_ => setHighlightUser(user)}>
-                                    <video data-cy="remote-user-video" id="remote-user-video-{user}" class={$remoteStreams[user].user.videoEnabled ? "" : "disabled"} autoplay muted={false} use:attachStream={user}>
+                                    <video
+                                        data-cy="remote-user-video"
+                                        id="remote-user-video-{user}"
+                                        class={$remoteStreams[user].user.videoEnabled || $remoteStreams[user].user.screenShareEnabled ? "" : "disabled"}
+                                        autoplay
+                                        muted={false}
+                                        use:attachStream={user}>
                                         <track kind="captions" src="" />
                                     </video>
-                                    <div class="user-name">{$userCache[user].name}</div>
+                                    <div class="user-name">
+                                        {$userCache[user].name}
+                                    </div>
                                     {#if !$remoteStreams[user].user.audioEnabled}
                                         <div class="mute-status">
                                             <Icon icon={Shape.MicrophoneSlash}></Icon>
@@ -456,7 +501,7 @@
                                     {/if}
                                 </div>
 
-                                {#if !$remoteStreams[user].stream || !$remoteStreams[user].user.videoEnabled}
+                                {#if !$remoteStreams[user].stream || (!$remoteStreams[user].user.videoEnabled && !$remoteStreams[user].user.screenShareEnabled)}
                                     <Participant
                                         participant={$userCache[user]}
                                         hasVideo={$userCache[user].media.is_streaming_video}
@@ -548,11 +593,19 @@
                 soundSource={undefined}
                 on:click={_ => {
                     Store.updateDeafened(!deafened)
-                    // VoiceRTCInstance.turnOnOffDeafened()
                 }}>
                 <Icon icon={deafened ? Shape.HeadphoneSlash : Shape.Headphones} />
             </Button>
-            <Button hook="button-call-stream" appearance={Appearance.Alt} icon tooltip={$_("call.stream")}>
+            <Button
+                hook="button-call-stream"
+                appearance={screenShareEnabled ? Appearance.Success : Appearance.Alt}
+                icon
+                tooltip={$_("call.stream")}
+                on:click={async _ => {
+                    // This component handles the call screen UI. In this specific case, the user has the option to cancel screen sharing.
+                    // The UI should not be updated until the user decides whether to share their screen or not.
+                    await VoiceRTCInstance.toggleScreenShare(!screenShareEnabled)
+                }}>
                 <Icon icon={Shape.Stream} />
             </Button>
             <Button

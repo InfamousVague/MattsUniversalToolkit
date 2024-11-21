@@ -42,7 +42,6 @@
     }
 
     let inputRef: HTMLInputElement
-    const dispatch = createEventDispatcher()
     let isEnterOrEscapeKeyPressed: boolean = false
 
     function getIcon() {
