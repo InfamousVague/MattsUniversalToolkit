@@ -627,7 +627,7 @@
 
             <div class="section">
                 <SettingSection hook="section-support" name={$_("settings.profile.support.label")} description={$_("settings.profile.support.description")}>
-                    <a href="mailto:support@satellite.com">
+                    <a href="mailto:support@satellite.im">
                         <Button hook="button-support" appearance={Appearance.Alt} text={$_("settings.profile.support.button")}>
                             <Icon icon={Shape.Email} />
                         </Button>
