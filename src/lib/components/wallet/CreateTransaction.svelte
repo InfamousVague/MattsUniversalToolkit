@@ -30,7 +30,6 @@
 
     let inputAmount = ""
     let currentView: ViewMode = ViewMode.None
-    let scannedQRCode = ""
     function onInputAmount() {
         inputAmount = inputAmount.replace(/[^0-9.]/g, "")
         if (inputAmount.split(".").length > 2) {
@@ -43,10 +42,6 @@
                 transfer.amountPreview = amountPreview
             })
         })
-    }
-    function handleQRCodeScanned(event: { detail: string }) {
-        scannedQRCode = event.detail
-        currentView = ViewMode.None
     }
     onInputAmount()
     function onChangeAssetKind() {

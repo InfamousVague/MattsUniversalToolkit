@@ -80,16 +80,12 @@
             try {
                 const sendingUserId = ConversationStore.getMessage(chat.id, chat.last_message_id)?.details.origin
                 const sendingUserDetails = get(Store.getUser(sendingUserId!))
-
                 const jsonStartIndex = chat.last_message_preview.indexOf("{")
                 if (jsonStartIndex === -1) {
                     console.error("No JSON found in last_message_preview:", chat.last_message_preview)
                     return "Invalid message format"
                 }
-
-                // Extract the JSON part from the preview
                 const jsonPart = chat.last_message_preview.slice(jsonStartIndex)
-
                 let parsedMessage
                 try {
                     parsedMessage = JSON.parse(jsonPart)
@@ -97,20 +93,14 @@
                     console.error("Error parsing JSON:", error, chat.last_message_preview)
                     return "Invalid message format"
                 }
-
-                // Extract values from the parsed JSON
-                const kind = parsedMessage.kind || "unknown"
                 let amount = parsedMessage.amount || "unknown"
 
-                // Format `amount` to remove trailing zeros
                 amount = amount.replace(/(\.\d*?[1-9])0+$|\.0*$/, "$1")
-
-                // Determine the sender and recipient
                 if (sendingUserDetails.key !== ownId.key) {
-                    return `${sendingUserDetails.name} sent you ${amount} ${kind}`
+                    return `${sendingUserDetails.name} sent you ${amount}`
                 } else {
                     const recipientId = parsedMessage.details?.toAddress || "unknown address"
-                    return `You sent ${amount} ${kind} to ${recipientId}`
+                    return `You sent ${amount} to ${recipientId}`
                 }
             } catch (error) {
                 console.error("Error in PaymentRequestsEnum.Send condition:", error)
