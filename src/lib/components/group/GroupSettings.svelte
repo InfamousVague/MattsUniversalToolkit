@@ -194,7 +194,7 @@
                 <ProfilePicture id={user.key} image={user.profile.photo.image} noIndicator size={Size.Small} />
                 <div class="selected-user-details">
                     <Text size={Size.Smallest}>{user.name}</Text>
-                    <Text muted size={Size.Smallest}>{user.key}</Text>
+                    <Text muted size={Size.Smallest}>{user.key.replace("did:key:", "")}</Text>
                 </div>
             </div>
             <div class="selected-user-kick-wrap">

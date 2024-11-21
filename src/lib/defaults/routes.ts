@@ -1,7 +1,6 @@
-import { Route, SettingsRoute, Shape } from "$lib/enums"
+import { Route, Shape } from "$lib/enums"
 import type { NavRoute } from "$lib/types"
 
-// TODO: This is not mock data and should be moved
 export let routes: NavRoute[] = [
     // {
     //     to: Route.Wallet,
