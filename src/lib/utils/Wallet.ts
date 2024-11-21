@@ -498,17 +498,12 @@ export class Transfer {
     }
 
     toDisplayString(kind: string, amount: string): string {
-        // Serialize the `this` object with custom handling for `amount` as `bigint`
         const transfer = JSON.stringify(this, (key, value) => (key === "amount" && typeof value === "bigint" ? value.toString() : value))
-        console.log(transfer)
-
-        // Return a well-structured JSON-like string
         return `/send {"kind":"${kind}", "amount":"${amount}", "details":${transfer}}`
     }
 
     async execute() {
         if (this.isValid()) {
-            console.log("EXECUTE SEND BACK", this.asset, this.amount, this.toAddress)
             await wallet.transfer(this.asset, this.amount, this.toAddress)
         }
     }
@@ -541,10 +536,10 @@ export function getValidPaymentRequest(msg: string, msgId?: string): Transfer | 
                 transfer.toAddress = parsed.toAddress
                 transfer.amountPreview = parsed.amountPreview
             } catch (err) {
-                console.log("Parse Failed", err)
+                console.error("Parse Failed", err)
             }
         } else {
-            console.log("Reject message is not JSON, possibly an ID or UUID:", json)
+            console.error("Reject message is not JSON, possibly an ID or UUID:", json)
             return undefined
         }
 
@@ -553,8 +548,6 @@ export function getValidPaymentRequest(msg: string, msgId?: string): Transfer | 
         }
     } else if (msg.startsWith(PaymentRequestsEnum.Send)) {
         let json = msg.substring(PaymentRequestsEnum.Send.length, msg.length).trim()
-
-        console.log("Catch send", msg)
         let jsonStartIndex = json.indexOf("{")
         if (jsonStartIndex !== -1) {
             json = json.substring(jsonStartIndex).trim()
@@ -566,15 +559,14 @@ export function getValidPaymentRequest(msg: string, msgId?: string): Transfer | 
                 transfer.toAddress = parsed.toAddress
                 transfer.amountPreview = parsed.amountPreview
             } catch (err) {
-                console.log("Parse Failed", err)
+                console.error("Parse Failed", err)
             }
         } else {
-            console.log("Send message is not JSON:", json)
+            console.error("Send message is not JSON:", json)
             return undefined
         }
 
         if (transfer.asset.kind !== AssetType.None && transfer.isValid()) {
-            console.log("tranfer botrtom", transfer)
             return transfer
         }
     }

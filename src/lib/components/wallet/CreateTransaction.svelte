@@ -84,9 +84,9 @@
                 <Label text={$_("payments.address")} />
                 <div class="address_QR">
                     <Input value={transfer.toAddress} />
-                    <div class="address_button">
+                    <!-- <div class="address_button">
                         <Button icon><Icon icon={Shape.QRCode}></Icon></Button>
-                    </div>
+                    </div> -->
                 </div>
             </div>
             <div class="amount">
@@ -115,9 +115,9 @@
                 <Label text={$_("payments.address")} />
                 <div class="address_QR">
                     <Input value={transfer.toAddress} />
-                    <div class="address_button">
+                    <!-- <div class="address_button">
                         <Button icon><Icon icon={Shape.QRCode}></Icon></Button>
-                    </div>
+                    </div> -->
                 </div>
             </div>
             <div class="amount">

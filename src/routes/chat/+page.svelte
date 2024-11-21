@@ -180,10 +180,8 @@
         }
         const formattedAmount = cleanedAmountPreview
         if (sender !== "") {
-            console.log(formattedAmount, kind, message)
             return `${sender} sent you ${formattedAmount}`
         } else {
-            console.log(formattedAmount, kind, message)
             return `You sent ${formattedAmount} to ${$users[$activeChat.users[1]]?.name}`
         }
     }
@@ -370,7 +368,7 @@
                     if (!alreadyRejected) {
                         return [...payments, { messageId: message.id, senderId: message.details.origin, rejectedPayment: true }]
                     } else {
-                        console.log(`MessageId ${message.id} is already in the rejected payments list`)
+                        console.error(`MessageId ${message.id} is already in the rejected payments list`)
                         return payments
                     }
                 })
@@ -380,25 +378,14 @@
         }
         if (paymentType === PaymentRequestsEnum.Send) {
             try {
-                console.log("Extracting payment details", message.text[0])
-
-                // Identify the start of the JSON part
                 const jsonStartIndex = message.text[0].indexOf("{")
                 if (jsonStartIndex === -1) {
                     throw new Error("No JSON part found in message")
                 }
-
-                // Extract and parse the JSON part
                 const jsonPart = message.text[0].slice(jsonStartIndex)
                 const paymentDetails = JSON.parse(jsonPart)
-
-                // Extract `kind` and `amount` from the parsed JSON
                 const kind = paymentDetails.asset?.kind || "unknown"
                 const amount = paymentDetails.amountPreview || "0"
-
-                console.log("Extracted payment details:", { kind, amount })
-
-                // Use the `toDisplayString` function to format the message with `kind` and `amount`
                 const formattedMessage = transfer.toDisplayString(kind, amount)
 
                 let chat = get(Store.state.activeChat)
@@ -408,20 +395,16 @@
 
                 let result = await RaygunStoreInstance.send(chat.id, txt, [])
                 result.onSuccess(res => {
-                    // if (getValidPaymentRequest(message.text[0])) {
-                    //     getValidPaymentRequest(message.text[0])?.execute()
-                    // }
                     Store.state.paymentTracker.update(payments => {
                         const alreadyRejected = payments.some(payment => payment.messageId === message.id)
 
                         if (!alreadyRejected) {
                             return [...payments, { messageId: message.id, senderId: message.details.origin, rejectedPayment: true }]
                         } else {
-                            console.log(`MessageId ${message.id} is already in the rejected payments list`)
+                            console.error(`MessageId ${message.id} is already in the rejected payments list`)
                             return payments
                         }
                     })
-                    console.log("Message Sent Successfully", res)
                     ConversationStore.addPendingMessages(chat.id, res.message, txt)
                 })
             } catch (error) {
@@ -971,8 +954,6 @@
                                                                         <Icon icon={Shape.XMark}></Icon>
                                                                     </Button>
                                                                 {/if}
-                                                                <!-- {:else if $own_user.key === message.details.origin && !checkForActiveRequest(message, line)}
-                                                                <Button hook="text-chat-message" disabled text={$_("payments.youCanceledRequest")} appearance={Appearance.Error} /> -->
                                                             {:else}
                                                                 <Button hook="text-chat-message" disabled text={$_("payments.paymentDeclined")} appearance={Appearance.Error} />
                                                             {/if}
