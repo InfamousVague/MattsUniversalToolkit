@@ -61,9 +61,6 @@
     })
 
     onMount(() => {
-        // setTimeout(() => {
-        //     loading = false
-        // }, 3000)
         setTimeout(() => {
             if (scrollContainer) {
                 if (unreads) {
