@@ -195,10 +195,6 @@
     }
     .send_button {
         display: flex;
-        // width: 100%;
-        // justify-content: space-between;
-        // align-items: center;
-        // padding: 0 25%;
         padding: var(--gap-less);
         :global(button) {
             width: 100%;
