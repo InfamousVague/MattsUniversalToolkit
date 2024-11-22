@@ -10,6 +10,7 @@
     import { log } from "$lib/utils/Logger"
     import Icon from "$lib/elements/Icon.svelte"
     import { _ } from "svelte-i18n"
+    import LiveLabel from "./LiveLabel.svelte"
 
     let previewVideo: HTMLDivElement
     $: remoteStreams = Store.state.activeCallMeta
@@ -168,6 +169,7 @@
                                 <track kind="captions" src="" />
                             </video>
                             <div class="user-name">{$userCache[user].name}</div>
+                            <LiveLabel screenShareEnabled={$remoteStreams[user].user.screenShareEnabled} />
                             {#if !$remoteStreams[user].user.audioEnabled}
                                 <div class="mute-status">
                                     <Icon icon={Shape.MicrophoneSlash}></Icon>

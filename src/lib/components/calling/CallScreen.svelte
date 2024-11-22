@@ -30,6 +30,7 @@
     import { playSound, Sounds } from "../utils/SoundHandler"
     import { MultipassStoreInstance } from "$lib/wasm/MultipassStore"
     import { debounce } from "$lib/utils/Functions"
+    import LiveLabel from "./LiveLabel.svelte"
 
     const MIN_USER_SIZE = 250
     export let expanded: boolean = false
@@ -513,12 +514,7 @@
                                     <div class="user-name">
                                         {$userCache[user].name}
                                     </div>
-                                    {#if $remoteStreams[user].user.screenShareEnabled}
-                                        <div class="live-label">
-                                            <span class="red-dot"></span>
-                                            <span>{$_("settings.calling.live")}</span>
-                                        </div>
-                                    {/if}
+                                    <LiveLabel screenShareEnabled={$remoteStreams[user].user.screenShareEnabled} />
                                     {#if !$remoteStreams[user].user.audioEnabled}
                                         <div class="mute-status">
                                             <Icon icon={Shape.MicrophoneSlash}></Icon>
@@ -830,28 +826,6 @@
             border-radius: 8px;
             font-size: 14px;
             z-index: 1;
-        }
-
-        .live-label {
-            position: absolute;
-            top: 8px;
-            left: 12px;
-            display: inline-flex;
-            align-items: center;
-            background-color: rgba(0, 0, 0, 0.6);
-            color: white;
-            padding: 4px 8px;
-            border-radius: 8px;
-            font-size: 14px;
-            z-index: 1;
-        }
-
-        .red-dot {
-            width: 6px;
-            height: 6px;
-            background-color: red;
-            border-radius: 50%;
-            margin-right: 8px;
         }
 
         .mute-status {
