@@ -115,7 +115,7 @@
                                 {recipient.name}
                             </Text>
                             <Text hook="single-user-key" singleLine muted>
-                                {recipient.key}
+                                {recipient.key.replace("did:key:", "")}
                             </Text>
                         </div>
                         <Checkbox hook="single-user-checkbox" checked={contains_recipient(recipients, recipient)} />

@@ -494,6 +494,12 @@
                                     <div class="user-name">
                                         {$userCache[user].name}
                                     </div>
+                                    {#if $remoteStreams[user].user.screenShareEnabled}
+                                        <div class="live-label">
+                                            <span class="red-dot"></span>
+                                            <span>{$_("settings.calling.live")}</span>
+                                        </div>
+                                    {/if}
                                     {#if !$remoteStreams[user].user.audioEnabled}
                                         <div class="mute-status">
                                             <Icon icon={Shape.MicrophoneSlash}></Icon>
@@ -593,7 +599,6 @@
                 soundSource={undefined}
                 on:click={_ => {
                     Store.updateDeafened(!deafened)
-                    // VoiceRTCInstance.turnOnOffDeafened()
                 }}>
                 <Icon icon={deafened ? Shape.HeadphoneSlash : Shape.Headphones} />
             </Button>
@@ -806,6 +811,28 @@
             border-radius: 8px;
             font-size: 14px;
             z-index: 1;
+        }
+
+        .live-label {
+            position: absolute;
+            top: 8px;
+            left: 12px;
+            display: inline-flex;
+            align-items: center;
+            background-color: rgba(0, 0, 0, 0.6);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 8px;
+            font-size: 14px;
+            z-index: 1;
+        }
+
+        .red-dot {
+            width: 6px;
+            height: 6px;
+            background-color: red;
+            border-radius: 50%;
+            margin-right: 8px;
         }
 
         .mute-status {

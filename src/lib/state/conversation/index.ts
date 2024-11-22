@@ -387,36 +387,6 @@ class Conversations {
             currentConversations[firstChatId] = initialData
             return currentConversations
         })
-        // this.pendingMsgConversations.set({
-        //     [firstChatId]: {
-        //         mock_id: {
-        //             message: {
-        //                 id: "mock_id",
-        //                 at: new Date(),
-        //                 text: ["Hello, world!"],
-        //             },
-        //             attachmentProgress: writable({
-        //                 test: {
-        //                     name: "filea",
-        //                     size: 5,
-        //                     total: 10,
-        //                 },
-        //                 testa: {
-        //                     name: "fileb",
-        //                     size: 10,
-        //                     total: 10,
-        //                     done: true,
-        //                 },
-        //                 testb: {
-        //                     name: "filec",
-        //                     size: 10,
-        //                     total: 10,
-        //                     error: "upload failed",
-        //                 },
-        //             }),
-        //         },
-        //     },
-        // })
     }
 }
 

@@ -236,7 +236,8 @@
         if (short) {
             await navigator.clipboard.writeText(`${userReference.name}#${userReference.id.short}`)
         } else {
-            await navigator.clipboard.writeText(`${userReference.key}`)
+            const updatedKey = userReference.key.replace("did:key:", "")
+            await navigator.clipboard.writeText(updatedKey)
         }
     }
 
@@ -626,7 +627,7 @@
 
             <div class="section">
                 <SettingSection hook="section-support" name={$_("settings.profile.support.label")} description={$_("settings.profile.support.description")}>
-                    <a href="mailto:support@satellite.com">
+                    <a href="mailto:support@satellite.im">
                         <Button hook="button-support" appearance={Appearance.Alt} text={$_("settings.profile.support.button")}>
                             <Icon icon={Shape.Email} />
                         </Button>
@@ -653,7 +654,6 @@
                 text={$_("settings.profile.delete_title")}
                 on:click={_ => {
                     isDeleteAccountModalOpened.set(true)
-                    // clearAllData()
                 }}>
                 <Icon icon={Shape.Trash} />
             </Button>
