@@ -154,8 +154,17 @@
             <div class="video-grid" style="grid-template-columns: {gridTemplateColumns};">
                 {#each filteredUsers.slice(0, 3) as user}
                     {#if $remoteStreams[user]}
-                        <div class="video-container {$userCache[user].media.is_playing_audio ? 'talking' : ''}" style={!$remoteStreams[user].user.videoEnabled ? "display: none" : ""} role="none">
-                            <video data-cy="remote-user-video" id="remote-user-video-{user}" class={$remoteStreams[user].user.videoEnabled ? "" : "disabled"} autoplay muted={false} use:attachStream={user}>
+                        <div
+                            class="video-container {$userCache[user].media.is_playing_audio ? 'talking' : ''}"
+                            style={!$remoteStreams[user].user.videoEnabled && !$remoteStreams[user].user.screenShareEnabled ? "display: none" : ""}
+                            role="none">
+                            <video
+                                data-cy="remote-user-video"
+                                id="remote-user-video-{user}"
+                                class={$remoteStreams[user].user.videoEnabled || $remoteStreams[user].user.screenShareEnabled ? "" : "disabled"}
+                                autoplay
+                                muted={false}
+                                use:attachStream={user}>
                                 <track kind="captions" src="" />
                             </video>
                             <div class="user-name">{$userCache[user].name}</div>
@@ -166,7 +175,7 @@
                             {/if}
                         </div>
 
-                        {#if !$remoteStreams[user].stream || !$remoteStreams[user].user.videoEnabled}
+                        {#if !$remoteStreams[user].stream || (!$remoteStreams[user].user.videoEnabled && !$remoteStreams[user].user.screenShareEnabled)}
                             <Participant
                                 participant={$userCache[user]}
                                 hasVideo={$userCache[user].media.is_streaming_video}
