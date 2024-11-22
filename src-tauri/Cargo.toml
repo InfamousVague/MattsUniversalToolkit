@@ -1,6 +1,6 @@
 [package]
 name = "uplink"
-version = "2.0.2"
+version = "2.0.3"
 description = "Privacy First, Modular, P2P Universal Messaging Client - With you at it's core"
 authors = ["Satellite.IM"]
 license = ""
