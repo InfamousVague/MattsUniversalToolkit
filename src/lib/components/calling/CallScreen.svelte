@@ -13,11 +13,24 @@
     import type { Chat } from "$lib/types"
     import VolumeMixer from "./VolumeMixer.svelte"
     import { createEventDispatcher, onDestroy, onMount } from "svelte"
-    import { callInProgress, callScreenVisible, callTimeout, makeCallSound, TIME_TO_SHOW_CONNECTING, TIME_TO_SHOW_END_CALL_FEEDBACK, timeCallStarted, usersAcceptedTheCall, usersDeniedTheCall, VoiceRTCInstance } from "$lib/media/Voice"
+    import {
+        callInProgress,
+        callScreenVisible,
+        callTimeout,
+        makeCallSound,
+        showCallPopUp,
+        TIME_TO_SHOW_CONNECTING,
+        TIME_TO_SHOW_END_CALL_FEEDBACK,
+        timeCallStarted,
+        usersAcceptedTheCall,
+        usersDeniedTheCall,
+        VoiceRTCInstance,
+    } from "$lib/media/Voice"
     import { log } from "$lib/utils/Logger"
     import { playSound, Sounds } from "../utils/SoundHandler"
     import { MultipassStoreInstance } from "$lib/wasm/MultipassStore"
     import { debounce } from "$lib/utils/Functions"
+    import LiveLabel from "./LiveLabel.svelte"
 
     const MIN_USER_SIZE = 250
     export let expanded: boolean = false
@@ -196,6 +209,7 @@
 
     onMount(async () => {
         callScreenVisible.set(true)
+        showCallPopUp.set(false)
         if ($makeCallSound) {
             stopMakeCallSound()
         }
@@ -268,6 +282,12 @@
         stopMakeCallSound()
         if (get(Store.state.activeCall) === null && get(Store.state.devices.screenShare) === true) {
             Store.state.devices.screenShare.set(false)
+        }
+
+        if ($callInProgress !== null) {
+            showCallPopUp.set(true)
+        } else {
+            showCallPopUp.set(false)
         }
     })
 
@@ -494,12 +514,7 @@
                                     <div class="user-name">
                                         {$userCache[user].name}
                                     </div>
-                                    {#if $remoteStreams[user].user.screenShareEnabled}
-                                        <div class="live-label">
-                                            <span class="red-dot"></span>
-                                            <span>{$_("settings.calling.live")}</span>
-                                        </div>
-                                    {/if}
+                                    <LiveLabel screenShareEnabled={$remoteStreams[user].user.screenShareEnabled} />
                                     {#if !$remoteStreams[user].user.audioEnabled}
                                         <div class="mute-status">
                                             <Icon icon={Shape.MicrophoneSlash}></Icon>
@@ -811,28 +826,6 @@
             border-radius: 8px;
             font-size: 14px;
             z-index: 1;
-        }
-
-        .live-label {
-            position: absolute;
-            top: 8px;
-            left: 12px;
-            display: inline-flex;
-            align-items: center;
-            background-color: rgba(0, 0, 0, 0.6);
-            color: white;
-            padding: 4px 8px;
-            border-radius: 8px;
-            font-size: 14px;
-            z-index: 1;
-        }
-
-        .red-dot {
-            width: 6px;
-            height: 6px;
-            background-color: red;
-            border-radius: 50%;
-            margin-right: 8px;
         }
 
         .mute-status {
