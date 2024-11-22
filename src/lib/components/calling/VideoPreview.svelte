@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { callScreenVisible, usersDidInActiveCall } from "$lib/media/Voice"
+    import { showCallPopUp, usersDidInActiveCall } from "$lib/media/Voice"
     import { Store } from "$lib/state/Store"
     import { onMount } from "svelte"
     import { page } from "$app/stores"
@@ -11,7 +11,6 @@
     import Icon from "$lib/elements/Icon.svelte"
     import { _ } from "svelte-i18n"
 
-    let showVideoPreview = false
     let previewVideo: HTMLDivElement
     $: remoteStreams = Store.state.activeCallMeta
     $: gridTemplateColumns = `repeat(${Math.min(filteredUsers.length, 3)}, 1fr)`
@@ -58,22 +57,6 @@
         log.debug(`VideoPreview: Page: ${$page.route.id}. activeCall: ${activeCall}`)
         if (activeCall) {
             chat = activeCall.chat
-        } else {
-            chat = undefined
-            showVideoPreview = false
-        }
-    })
-
-    callScreenVisible.subscribe(visible => {
-        if (visible === true) {
-            showVideoPreview = false
-            return
-        }
-        if (visible === false && get(Store.state.activeCall) !== null) {
-            setTimeout(() => {
-                log.warn("Changing video preview visibility")
-                showVideoPreview = true
-            }, 100)
         }
     })
 
@@ -161,7 +144,7 @@
     })
 </script>
 
-<div id="video-preview" class={showVideoPreview ? "video-preview" : "hidden"}>
+<div id="video-preview" class={$showCallPopUp ? "video-preview" : "hidden"}>
     <div id="preview-video" bind:this={previewVideo}>
         <div class="users-in-call">
             <Icon icon={Shape.Users}></Icon>

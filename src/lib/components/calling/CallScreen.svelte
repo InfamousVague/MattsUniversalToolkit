@@ -13,7 +13,19 @@
     import type { Chat } from "$lib/types"
     import VolumeMixer from "./VolumeMixer.svelte"
     import { createEventDispatcher, onDestroy, onMount } from "svelte"
-    import { callInProgress, callScreenVisible, callTimeout, makeCallSound, TIME_TO_SHOW_CONNECTING, TIME_TO_SHOW_END_CALL_FEEDBACK, timeCallStarted, usersAcceptedTheCall, usersDeniedTheCall, VoiceRTCInstance } from "$lib/media/Voice"
+    import {
+        callInProgress,
+        callScreenVisible,
+        callTimeout,
+        makeCallSound,
+        showCallPopUp,
+        TIME_TO_SHOW_CONNECTING,
+        TIME_TO_SHOW_END_CALL_FEEDBACK,
+        timeCallStarted,
+        usersAcceptedTheCall,
+        usersDeniedTheCall,
+        VoiceRTCInstance,
+    } from "$lib/media/Voice"
     import { log } from "$lib/utils/Logger"
     import { playSound, Sounds } from "../utils/SoundHandler"
     import { MultipassStoreInstance } from "$lib/wasm/MultipassStore"
@@ -196,6 +208,7 @@
 
     onMount(async () => {
         callScreenVisible.set(true)
+        showCallPopUp.set(false)
         if ($makeCallSound) {
             stopMakeCallSound()
         }
@@ -268,6 +281,12 @@
         stopMakeCallSound()
         if (get(Store.state.activeCall) === null && get(Store.state.devices.screenShare) === true) {
             Store.state.devices.screenShare.set(false)
+        }
+
+        if ($callInProgress !== null) {
+            showCallPopUp.set(true)
+        } else {
+            showCallPopUp.set(false)
         }
     })
 
