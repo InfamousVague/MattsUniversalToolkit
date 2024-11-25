@@ -898,13 +898,13 @@
                                                     {#each message.text as line}
                                                         {#if line.startsWith(PaymentRequestsEnum.Reject)}
                                                             {#if !checkForActiveRequest(message, line)}
-                                                                {#if $own_user.key !== message.details.origin}
+                                                                {#if $own_user.key === message.details.origin}
+                                                                    <Text hook="text-chat-message" markdown={$_("payments.youCanceledRequest")} appearance={group.details.remote ? Appearance.Default : Appearance.Alt} />
+                                                                {:else}
                                                                     <Text
                                                                         hook="text-chat-message"
                                                                         markdown={$_("payments.declinedPayment", { values: { user: resolved.name } })}
                                                                         appearance={group.details.remote ? Appearance.Default : Appearance.Alt} />
-                                                                {:else}
-                                                                    <Text hook="text-chat-message" markdown={$_("payments.youCanceledRequest")} appearance={group.details.remote ? Appearance.Default : Appearance.Alt} />
                                                                 {/if}
                                                             {/if}
                                                         {:else if line.startsWith(PaymentRequestsEnum.Send)}
