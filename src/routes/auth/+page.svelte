@@ -3,6 +3,7 @@
     import { Route } from "$lib/enums"
 
     import { Entrypoint, NewAccount, LoginPage, RecoveryCopy, Unlock } from "$lib/layouts/login"
+    import ImportAccount from "$lib/layouts/login/ImportAccount.svelte"
     import { AuthStore } from "$lib/state/auth"
     import { Store } from "$lib/state/Store"
     import { ToastMessage } from "$lib/state/ui/toast"
@@ -84,6 +85,8 @@
     <Entrypoint bind:page={currentPage} />
 {:else if currentPage == LoginPage.Username}
     <NewAccount bind:page={currentPage} bind:username={username} bind:statusMessage={statusMessage} bind:profilePicture={profilePicture} />
+{:else if currentPage == LoginPage.Import}
+    <ImportAccount bind:page={currentPage} onImport={id => {}} />
 {:else if currentPage == LoginPage.Pin}
     <Unlock
         create={!exist()}

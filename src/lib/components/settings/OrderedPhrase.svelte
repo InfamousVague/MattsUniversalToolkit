@@ -2,10 +2,13 @@
     import { fade } from "svelte/transition"
     import { animationDelay, animationDuration } from "$lib/globals/animations"
     import { Text, Loader } from "$lib/elements"
+    import Input from "$lib/elements/Input/Input.svelte"
+    import type { Writable } from "svelte/store"
 
     export let number: number = 0
     export let word: string = "UNKNOWN"
     export let loading: boolean = false
+    export let editable: boolean = false
 </script>
 
 <div class="ordered-phrase">
@@ -18,12 +21,16 @@
             </div>
         {/if}
     </span>
-    <span class="word">
+    <span class="word {editable ? 'editable' : ''}">
         {#if loading}
             <Loader text />
         {:else}
             <div data-cy="ordered-phrase-word-{number}" in:fade={{ duration: animationDuration, delay: number * animationDelay }}>
-                <Text>{word}</Text>
+                {#if editable}
+                    <Input bind:value={word}></Input>
+                {:else}
+                    <Text>{word}</Text>
+                {/if}
             </div>
         {/if}
     </span>
@@ -64,6 +71,16 @@
             display: inline-block;
             flex: 1;
             padding: var(--padding-minimal) var(--padding);
+            &.editable {
+                padding: 0;
+            }
+        }
+
+        :global(.input-group > .input-container) {
+            border: none;
+        }
+        :global(.input-group > .input-container::selection) {
+            border: none;
         }
     }
 </style>
