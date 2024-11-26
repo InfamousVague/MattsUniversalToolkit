@@ -64,29 +64,6 @@
     $: chats = UIStore.state.chats
     $: userCache = Store.getUsersLookup($chats.map(c => c.users).flat())
 
-    function attachStream(node: HTMLMediaElement, user: string) {
-        const stream = $remoteStreams[user]?.stream
-
-        if (stream) {
-            node.srcObject = stream
-            stream.onremovetrack = () => {
-                log.dev("Stream removed: ", user)
-            }
-        }
-
-        return {
-            update(newUser: string) {
-                const newStream = $remoteStreams[newUser]?.stream
-                if (newStream && node.srcObject !== newStream) {
-                    node.srcObject = newStream
-                }
-            },
-            destroy() {
-                node.srcObject = null
-            },
-        }
-    }
-
     onMount(() => {
         const video = previewVideo
 
@@ -155,37 +132,7 @@
             <div class="video-grid" style="grid-template-columns: {gridTemplateColumns};">
                 {#each filteredUsers.slice(0, 3) as user}
                     {#if $remoteStreams[user]}
-                        <div
-                            class="video-container {$userCache[user].media.is_playing_audio ? 'talking' : ''}"
-                            style={!$remoteStreams[user].user.videoEnabled && !$remoteStreams[user].user.screenShareEnabled ? "display: none" : ""}
-                            role="none">
-                            <video
-                                data-cy="remote-user-video"
-                                id="remote-user-video-{user}"
-                                class={$remoteStreams[user].user.videoEnabled || $remoteStreams[user].user.screenShareEnabled ? "" : "disabled"}
-                                autoplay
-                                muted={false}
-                                use:attachStream={user}>
-                                <track kind="captions" src="" />
-                            </video>
-                            <div class="user-name">{$userCache[user].name}</div>
-                            <LiveLabel screenShareEnabled={$remoteStreams[user].user.screenShareEnabled} />
-                            {#if !$remoteStreams[user].user.audioEnabled}
-                                <div class="mute-status">
-                                    <Icon icon={Shape.MicrophoneSlash}></Icon>
-                                </div>
-                            {/if}
-                        </div>
-
-                        {#if !$remoteStreams[user].stream || (!$remoteStreams[user].user.videoEnabled && !$remoteStreams[user].user.screenShareEnabled)}
-                            <Participant
-                                participant={$userCache[user]}
-                                hasVideo={$userCache[user].media.is_streaming_video}
-                                isMuted={$remoteStreams[user] && !$remoteStreams[user].user.audioEnabled}
-                                isDeafened={$remoteStreams[user] && $remoteStreams[user].user.isDeafened}
-                                isTalking={$userCache[user].media.is_playing_audio}
-                                on:click={_ => {}} />
-                        {/if}
+                        <Participant participantDid={user} userCache={$userCache} on:click={_ => {}} />
                     {/if}
                 {/each}
             </div>
@@ -270,61 +217,6 @@
                 gap: 10px;
                 width: 100%;
                 height: 100%;
-            }
-
-            .video-container {
-                position: relative;
-                display: inline-block;
-                border-radius: 12px;
-                overflow: hidden;
-                border: 2px solid var(--color-muted);
-                cursor: pointer;
-                &.talking {
-                    border: 2px solid var(--success-color);
-                }
-                width: 100%;
-                height: 100%;
-                aspect-ratio: 4 / 3;
-
-                .user-name {
-                    position: absolute;
-                    bottom: 8px;
-                    left: 12px;
-                    background-color: rgba(0, 0, 0, 0.6);
-                    color: white;
-                    padding: 4px 8px;
-                    border-radius: 8px;
-                    font-size: 14px;
-                    z-index: 1;
-                }
-
-                .mute-status {
-                    position: absolute;
-                    display: flex;
-                    bottom: 8px;
-                    right: 12px;
-                    align-items: center;
-                    justify-content: center;
-                    background-color: rgba(0, 0, 0, 0.6);
-                    color: white;
-                    padding: 4px 8px;
-                    border-radius: 8px;
-                    font-size: 14px;
-                    z-index: 1;
-                }
-
-                video {
-                    object-fit: cover;
-                    border-radius: 12px;
-                    background-color: var(--black);
-                    width: 100%;
-                    height: 100%;
-
-                    &.disabled {
-                        width: 0;
-                        height: 0;
-                    }
-                }
             }
         }
     }

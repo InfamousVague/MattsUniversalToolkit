@@ -8,23 +8,106 @@
     import Controls from "$lib/layouts/Controls.svelte"
     import { Icon, Button, Text } from "$lib/elements"
     import Spacer from "$lib/elements/Spacer.svelte"
+    import LiveLabel from "./LiveLabel.svelte"
+    import { Store } from "$lib/state/Store"
+    import { log } from "$lib/utils/Logger"
+    import { createEventDispatcher } from "svelte"
+    import { VoiceRTCInstance } from "$lib/media/Voice"
 
-    export let participant: User = defaultUser
-    export let hasVideo: boolean = false
-    export let isMuted: boolean = false
-    export let isDeafened: boolean = false
+    export let participantDid: string
     export let showDetails: boolean = false
-    export let isTalking: boolean = false
+    export let userCache: Record<string, User>
+    export let isOwnUser: boolean = false
+    export let isFullScreen: boolean = false
+
+    $: participantWihoutVideo = !$remoteStreams[participantDid]?.stream || (!$remoteStreams[participantDid]?.user?.videoEnabled && !$remoteStreams[participant.key]?.user?.screenShareEnabled)
+    $: remoteStreams = Store.state.activeCallMeta
+
+    $: isTalking = userCache[participantDid].media.is_playing_audio
+    $: isMuted = $remoteStreams[participantDid] && !$remoteStreams[participantDid]?.user?.audioEnabled
+    $: isDeafened = $remoteStreams[participantDid] && $remoteStreams[participantDid]?.user?.isDeafened
+
+    let participant = userCache[participantDid] || defaultUser
+
+    function attachStream(node: HTMLMediaElement, user: string) {
+        const stream = $remoteStreams[user]?.stream
+
+        if (stream) {
+            node.srcObject = stream
+            stream.onremovetrack = () => {
+                log.dev("Stream removed: ", user)
+            }
+        }
+
+        return {
+            update(newUser: string) {
+                const newStream = $remoteStreams[newUser]?.stream
+                if (newStream && node.srcObject !== newStream) {
+                    node.srcObject = newStream
+                }
+            },
+            destroy() {
+                node.srcObject = null
+            },
+        }
+    }
+
+    const dispatch = createEventDispatcher()
 
     function toggleDetails(state: boolean) {
         showDetails = state
     }
 </script>
 
-<div class="participant" data-cy="call-participant">
-    {#if hasVideo}
+{#if !participantWihoutVideo && !isOwnUser}
+    <div
+        class="video-container {userCache[participantDid].media.is_playing_audio ? 'talking' : ''}"
+        on:click
+        style={!$remoteStreams[participantDid]?.user?.videoEnabled && !$remoteStreams[participantDid]?.user?.screenShareEnabled ? "display: none" : ""}
+        role="none">
+        <video
+            data-cy="remote-user-video"
+            id="remote-user-video-{participantDid}"
+            class={$remoteStreams[participantDid]?.user?.videoEnabled || $remoteStreams[participantDid]?.user?.screenShareEnabled ? "" : "disabled"}
+            autoplay
+            muted={false}
+            use:attachStream={participantDid}>
+            <track kind="captions" src="" />
+        </video>
+        <div class="user-name">{userCache[participantDid].name}</div>
+        <LiveLabel screenShareEnabled={$remoteStreams[participantDid]?.user?.screenShareEnabled} />
+        {#if !$remoteStreams[participantDid]?.user?.audioEnabled}
+            <div class="mute-status">
+                <Icon icon={Shape.MicrophoneSlash}></Icon>
+            </div>
+        {/if}
+    </div>
+{:else if !participantWihoutVideo && isOwnUser}
+    <div
+        class="video-container {userCache[participantDid].media.is_playing_audio ? 'talking' : ''} {isFullScreen ? 'fullscreen' : ''}"
+        style={!VoiceRTCInstance.callOptions.video.enabled && !VoiceRTCInstance.callOptions.video.screenShareEnabled ? "display: none" : ""}
+        role="none"
+        on:click>
+        <video
+            data-cy="local-user-video"
+            id="local-user-video"
+            bind:this={VoiceRTCInstance.localVideoCurrentSrc}
+            style="display: {VoiceRTCInstance.callOptions.video.enabled || VoiceRTCInstance.callOptions.video.screenShareEnabled ? 'block' : 'none'}"
+            muted
+            autoplay>
+            <track kind="captions" src="" />
+        </video>
+        <div class="user-name">{userCache[participantDid].name}</div>
+        {#if !VoiceRTCInstance.callOptions.audio.enabled}
+            <div class="mute-status">
+                <Icon icon={Shape.MicrophoneSlash}></Icon>
+            </div>
+        {/if}
+    </div>
+{:else}
+    <div class="participant" data-cy="call-participant">
         <!-- svelte-ignore a11y-media-has-caption -->
-        <video data-cy="participant-video" class="{isMuted ? 'muted' : ''} {isDeafened ? 'deafened' : ''}" autoplay muted on:mouseover={() => toggleDetails(true)} on:mouseleave={() => toggleDetails(false)}> </video>
+
         {#if showDetails}
             <div class="details" in:fade={{ duration: animationDuration }}>
                 <div data-cy="participant-user" class="user">
@@ -47,10 +130,10 @@
                 </Controls>
             </div>
         {/if}
-    {:else}
         <!-- svelte-ignore a11y-mouse-events-have-key-events -->
         <!-- svelte-ignore a11y-no-static-element-interactions -->
         <!-- svelte-ignore a11y-click-events-have-key-events -->
+
         <div data-cy="participant-without-video" class="simple" on:click on:mouseover={() => toggleDetails(true)} on:mouseleave={() => toggleDetails(false)}>
             {#if showDetails}
                 <div class="state centered" in:fade={{ duration: animationDuration }}>
@@ -78,10 +161,65 @@
             <Spacer less />
             <Text singleLine size={Size.Smaller}>{participant.name}</Text>
         </div>
-    {/if}
-</div>
+    </div>
+{/if}
 
 <style lang="scss">
+    .video-container {
+        position: relative;
+        display: inline-block;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 2px solid var(--color-muted);
+        cursor: pointer;
+        &.talking {
+            border: 2px solid var(--success-color);
+        }
+        width: 100%;
+        height: 100%;
+        aspect-ratio: 4 / 3;
+
+        .user-name {
+            position: absolute;
+            bottom: 8px;
+            left: 12px;
+            background-color: rgba(0, 0, 0, 0.6);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 8px;
+            font-size: 14px;
+            z-index: 1;
+        }
+
+        .mute-status {
+            position: absolute;
+            display: flex;
+            bottom: 8px;
+            right: 12px;
+            align-items: center;
+            justify-content: center;
+            background-color: rgba(0, 0, 0, 0.6);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 8px;
+            font-size: 14px;
+            z-index: 1;
+        }
+
+        video {
+            object-fit: cover;
+            border-radius: 12px;
+            background-color: var(--black);
+            width: 100%;
+            height: 100%;
+
+            &.disabled {
+                width: 0;
+                height: 0;
+            }
+        }
+    }
+
     .participant {
         width: fit-content;
         height: fit-content;
@@ -100,21 +238,21 @@
             }
         }
 
-        video {
-            width: 300px;
-            border-radius: var(--border-radius);
-            border: var(--border-width-more) solid transparent;
+        // video {
+        //     width: 300px;
+        //     border-radius: var(--border-radius);
+        //     border: var(--border-width-more) solid transparent;
 
-            &:hover {
-                border: var(--border-width-more) solid var(--primary-color);
-                cursor: pointer;
-            }
+        //     &:hover {
+        //         border: var(--border-width-more) solid var(--primary-color);
+        //         cursor: pointer;
+        //     }
 
-            &.muted,
-            &.deafened {
-                border: var(--border-width-more) solid var(--error-color);
-            }
-        }
+        //     &.muted,
+        //     &.deafened {
+        //         border: var(--border-width-more) solid var(--error-color);
+        //     }
+        // }
 
         .details {
             position: absolute;
