@@ -371,6 +371,14 @@
                 "remove": "Your recovery phrase will not be stored anymore and will be removed. Make sure to save the phrase! This change is irreversible!",
                 "remove.yes": "I understand",
                 "remove.no": "Cancel"
+            },
+            "export": {
+                "label": "Export",
+                "description": "Export your account manually to remote or a file",
+                "remote": "Remote",
+                "file": "File",
+                "fail": "Failed to export account",
+                "success": "Successfully exported account to remote"
             }
         },
         "calling": {

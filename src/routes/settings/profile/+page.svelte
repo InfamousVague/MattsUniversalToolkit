@@ -283,6 +283,26 @@
             return true
         }
     }
+
+    async function exportAccount(file?: boolean) {
+        let res = await MultipassStoreInstance.exportAccount(file)
+        res.onSuccess(memory => {
+            if (memory) {
+                let blob = new Blob([memory])
+                const elem = window.document.createElement("a")
+                elem.href = window.URL.createObjectURL(blob)
+                elem.download = "export.upbck"
+                document.body.appendChild(elem)
+                elem.click()
+                document.body.removeChild(elem)
+            } else {
+                Store.addToastNotification(new ToastMessage($_("settings.profile.export.success"), "", 2))
+            }
+        })
+        res.onFailure(err => {
+            Store.addToastNotification(new ToastMessage($_("settings.profile.export.fail"), err, 2))
+        })
+    }
 </script>
 
 <div id="page">
@@ -624,7 +644,28 @@
                     </Checkbox>
                 </div>
             {/if}
-
+            <div class="section">
+                <SettingSection hook="export-account" name={$_("settings.profile.export.label")} description={$_("settings.profile.export.description")}>
+                    <Button
+                        hook="export-account-remote"
+                        appearance={Appearance.Alt}
+                        text={$_("settings.profile.export.remote")}
+                        on:click={async _ => {
+                            await exportAccount()
+                        }}>
+                        <Icon icon={Shape.Globe} />
+                    </Button>
+                    <Button
+                        hook="export-account-file"
+                        appearance={Appearance.Alt}
+                        text={$_("settings.profile.export.file")}
+                        on:click={async _ => {
+                            await exportAccount(true)
+                        }}>
+                        <Icon icon={Shape.Document} />
+                    </Button>
+                </SettingSection>
+            </div>
             <div class="section">
                 <SettingSection hook="section-support" name={$_("settings.profile.support.label")} description={$_("settings.profile.support.description")}>
                     <a href="mailto:support@satellite.im">
