@@ -47,7 +47,7 @@
     }
 
     .loading {
-        font-size: 10px;
+        font-size: 12px;
         position: absolute;
         bottom: 0;
     }
