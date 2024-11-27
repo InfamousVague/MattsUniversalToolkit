@@ -6,7 +6,7 @@
     import { ProfilePicture, OrderedPhrase, ContextMenu } from "$lib/components"
     import { Button, Icon, Label, Input, Text, Select, Checkbox } from "$lib/elements"
     import { Store } from "$lib/state/Store"
-    import type { Integration, User } from "$lib/types"
+    import type { User } from "$lib/types"
     import FileUploadButton from "$lib/components/ui/FileUploadButton.svelte"
     import Controls from "$lib/layouts/Controls.svelte"
     import { get, writable } from "svelte/store"
