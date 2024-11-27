@@ -9,7 +9,7 @@ export type DeSerializer<T> = {
 export function createPersistentState<T>(key: string, defaultState: T, deserializer?: DeSerializer<T>) {
     const state = writable<T>(defaultState)
     getStateFromDB<any>(key, defaultState).then(loadedState => {
-        if (deserializer?.deserializer) loadedState = deserializer.deserializer(loadedState)
+        if (deserializer && deserializer.deserializer) loadedState = deserializer.deserializer(loadedState)
         state.set(loadedState)
         state.subscribe(value => setStateToDB<any>(key, deserializer?.serializer ? deserializer.serializer(value) : value))
     })
