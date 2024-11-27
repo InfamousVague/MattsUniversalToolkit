@@ -1,7 +1,7 @@
 <script lang="ts">
     import { Text } from "$lib/elements"
     import { ProfilePicture } from "$lib/components"
-    import { defaultUser, type Transaction, type User } from "$lib/types"
+    import { defaultUser, type Transaction } from "$lib/types"
     import { Size } from "$lib/enums"
     import { Store } from "$lib/state/Store"
 
