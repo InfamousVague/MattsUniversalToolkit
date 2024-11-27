@@ -319,8 +319,8 @@
     async function sendPaymentMessage(message: MessageType, paymentType: string) {
         let transfer = new Transfer()
         let chat = get(Store.state.activeChat)
-        let rejectTranser = transfer.toRejectString(message.id)
-        let txt = rejectTranser.split("\n")
+        let rejectTransfer = transfer.toRejectString(message.id)
+        let txt = rejectTransfer.split("\n")
         if (paymentType === "result") {
             let result = await RaygunStoreInstance.send(chat.id, txt, [])
             result.onSuccess(res => {
