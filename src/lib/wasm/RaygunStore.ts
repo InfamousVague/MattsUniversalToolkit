@@ -608,7 +608,9 @@ class RaygunStore {
                         let recipient = await MultipassStoreInstance.identity_from_did(event.values["recipient"])
                         if (recipient) {
                             UIStore.mutateChat(conversation_id, c => {
-                                c.users = [...c.users, recipient.key]
+                                let users = new Set(c.users)
+                                users.add(recipient.key)
+                                c.users = [...users]
                             })
                             Store.updateUser(recipient)
                         }
