@@ -140,12 +140,6 @@ jobs:
                   name: playwright-merged-report
                   path: playwright-report
                   
-            - name: Fetch existing gh-pages branch
-              run: |
-               git fetch origin gh-pages
-               git checkout gh-pages
-               git pull origin gh-pages
-    
             - name: Set a timestamp one
               id: timestampidone
               run: echo "timestamp=$(date --utc +%Y%m%d_%H%M%SZ)" >> "$GITHUB_OUTPUT"
@@ -159,6 +153,7 @@ jobs:
                   publish_branch: gh-pages
                   publish_dir: ./playwright-report
                   destination_dir: ${{ steps.timestampidone.outputs.timestamp }}
+                  force_orphan: true
 
             - name: Set Playwright report URL output
               id: comment
