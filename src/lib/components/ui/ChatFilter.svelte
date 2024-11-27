@@ -9,7 +9,6 @@
     import { UIStore } from "$lib/state/ui"
     import { RaygunStoreInstance } from "$lib/wasm/RaygunStore"
     import { goto } from "$app/navigation"
-    import StoreResolver from "../utils/StoreResolver.svelte"
 
     export let filter: string
 

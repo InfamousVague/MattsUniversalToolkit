@@ -2,7 +2,7 @@
     import TimeAgo from "javascript-time-ago"
     import { Appearance, ChatType, PaymentRequestsEnum, Route, Shape, Size, Status } from "$lib/enums"
     import type { Chat } from "$lib/types"
-    import { Text, Loader, Button, Icon } from "$lib/elements"
+    import { Text, Loader, Icon } from "$lib/elements"
     import { ProfilePicture } from "$lib/components"
     import { createEventDispatcher, onMount } from "svelte"
     import ProfilePictureMany from "../profile/ProfilePictureMany.svelte"
@@ -16,7 +16,6 @@
     import { ConversationStore } from "$lib/state/conversation"
     import { SettingsStore } from "$lib/state"
     import { callInProgress, timeCallStarted } from "$lib/media/Voice"
-    import Spacer from "$lib/elements/Spacer.svelte"
 
     export let chat: Chat
     export let cta: boolean = false

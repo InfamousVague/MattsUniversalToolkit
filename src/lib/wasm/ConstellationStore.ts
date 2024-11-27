@@ -1,4 +1,4 @@
-import { derived, get, writable, type Writable } from "svelte/store"
+import { get, writable, type Writable } from "svelte/store"
 import * as wasm from "warp-wasm"
 import { WarpStore } from "./WarpStore"
 import { WarpError, handleErrors } from "./HandleWarpErrors"
