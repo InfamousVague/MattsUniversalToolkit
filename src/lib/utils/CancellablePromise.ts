@@ -15,7 +15,7 @@ export function create_cancellable_handler(handler: (isCancelled: () => boolean)
     const promise = new Promise((resolve, reject) => {
         state.cancel = reason => {
             isCancelled = true
-            if (asReject) reject(reason)
+            if (asReject) reject(new Error(reason))
             else resolve(undefined)
         }
     })
