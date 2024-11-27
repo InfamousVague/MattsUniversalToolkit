@@ -319,9 +319,17 @@ class ConstellationStore {
     }
 }
 
-export function imageFromData(data: any[], prefix: string, kind: string) {
-    let hrefData = btoa(new Uint8Array(data).reduce((data, byte) => data + String.fromCharCode(byte), ""))
-    return `data:${prefix}/${kind};base64, ${hrefData}`
+export function imageFromData(data: Uint8Array, file_type: wasm.FileType) {
+    let mime = "application/octet-stream"
+    if (file_type !== "Generic") {
+        mime = file_type.Mime
+    }
+    return imageFromMime(data, mime)
+}
+
+export function imageFromMime(data: Uint8Array, mime: string) {
+    let hrefData = btoa(data.reduce((data, byte) => data + String.fromCharCode(byte), ""))
+    return `data:${mime};base64, ${hrefData}`
 }
 
 export const ConstellationStoreInstance = new ConstellationStore(WarpStore.warp.constellation)
