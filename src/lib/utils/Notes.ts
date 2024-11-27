@@ -4,7 +4,6 @@ export class Notes {
     }
 
     get(key: string): string {
-        let val = localStorage.getItem(`note-${key}`)
-        return val ? val : ""
+        return localStorage.getItem(`note-${key}`) || ""
     }
 }
