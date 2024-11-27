@@ -3,7 +3,7 @@
     import { createPersistentState } from "$lib/state"
     import { onMount, onDestroy } from "svelte"
     import { writable, get } from "svelte/store"
-    import { _, number } from "svelte-i18n"
+    import { _ } from "svelte-i18n"
 
     enum GamepadBrand {
         Xbox = "Xbox",
