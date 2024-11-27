@@ -3,7 +3,7 @@
     import { Appearance, ChatType, PaymentRequestsEnum, Route, Shape, Size, Status } from "$lib/enums"
     import type { Chat } from "$lib/types"
     import { Text, Loader, Button, Icon } from "$lib/elements"
-    import { ProfilePicture } from "$lib/components"
+    import { ChatIcon, ProfilePicture } from "$lib/components"
     import { createEventDispatcher, onMount } from "svelte"
     import ProfilePictureMany from "../profile/ProfilePictureMany.svelte"
     import { Store } from "$lib/state/Store"
@@ -16,7 +16,6 @@
     import { ConversationStore } from "$lib/state/conversation"
     import { SettingsStore } from "$lib/state"
     import { callInProgress, timeCallStarted } from "$lib/media/Voice"
-    import Spacer from "$lib/elements/Spacer.svelte"
 
     export let chat: Chat
     export let cta: boolean = false
@@ -129,19 +128,7 @@
         }
         goto(Route.Chat)
     }}>
-    {#if chat.kind === ChatType.DirectMessage}
-        <ProfilePicture
-            hook="chat-preview-picture"
-            id={$users[1].key}
-            typing={chat.typing_indicator.size > 0 && chat.typing_indicator.users()[0] === $users[1].key}
-            image={directChatPhoto}
-            status={chatStatus}
-            size={Size.Medium}
-            loading={loading}
-            frame={$users[1].profile.photo.frame} />
-    {:else}
-        <ProfilePictureMany users={$users} />
-    {/if}
+    <ChatIcon chat={chat} profileHook={"chat-preview-picture"} loading={loading} />
     <div class="content">
         <div class="heading">
             <Text hook="chat-preview-name" class="chat-user min-text" singleLine loading={loading}>

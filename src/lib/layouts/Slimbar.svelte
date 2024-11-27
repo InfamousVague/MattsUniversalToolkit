@@ -8,7 +8,7 @@
     import { slide } from "svelte/transition"
     import { animationDuration } from "$lib/globals/animations"
     import { Store } from "$lib/state/Store"
-    import { ProfilePicture, ProfilePictureMany } from "$lib/components"
+    import { ChatIcon, ProfilePicture, ProfilePictureMany } from "$lib/components"
     import { Label } from "$lib/elements"
     import { goto } from "$app/navigation"
     import CommunityIcon from "$lib/components/community/icon/CommunityIcon.svelte"
@@ -66,11 +66,7 @@
                             }
                             goto(Route.Chat)
                         }}>
-                        {#if favorite.kind === ChatType.DirectMessage}
-                            <ProfilePicture hook="favorite-profile-picture" id={resolved[1]?.key} typing={favorite.typing_indicator.size > 0} image={resolved[1]?.profile.photo.image} status={resolved[1].profile.status} size={Size.Medium} />
-                        {:else}
-                            <ProfilePictureMany users={resolved} />
-                        {/if}
+                        <ChatIcon chat={favorite} profileHook={"favorite-profile-picture"} />
                     </div>
                 </StoreResolver>
             {/each}

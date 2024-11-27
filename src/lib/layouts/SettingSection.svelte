@@ -1,7 +1,6 @@
 <script lang="ts">
     import { Label, Text } from "$lib/elements"
     import { Size } from "$lib/enums"
-    import Sidebar from "./Sidebar.svelte"
 
     export let name: string = "Setting"
     export let description: string = "Some setting description"
