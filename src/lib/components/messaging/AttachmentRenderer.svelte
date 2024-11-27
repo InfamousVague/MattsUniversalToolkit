@@ -1,6 +1,6 @@
 <script lang="ts">
     import { MessageAttachmentKind, Shape } from "$lib/enums"
-    import { ContextMenu, FileEmbed, ImageEmbed, Modal, STLViewer } from "$lib/components"
+    import { ContextMenu, FileEmbed, ImageEmbed, STLViewer } from "$lib/components"
     import { OperationState, type Attachment, type ContextItem } from "$lib/types"
     import { RaygunStoreInstance } from "$lib/wasm/RaygunStore"
     import TextDocument from "./embeds/TextDocument.svelte"

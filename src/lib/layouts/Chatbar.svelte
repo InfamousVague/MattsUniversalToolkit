@@ -9,7 +9,7 @@
     import { RaygunStoreInstance, type FileAttachment } from "$lib/wasm/RaygunStore"
     import { createEventDispatcher, onMount } from "svelte"
     import { ConversationStore } from "$lib/state/conversation"
-    import type { Chat, FileInfo, GiphyGif, User } from "$lib/types"
+    import type { Chat, FileInfo, GiphyGif } from "$lib/types"
     import { Message, PopupButton } from "$lib/components"
     import { type Message as MessageType } from "$lib/types"
     import { ProfilePicture } from "$lib/components"
