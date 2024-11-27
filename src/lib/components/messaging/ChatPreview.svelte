@@ -16,7 +16,6 @@
     import { ConversationStore } from "$lib/state/conversation"
     import { SettingsStore } from "$lib/state"
     import { callInProgress, timeCallStarted } from "$lib/media/Voice"
-    import Spacer from "$lib/elements/Spacer.svelte"
 
     export let chat: Chat
     export let cta: boolean = false
