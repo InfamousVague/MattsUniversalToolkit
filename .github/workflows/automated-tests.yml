@@ -139,7 +139,6 @@ jobs:
               with:
                   name: playwright-merged-report
                   path: playwright-report
-                  
             - name: Set a timestamp one
               id: timestampidone
               run: echo "timestamp=$(date --utc +%Y%m%d_%H%M%SZ)" >> "$GITHUB_OUTPUT"
