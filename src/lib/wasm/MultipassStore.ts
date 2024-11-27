@@ -622,10 +622,18 @@ class MultipassStore {
         }
     }
 
-    async importAccount(passphrase: string, to?: Uint8Array): Promise<Result<WarpError, wasm.Identity | undefined>> {
-        let multipass = get(this.multipassWritable)
+    async importAccount(passphrase: string, settings?: { to?: Uint8Array; multipassBox?: wasm.MultiPassBox }): Promise<Result<WarpError, wasm.Identity | undefined>> {
+        let multipass = settings?.multipassBox ? settings.multipassBox : get(this.multipassWritable)
         if (multipass) {
-            return success(await multipass.import_identity(passphrase, to))
+            let result = multipass
+                .import_identity(passphrase, settings?.to)
+                .then(value => {
+                    return success<WarpError, wasm.Identity | undefined>(value)
+                })
+                .catch(reason => {
+                    return failure<WarpError, wasm.Identity | undefined>(handleErrors(reason))
+                })
+            return await result
         }
         return failure(WarpError.MULTIPASS_NOT_FOUND)
     }

@@ -276,7 +276,10 @@
                 "description": "Import your account from remote or a backup file",
                 "passphrase": "Add passphrase",
                 "remote": "Import from remote",
-                "file": "Import from file"
+                "file": "Import from file",
+                "warning": "By continuuing your old account will be overwritten!",
+                "fail": "Failed to import account",
+                "fail.null": "Failed to create identity during account import"
             }
         }
     },

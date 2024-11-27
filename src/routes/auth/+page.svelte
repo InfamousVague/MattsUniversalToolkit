@@ -86,7 +86,7 @@
 {:else if currentPage == LoginPage.Username}
     <NewAccount bind:page={currentPage} bind:username={username} bind:statusMessage={statusMessage} bind:profilePicture={profilePicture} />
 {:else if currentPage == LoginPage.Import}
-    <ImportAccount bind:page={currentPage} onImport={id => {}} />
+    <ImportAccount bind:page={currentPage} onImport={finalizeLogin} />
 {:else if currentPage == LoginPage.Pin}
     <Unlock
         create={!exist()}

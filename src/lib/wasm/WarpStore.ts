@@ -38,8 +38,12 @@ class Store {
         }
         await initWarp()
         let warp_instance = await this.createIpfs(addresses)
-        let tesseract = warp_instance.multipass.tesseract()
-        let locked = createLock(warp_instance)
+        this.updateWarpInstance(warp_instance)
+    }
+
+    async updateWarpInstance(instance: wasm.WarpInstance) {
+        let tesseract = instance.multipass.tesseract()
+        let locked = createLock(instance)
         // After passing tesseract to Ipfs the current ref is consumed so we fetch it from Ipfs again
         TesseractStoreInstance.initTesseract(tesseract)
         this.warp.tesseract.set(tesseract)
@@ -55,7 +59,7 @@ class Store {
      * @returns {Promise<wasm.WarpInstance>} A promise that resolves to a WarpInstance.
      * @private
      */
-    private async createIpfs(addresses?: string[]): Promise<wasm.WarpInstance> {
+    async createIpfs(addresses?: string[]): Promise<wasm.WarpInstance> {
         let tesseract: wasm.Tesseract = await TesseractStoreInstance.getTesseract()
         let config: wasm.Config
         if (addresses && addresses.length > 0) {
