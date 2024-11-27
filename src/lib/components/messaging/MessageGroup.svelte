@@ -5,8 +5,7 @@
     import { createEventDispatcher } from "svelte"
     import { get } from "svelte/store"
     import { SettingsStore } from "$lib/state"
-    import { Label } from "$lib/elements"
-
+    
     export let remote: boolean = false
     export let subtext: string | null = ""
     export let profilePictureRequirements: ProfilePictureRequirements | null = null

@@ -2,7 +2,7 @@
     import { Button, Icon, Text } from "$lib/elements"
     import { Appearance, CommunitySettingsRoute, Route, SettingsRoute } from "$lib/enums"
     import { VoiceRTCInstance } from "$lib/media/Voice"
-    import { SettingsStore, type ISettingsState } from "$lib/state"
+    import { SettingsStore } from "$lib/state"
     import { Store } from "$lib/state/Store"
     import { UIStore } from "$lib/state/ui"
     import type { FriendRequest, NavRoute } from "$lib/types"
