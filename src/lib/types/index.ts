@@ -176,6 +176,8 @@ export type Chat = {
     last_message_id: string
     last_message_at: Date
     last_message_preview: string
+    icon?: string
+    banner?: string
 }
 
 const typingDuration = 5
