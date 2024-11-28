@@ -96,6 +96,8 @@
     }
 
     function handleTouchStart(evt: TouchEvent) {
+        document.body.style.userSelect = "none"
+
         touchTimeout = window.setTimeout(() => {
             openContext(evt)
         }, 350)
