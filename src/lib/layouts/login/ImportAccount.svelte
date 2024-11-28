@@ -109,7 +109,15 @@
             <Icon icon={Shape.Details} />
         </Button>
         <div class="import-button-group">
-            <Button hook="button-import-account-go-back" loading={loading} text={$_("controls.go_back")} appearance={Appearance.Alt} on:click={() => (page = LoginPage.EntryPoint)}>
+            <Button
+                hook="button-import-account-go-back"
+                loading={loading}
+                text={$_("controls.go_back")}
+                appearance={Appearance.Alt}
+                on:click={() => {
+                    page = LoginPage.EntryPoint
+                    TesseractStoreInstance.clearTesseract()
+                }}>
                 <Icon icon={Shape.ArrowLeft} />
             </Button>
             <Button
