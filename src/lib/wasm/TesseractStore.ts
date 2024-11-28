@@ -64,7 +64,6 @@ class TesseractStore {
 
     exists() {
         const tesseract = get(this.tesseractWritable)
-        console.log("exist ", tesseract)
         return tesseract?.exist("keypair")
     }
 
