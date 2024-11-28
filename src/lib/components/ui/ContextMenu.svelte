@@ -9,12 +9,14 @@
     import { clickoutside } from "@svelte-put/clickoutside"
     import { Appearance } from "$lib/enums"
     import type { ContextItem } from "$lib/types"
-    import { createEventDispatcher, tick } from "svelte"
+    import { createEventDispatcher, onDestroy, onMount, tick } from "svelte"
     import { log } from "$lib/utils/Logger"
 
     let visible: boolean = false
     let coords: [number, number] = [0, 0]
     let context: HTMLElement
+    let touchTimeout: number | undefined
+    let slotContainer: HTMLElement
     export let items: ContextItem[] = []
     export let hook: string = ""
 
@@ -25,36 +27,85 @@
         close_context = undefined
     }
 
-    function calculatePos(evt: MouseEvent): [number, number] {
-        if (context === undefined) return [evt.clientX, evt.clientY]
-        const { width, height } = context.getBoundingClientRect()
-        let offsetX = evt.pageX
-        let offsetY = evt.pageY
-        let screenWidth = evt.view!.innerWidth
-        let screenHeight = evt.view!.innerHeight
-        let overFlowX = screenWidth < width + offsetX
-        let overFlowY = screenHeight < height + offsetY
-        let topX = overFlowX ? Math.max(5, screenWidth - width - 5) : Math.max(5, offsetX)
-        if (screenHeight - offsetY < height + 30) {
-            let adjustedY = offsetY - height
-            let topY = Math.max(5, adjustedY)
-            return [topX, topY]
-        } else {
-            let topY = Math.max(5, overFlowY ? offsetY - height : offsetY)
-            return [topX, topY]
+    function calculatePos(evt: MouseEvent | TouchEvent): [number, number] {
+        if (!context) {
+            if (evt instanceof MouseEvent) {
+                return [evt.clientX, evt.clientY]
+            } else if (evt instanceof TouchEvent) {
+                const touch = evt.touches[0]
+                return [touch.clientX, touch.clientY]
+            }
+            return [0, 0]
         }
+
+        const { width, height } = context.getBoundingClientRect()
+
+        let offsetX: number, offsetY: number, screenWidth: number, screenHeight: number
+
+        if (evt instanceof MouseEvent) {
+            offsetX = evt.pageX
+            offsetY = evt.pageY
+            screenWidth = evt.view!.innerWidth
+            screenHeight = evt.view!.innerHeight
+        } else if (evt instanceof TouchEvent) {
+            const touch = evt.touches[0]
+            const targetElement = touch.target as HTMLElement
+
+            const doc = targetElement.ownerDocument!
+            const win = doc.defaultView!
+
+            offsetX = touch.pageX
+            offsetY = touch.pageY
+            screenWidth = win.innerWidth
+            screenHeight = win.innerHeight
+        } else {
+            return [0, 0]
+        }
+
+        // Calculate overflow
+        const overFlowX = screenWidth < width + offsetX
+        const overFlowY = screenHeight < height + offsetY
+
+        // Adjust X position
+        const topX = overFlowX ? Math.max(5, screenWidth - width - 5) : Math.max(5, offsetX)
+
+        // Adjust Y position
+        const topY = screenHeight - offsetY < height + 30 ? Math.max(5, offsetY - height) : Math.max(5, overFlowY ? offsetY - height : offsetY)
+
+        return [topX, topY]
     }
 
-    async function openContext(evt: MouseEvent) {
+    async function openContext(evt: MouseEvent | TouchEvent) {
         if (close_context !== undefined) {
             close_context()
         }
         close_context = () => (visible = false)
+
         evt.preventDefault()
         visible = true
-        coords = [evt.clientX, evt.clientY]
+
+        if (evt instanceof MouseEvent) {
+            coords = [evt.clientX, evt.clientY]
+        } else if (evt instanceof TouchEvent) {
+            const touch = evt.touches[0]
+            coords = [touch.clientX, touch.clientY]
+        }
+
         await tick()
         coords = calculatePos(evt)
+    }
+
+    function handleTouchStart(evt: TouchEvent) {
+        touchTimeout = window.setTimeout(() => {
+            openContext(evt)
+        }, 350)
+    }
+
+    function handleTouchEnd() {
+        if (touchTimeout !== undefined) {
+            clearTimeout(touchTimeout)
+            touchTimeout = undefined
+        }
     }
 
     function handleItemClick(e: MouseEvent, item: ContextItem) {
@@ -66,9 +117,22 @@
         })
         onClose(customEvent)
     }
+
+    onMount(() => {
+        // Add event listeners for mobile
+        slotContainer.addEventListener("touchstart", handleTouchStart)
+        slotContainer.addEventListener("touchend", handleTouchEnd)
+    })
+
+    onDestroy(() => {
+        slotContainer.removeEventListener("touchstart", handleTouchStart)
+        slotContainer.removeEventListener("touchend", handleTouchEnd)
+    })
 </script>
 
-<slot name="content" open={openContext} />
+<div bind:this={slotContainer}>
+    <slot name="content" open={openContext} />
+</div>
 {#if visible}
     <div id="context-menu" data-cy={hook} bind:this={context} use:clickoutside on:clickoutside={onClose} style={`left: ${coords[0]}px; top: ${coords[1]}px;`}>
         <slot name="items" close={onClose}></slot>
