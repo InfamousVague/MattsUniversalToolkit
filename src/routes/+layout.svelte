@@ -271,7 +271,7 @@
             await ScreenOrientation.lock({ orientation: "portrait" })
             log.info("Screen orientation locked to portrait.")
         } catch (error) {
-            console.error("Failed to lock screen orientation:", error)
+            log.error("Failed to lock screen orientation:", error)
         }
     }
 
