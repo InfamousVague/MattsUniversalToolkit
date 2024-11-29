@@ -20,6 +20,9 @@
     import { CommonInputRules } from "$lib/utils/CommonInputRules"
     import CreateGroup from "$lib/components/group/CreateGroup.svelte"
     import { onDestroy } from "svelte"
+    import { isAndroidOriOS } from "$lib/utils/Mobile"
+    import { routes } from "$lib/defaults/routes"
+    import BottomNavBarMobile from "$lib/layouts/BottomNavBarMobile.svelte"
 
     let loading: boolean = false
     $: sidebarOpen = UIStore.state.sidebarOpen
@@ -454,6 +457,9 @@
         </Modal>
     {/if}
 </div>
+{#if isAndroidOriOS()}
+    <BottomNavBarMobile icons routes={routes} activeRoute={Route.Friends} on:navigate={e => goto(e.detail)} />
+{/if}
 
 <style lang="scss">
     #page {

@@ -1,7 +1,9 @@
 <script lang="ts">
     import { goto } from "$app/navigation"
     import { page } from "$app/stores"
+    import { routes } from "$lib/defaults/routes"
     import { Route, SettingsRoute, Shape } from "$lib/enums"
+    import BottomNavBarMobile from "$lib/layouts/BottomNavBarMobile.svelte"
 
     import Navigation from "$lib/layouts/Navigation.svelte"
     import Sidebar from "$lib/layouts/Sidebar.svelte"
@@ -9,7 +11,7 @@
     import { SettingsStore } from "$lib/state"
     import { UIStore } from "$lib/state/ui"
     import type { NavRoute } from "$lib/types"
-    import { checkMobile } from "$lib/utils/Mobile"
+    import { checkMobile, isAndroidOriOS } from "$lib/utils/Mobile"
     import { onMount } from "svelte"
     import { _ } from "svelte-i18n"
     import { get, writable, type Writable } from "svelte/store"
@@ -202,6 +204,9 @@
         </div>
     </div>
 </div>
+{#if isAndroidOriOS()}
+    <BottomNavBarMobile icons routes={routes} activeRoute={Route.Settings} on:navigate={e => goto(e.detail)} />
+{/if}
 
 <style lang="scss">
     #settings {
