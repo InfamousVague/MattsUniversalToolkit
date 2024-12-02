@@ -5,7 +5,22 @@
     import { animationDuration } from "$lib/globals/animations"
     import { slide } from "svelte/transition"
     import { Chatbar, Sidebar, Topbar, Profile } from "$lib/layouts"
-    import { ImageEmbed, ChatPreview, Conversation, Message as MessageComponent, MessageGroup, MessageReactions, MessageReplyContainer, ProfilePicture, Modal, ProfilePictureMany, ChatFilter, ContextMenu, EmojiGroup } from "$lib/components"
+    import {
+        ImageEmbed,
+        ChatPreview,
+        Conversation,
+        Message as MessageComponent,
+        MessageGroup,
+        MessageReactions,
+        MessageReplyContainer,
+        ProfilePicture,
+        Modal,
+        ProfilePictureMany,
+        ChatFilter,
+        ContextMenu,
+        EmojiGroup,
+        ChatIcon,
+    } from "$lib/components"
     import CreateTransaction from "$lib/components/wallet/CreateTransaction.svelte"
     import { Button, FileInput, Icon, Label, Text } from "$lib/elements"
     import CallScreen from "$lib/components/calling/CallScreen.svelte"
@@ -705,19 +720,7 @@
             <Topbar>
                 <div slot="before">
                     {#if $activeChat.users.length > 0}
-                        {#if $activeChat.kind === ChatType.DirectMessage}
-                            <ProfilePicture
-                                hook="chat-topbar-profile-picture"
-                                typing={$activeChat.typing_indicator.size > 0}
-                                id={$users[$activeChat.users[1]]?.key}
-                                image={$users[$activeChat.users[1]]?.profile.photo.image}
-                                frame={$users[$activeChat.users[1]]?.profile.photo.frame}
-                                status={$users[$activeChat.users[1]]?.profile.status}
-                                size={Size.Medium}
-                                loading={loading} />
-                        {:else}
-                            <ProfilePictureMany users={Object.values($users)} on:click={_ => (showUsers = true)} />
-                        {/if}
+                        <ChatIcon chat={$activeChat} profileHook={"chat-topbar-profile-picture"} loading={loading} on:click={_ => (showUsers = true)} />
                     {/if}
                 </div>
                 <div slot="content">

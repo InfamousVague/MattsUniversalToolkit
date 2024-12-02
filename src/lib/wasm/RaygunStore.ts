@@ -5,20 +5,21 @@ import { Store } from "../state/Store"
 import { UIStore } from "../state/ui"
 import { ConversationStore } from "../state/conversation"
 import { MessageOptions } from "warp-wasm"
-import { ChatType, MessageAttachmentKind, Route } from "$lib/enums"
-import { type User, type Chat, defaultChat, type Message, mentions_user, type Attachment, messageTypeFromTexts } from "$lib/types"
+import { Appearance, ChatType, MessageAttachmentKind, Route } from "$lib/enums"
+import { type User, type Chat, defaultChat, type Message, mentions_user, type Attachment, messageTypeFromTexts, type Reaction } from "$lib/types"
 import { WarpError, handleErrors } from "./HandleWarpErrors"
 import { failure, success, type Result } from "$lib/utils/Result"
 import { create_cancellable_handler, type Cancellable } from "$lib/utils/CancellablePromise"
 import { parseJSValue } from "./EnumParser"
 import { MultipassStoreInstance } from "./MultipassStore"
 import { log } from "$lib/utils/Logger"
-import { imageFromData } from "./ConstellationStore"
+import { imageFromData, imageFromMime } from "./ConstellationStore"
 import { Sounds } from "$lib/components/utils/SoundHandler"
 import { SettingsStore } from "$lib/state"
 import { ToastMessage } from "$lib/state/ui/toast"
 import { page } from "$app/stores"
 import { goto } from "$app/navigation"
+import { Readable } from "stream"
 
 const MAX_PINNED_MESSAGES = 100
 export type FetchMessagesConfig =
@@ -82,11 +83,6 @@ export type ConversationSettings =
 export type FileAttachment = {
     file: string
     attachment?: [ReadableStream, number]
-}
-
-type Range = {
-    start: any
-    end: any
 }
 
 class RaygunStore {
@@ -204,6 +200,22 @@ class RaygunStore {
         return await this.get(r => r.set_conversation_description(conversation_id, description), "Error updating conversation settings")
     }
 
+    async updateConversationPicture(conversation_id: string, picture: string, banner?: boolean) {
+        return await this.get(r => {
+            const data = picture.startsWith("data:") ? picture.split(",")[1] : picture
+            const buffer = Buffer.from(data, "base64")
+            const len = buffer.length
+            const stream = new ReadableStream({
+                start(controller) {
+                    controller.enqueue(buffer)
+                    controller.close()
+                },
+            })
+            let file = new wasm.AttachmentFile("", new wasm.AttachmentStream(len, stream))
+            banner ? r.update_conversation_banner(conversation_id, file) : r.update_conversation_icon(conversation_id, file)
+        }, "Error updating conversation icon")
+    }
+
     /**
      * Deletes a message for the given chat. If no message id provided will delete the chat
      */
@@ -237,41 +249,29 @@ class RaygunStore {
         }, `Error fetching conversations`)
     }
 
-    async fetchMessages(conversation_id: string, config: FetchMessagesConfig & { [type: string]: any }): Promise<Result<WarpError, FetchMessageResponse>> {
+    async fetchMessages(conversation_id: string, config: FetchMessagesConfig): Promise<Result<WarpError, FetchMessageResponse>> {
         return this.get(async r => {
             let message_options = new MessageOptions()
             switch (config.type) {
                 case "Between": {
-                    let range: Range = {
-                        start: config.from,
-                        end: config.to,
-                    }
-                    message_options.set_date_range(range) //TODO verify that js Date can be parsed to rust DateTime::<Utc>
+                    message_options.set_date_range(config.from, config.to) //TODO verify that js Date can be parsed to rust DateTime::<Utc>
+                    break
                 }
                 case "MostRecent": {
                     let total_messages = await r.get_message_count(conversation_id)
-                    let range: Range = {
-                        start: Math.min(0, total_messages - config.amount),
-                        end: total_messages,
-                    }
-                    message_options.set_range(range)
+                    message_options.set_range(Math.min(0, total_messages - config.amount), total_messages)
+                    break
                 }
                 case "Earlier": {
-                    let range: Range = {
-                        start: new Date(),
-                        end: config.start_date,
-                    }
-                    message_options.set_date_range(range)
+                    message_options.set_date_range(new Date(), config.start_date)
                     message_options.set_reverse()
                     message_options.set_limit(config.limit)
+                    break
                 }
                 case "Later": {
-                    let range: Range = {
-                        start: config.start_date,
-                        end: new Date(),
-                    }
-                    message_options.set_date_range(range)
+                    message_options.set_date_range(config.start_date, new Date())
                     message_options.set_limit(config.limit)
+                    break
                 }
             }
 
@@ -279,7 +279,7 @@ class RaygunStore {
             if (config.type === "Earlier") {
                 messages = messages.reverse()
             }
-            let has_more = messages.length >= config.get_limit()
+            let has_more = "limit" in config ? messages.length >= config.limit : false
 
             let opt = new MessageOptions()
             opt.set_limit(1)
@@ -608,7 +608,9 @@ class RaygunStore {
                         let recipient = await MultipassStoreInstance.identity_from_did(event.values["recipient"])
                         if (recipient) {
                             UIStore.mutateChat(conversation_id, c => {
-                                c.users = [...c.users, recipient.key]
+                                let users = new Set(c.users)
+                                users.add(recipient.key)
+                                c.users = [...users]
                             })
                             Store.updateUser(recipient)
                         }
@@ -664,6 +666,23 @@ class RaygunStore {
                         })
                         break
                     }
+                    case "conversation_updated_icon": {
+                        let conversation_id: string = event.values["conversation_id"]
+                        let icon = await raygun.conversation_icon(conversation_id)
+                        console.log("type ", icon.image_type(), " data ", btoa(icon.data().reduce((data, byte) => data + String.fromCharCode(byte), "")))
+                        UIStore.mutateChat(conversation_id, c => {
+                            c.icon = imageFromMime(icon.data(), "image/png")
+                        })
+                        break
+                    }
+                    case "conversation_updated_banner": {
+                        let conversation_id: string = event.values["conversation_id"]
+                        let icon = await raygun.conversation_banner(conversation_id)
+                        UIStore.mutateChat(conversation_id, c => {
+                            c.banner = imageFromData(icon.data(), icon.image_type())
+                        })
+                        break
+                    }
                     default: {
                         log.error(`Unhandled message event: ${JSON.stringify(event)}`)
                         break
@@ -677,7 +696,7 @@ class RaygunStore {
         let msgs = await raygun.get_messages(conversation_id, options)
         let messages: Message[] = []
         if (msgs.variant() === wasm.MessagesEnum.List) {
-            let warpMsgs = (msgs.value() as any[]).map(v => wasm.message_from({ ...Object.fromEntries(v) }))
+            let warpMsgs = msgs.messages()!
             messages = (await Promise.all(warpMsgs.map(async msg => await this.convertWarpMessage(conversation_id, msg)))).filter((m: Message | null): m is Message => m !== null)
         }
         return messages
@@ -812,7 +831,16 @@ class RaygunStore {
             let sender = await MultipassStoreInstance.identity_from_did(message.sender())
             if (sender) Store.updateUser(sender)
         }
-        let attachments: any[] = message.attachments()
+        let attachments = message.attachments()
+        let reactions: { [key: string]: Reaction } = {}
+        message.reactions().forEach((dids, emoji) => {
+            reactions[emoji] = {
+                reactors: new Set(dids),
+                emoji: emoji,
+                highlight: Appearance.Default, //TODO
+                description: "", //TODO
+            }
+        })
         return {
             id: message.id(),
             details: {
@@ -822,31 +850,31 @@ class RaygunStore {
             },
             text: message.lines(),
             inReplyTo: message.replied() ? ConversationStore.getMessage(conversation_id, message.replied()!) : null,
-            reactions: message.reactions(),
+            reactions: reactions,
             attachments: attachments.map(f => this.convertWarpAttachment(f)),
             pinned: message.pinned(),
             type: messageTypeFromTexts(message.lines()),
         }
     }
 
-    private convertWarpAttachment(attachment: any): Attachment {
+    private convertWarpAttachment(attachment: wasm.File): Attachment {
         let kind: MessageAttachmentKind = MessageAttachmentKind.File
-        let type = parseJSValue(attachment.file_type)
+        let type = attachment.file_type()
         let mime = "application/octet-stream"
-        if (type.type === "mime") {
-            mime = type.values as any as string
+        if (type !== "Generic") {
+            mime = type.Mime
         }
         if (mime.startsWith("image")) {
             kind = MessageAttachmentKind.Image
         } else if (mime.startsWith("video")) {
             kind = MessageAttachmentKind.Video
         }
-        let thumbnail: [] = attachment.thumbnail
-        let location = thumbnail.length > 0 ? imageFromData(attachment.thumbnail, "image", mime) : ""
+        let thumbnail = attachment.thumbnail()
+        let location = thumbnail.length > 0 ? imageFromData(thumbnail, type) : ""
         return {
             kind: kind,
-            name: attachment.name,
-            size: attachment.size,
+            name: attachment.name(),
+            size: attachment.size(),
             location: location,
             mime: mime,
         }

@@ -2,7 +2,7 @@
     import { INTEGRATIONS } from "$lib/config"
     import { toIntegrationIconSrc, toIntegrationKind } from "$lib/utils/ProfileUtils"
     import { Button, Icon, Input, Label } from "$lib/elements"
-    import { Appearance, IntegrationDisplays, Integrations, Shape } from "$lib/enums"
+    import { Appearance, IntegrationDisplays, Shape } from "$lib/enums"
 
     export let key: string
     export let value: string
