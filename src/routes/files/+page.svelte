@@ -379,8 +379,7 @@
         search_component.select_first()
     }
 
-    const onFileSelected = async (e: Event) => {
-        const target = e.target as HTMLInputElement
+    const onFileSelected = async (target: HTMLInputElement) => {
         if (target && target.files) {
             for (let i = 0; i < target.files.length; i++) {
                 const file = target.files[i]
@@ -630,12 +629,24 @@
                         hook="button-upload-file"
                         icon
                         tooltip={$_("files.upload")}
-                        on:click={async () => {
-                            filesToUpload?.click()
+                        on:click={() => {
+                            const input = document.createElement("input")
+                            input.type = "file"
+                            input.multiple = true
+                            input.style.display = "none"
+
+                            input.addEventListener("change", _ => {
+                                const files = input.files
+                                onFileSelected(input)
+                            })
+
+                            document.body.appendChild(input)
+                            input.click()
+                            document.body.removeChild(input)
                         }}>
                         <Icon icon={Shape.Plus} />
                     </Button>
-                    <input data-cy="input=upload-files" style="display:none" multiple type="file" on:change={e => onFileSelected(e)} bind:this={filesToUpload} />
+
                     <ProgressButton appearance={Appearance.Alt} icon={Shape.ArrowsUpDown} />
                 {/if}
             </svelte:fragment>
