@@ -498,8 +498,9 @@ export class Transfer {
         return `/reject ${id} {"details":${transfer}}`
     }
 
-    toDisplayString(kind: string, amount: string): string {
+    toDisplayString(kind: string, amount: string, to: string): string {
         const transfer = JSON.stringify(this, (key, value) => (key === "amount" && typeof value === "bigint" ? value.toString() : value))
+        console.log(transfer)
         return `/send {"kind":"${kind}", "amount":"${amount}", "details":${transfer}}`
     }
 

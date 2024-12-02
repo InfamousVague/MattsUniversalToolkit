@@ -43,14 +43,29 @@
             })
         })
     }
+    let addressInput = ""
+    function onAddressInput() {
+        wallet.myAddress(transfer.asset).then(address => {
+            transfer.toAddress = addressInput
+        })
+        console.log(addressInput)
+    }
     onInputAmount()
     function onChangeAssetKind() {
         transfer.asset.id = ""
         transfer.amount = BigInt(0)
         onInputAmount()
-        wallet.myAddress(transfer.asset).then(address => {
-            transfer.toAddress = address
-        })
+        if (sendCoin !== ViewMode.Send) {
+            wallet.myAddress(transfer.asset).then(address => {
+                transfer.toAddress = address
+            })
+        } else {
+            wallet.myAddress(transfer.asset).then(address => {
+                transfer.toAddress = addressInput
+            })
+            console.log(addressInput)
+            // transfer.toAddress = addressInput
+        }
     }
     onChangeAssetKind()
 
@@ -79,16 +94,16 @@
         <div class="asset_selector">
             <Label text={$_("payments.type") + ":"}></Label><Select bind:selected={transfer.asset.kind} options={Object.values(AssetType).map(value => ({ value: value, text: value }))} on:change={onChangeAssetKind} />
         </div>
-        {#if transfer.toAddress !== ""}
-            <div class="address">
-                <Label text={$_("payments.address")} />
-                <div class="address_QR">
-                    <Input value={transfer.toAddress} />
-                    <!-- <div class="address_button">
+        <div class="address">
+            <Label text={$_("payments.address")} />
+            <div class="address_QR">
+                <Input bind:value={addressInput} on:input={onAddressInput} />
+                <!-- <div class="address_button">
                         <Button icon><Icon icon={Shape.QRCode}></Icon></Button>
                     </div> -->
-                </div>
             </div>
+        </div>
+        {#if addressInput !== ""}
             <div class="amount">
                 <Label text={$_("payments.amount")} />
                 <Input bind:value={inputAmount} on:input={onInputAmount} />
@@ -102,7 +117,7 @@
             <Button
                 disabled={!transfer.isValid()}
                 on:click={async () => {
-                    await sendMessage(transfer.toDisplayString())
+                    await sendMessage(transfer.toDisplayString(transfer.asset.kind, inputAmount, transfer.toAddress))
                     onClose()
                 }}>{$_("payments.create_transaction")}</Button>
         </div>

@@ -92,7 +92,6 @@
                     console.error("Error parsing JSON:", error, chat.last_message_preview)
                     return "Invalid message format"
                 }
-                console.log(parsedMessage)
                 let amount = parsedMessage.details.amountPreview || "unknown"
 
                 amount = amount.replace(/(\.\d*?[1-9])0+$|\.0*$/, "$1")

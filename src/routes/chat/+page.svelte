@@ -407,7 +407,6 @@
                 let txt = formattedMessage.split("\n")
 
                 console.log("Formatted Transfer Message", formattedMessage)
-
                 let result = await RaygunStoreInstance.send(chat.id, txt, [])
                 result.onSuccess(res => {
                     Store.state.paymentTracker.update(payments => {
