@@ -42,11 +42,7 @@
         return localStorage.getItem("install-banner-dismissed") === "true"
     }
 
-    function isMobile(): boolean {
-        return /Android|iPhone|iPad|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-    }
-
-    let showBanner = !(isElectron() || isTauri() || isMobile() || isBannerClosed())
+    let showBanner = !(isElectron() || isTauri() || isCapacitor() || isBannerClosed())
     let platform = detectPlatform()
 
     function closeBanner() {
