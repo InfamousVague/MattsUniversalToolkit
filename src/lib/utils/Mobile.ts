@@ -1,4 +1,4 @@
-import { Device } from "@capacitor/device"=
+import { Device } from "@capacitor/device"
 import { log } from "./Logger"
 
 export function checkMobile(): boolean {
