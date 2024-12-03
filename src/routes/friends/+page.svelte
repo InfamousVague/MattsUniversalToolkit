@@ -9,6 +9,7 @@
     import Fuse from "fuse.js"
     import Friend from "$lib/components/friends/Friend.svelte"
     import { Store } from "$lib/state/Store"
+    import { FriendPage, PageState, type PageStateStruct } from "$lib/state/page/PageStates"
     import { get } from "svelte/store"
     import { goto } from "$app/navigation"
     import { UIStore } from "$lib/state/ui"
@@ -19,7 +20,7 @@
     import { ToastMessage } from "$lib/state/ui/toast"
     import { CommonInputRules } from "$lib/utils/CommonInputRules"
     import CreateGroup from "$lib/components/group/CreateGroup.svelte"
-    import { onDestroy } from "svelte"
+    import AddFriendPopup from "$lib/components/friends/AddFriendPopup.svelte"
 
     let loading: boolean = false
     $: sidebarOpen = UIStore.state.sidebarOpen
@@ -31,20 +32,8 @@
     let isValidFriendDid: boolean = false
     let newGroup: boolean = false
 
-    let tab: "all" | "active" | "blocked" = "all"
-
-    let unsub = Store.state.pageState.subscribe(s => {
-        function isTab(value: string): value is "all" | "active" | "blocked" {
-            return value === "all" || value === "active" || value === "blocked"
-        }
-        if (isTab(s)) {
-            tab = s
-        }
-    })
-
-    onDestroy(() => {
-        unsub()
-    })
+    $: tab = PageState.friends
+    $: addFriend = PageState.addFriend
 
     function toggleSidebar(): void {
         UIStore.toggleSidebar()
@@ -160,9 +149,25 @@
             await navigator.clipboard.writeText(updatedKey)
         }
     }
+
+    function validDid(did: string) {
+        return did !== get(Store.state.user).key.replace("did:key:", "")
+    }
 </script>
 
 <div id="page">
+    {#if $addFriend && validDid($addFriend)}
+        <Modal
+            on:close={_ => {
+                $addFriend = ""
+            }}>
+            <AddFriendPopup
+                friend={$addFriend}
+                on:close={_ => {
+                    $addFriend = ""
+                }}></AddFriendPopup>
+        </Modal>
+    {/if}
     <Sidebar loading={loading} on:toggle={toggleSidebar} open={$sidebarOpen} activeRoute={Route.Friends}>
         <!--
             <Button hook="button-marketplace" outline appearance={Appearance.Alt} text={$_("market.market")}>
@@ -206,30 +211,30 @@
     <div class="content">
         <Topbar>
             <svelte:fragment slot="controls">
-                {#if tab === "all"}
-                    <Button hook="button-friends-all" appearance={Appearance.Alt} text={$_("friends.all")} on:click={_ => (tab = "all")}>
+                {#if $tab === FriendPage.ALL}
+                    <Button hook="button-friends-all" appearance={Appearance.Alt} text={$_("friends.all")} on:click={_ => ($tab = FriendPage.ALL)}>
                         <Icon icon={Shape.Users} alt />
                     </Button>
                 {:else}
-                    <Button hook="button-friends-all" appearance={Appearance.Alt} text={$_("friends.all")} on:click={_ => (tab = "all")}>
+                    <Button hook="button-friends-all" appearance={Appearance.Alt} text={$_("friends.all")} on:click={_ => ($tab = FriendPage.ALL)}>
                         <Icon icon={Shape.Users} />
                     </Button>
                 {/if}
-                {#if tab === "active"}
-                    <Button badge={incomingRequests.length} hook="button-friends-active" appearance={Appearance.Primary} text={$_("friends.active")} on:click={_ => (tab = "active")} hideTextOnMobile>
+                {#if $tab === FriendPage.ACTIVE}
+                    <Button badge={incomingRequests.length} hook="button-friends-active" appearance={Appearance.Primary} text={$_("friends.active")} on:click={_ => ($tab = FriendPage.ACTIVE)} hideTextOnMobile>
                         <Icon icon={Shape.ArrowsLeftRight} alt />
                     </Button>
                 {:else}
-                    <Button badge={incomingRequests.length} hook="button-friends-active" appearance={Appearance.Alt} text={$_("friends.active")} on:click={_ => (tab = "active")} hideTextOnMobile>
+                    <Button badge={incomingRequests.length} hook="button-friends-active" appearance={Appearance.Alt} text={$_("friends.active")} on:click={_ => ($tab = FriendPage.ACTIVE)} hideTextOnMobile>
                         <Icon icon={Shape.ArrowsLeftRight} />
                     </Button>
                 {/if}
-                {#if tab === "blocked"}
-                    <Button hook="button-friends-blocked" appearance={Appearance.Primary} text={$_("friends.blocked")} on:click={_ => (tab = "blocked")} hideTextOnMobile>
+                {#if $tab === FriendPage.BLOCKED}
+                    <Button hook="button-friends-blocked" appearance={Appearance.Primary} text={$_("friends.blocked")} on:click={_ => ($tab = FriendPage.BLOCKED)} hideTextOnMobile>
                         <Icon icon={Shape.NoSymbol} alt />
                     </Button>
                 {:else}
-                    <Button hook="button-friends-blocked" appearance={Appearance.Alt} text={$_("friends.blocked")} on:click={_ => (tab = "blocked")} hideTextOnMobile>
+                    <Button hook="button-friends-blocked" appearance={Appearance.Alt} text={$_("friends.blocked")} on:click={_ => ($tab = FriendPage.BLOCKED)} hideTextOnMobile>
                         <Icon icon={Shape.NoSymbol} />
                     </Button>
                 {/if}
@@ -237,7 +242,7 @@
         </Topbar>
 
         <div class="body">
-            {#if tab === "all"}
+            {#if $tab === FriendPage.ALL}
                 <Label hook="label-add-someone" text={$_("friends.add_someone")} />
                 <div class="section" data-cy="friends-section-all">
                     <Input
@@ -397,7 +402,7 @@
                         {/each}
                     </div>
                 </div>
-            {:else if tab === "active"}
+            {:else if FriendPage.ACTIVE}
                 <div class="section column" data-cy="friends-section-requests">
                     <Label hook="label-outgoing-requests" text={$_("friends.outgoing_requests")} />
                     {#each outgoingRequests as request}
@@ -429,7 +434,7 @@
                         <Text hook="text-no-incoming-requests">{$_("friends.noIncoming")}</Text>
                     {/if}
                 </div>
-            {:else if tab === "blocked"}
+            {:else if $tab === FriendPage.BLOCKED}
                 <div class="section column" data-cy="friends-section-blocked">
                     <Label hook="label-blocked-users" text={$_("friends.blocked_users")} />
                     {#each $blocked as user}
