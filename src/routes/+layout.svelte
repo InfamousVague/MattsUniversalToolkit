@@ -27,6 +27,7 @@
     import InstallBanner from "$lib/components/ui/InstallBanner.svelte"
     import Market from "$lib/components/market/Market.svelte"
     import { swipe } from "$lib/components/ui/Swipe"
+    import { fetchDeviceInfo } from "$lib/utils/Mobile"
 
     log.debug("Initializing app, layout routes page.")
 
@@ -265,6 +266,7 @@
     }
 
     onMount(async () => {
+        await fetchDeviceInfo()
         await checkIfUserIsLogged($page.route.id)
         await initializeLocale()
         buildStyle()
