@@ -5,6 +5,7 @@
     import Label from "$lib/elements/Label.svelte"
     import { Appearance, Shape } from "$lib/enums"
     import Controls from "$lib/layouts/Controls.svelte"
+    import { isAndroidOriOS } from "$lib/utils/Mobile"
 
     enum Platform {
         Windows = "Windows",
@@ -18,10 +19,10 @@
     function detectPlatform(): Platform {
         const userAgent = navigator.userAgent.toLowerCase()
 
+        if (/iphone|ipad|ipod/.test(userAgent)) return Platform.iOS
         if (userAgent.includes("windows")) return Platform.Windows
         if (userAgent.includes("mac")) return Platform.MacOS
         if (userAgent.includes("android")) return Platform.Android
-        if (/iphone|ipad|ipod/.test(userAgent)) return Platform.iOS
         if (userAgent.includes("linux")) return Platform.Linux
         return Platform.Other
     }
@@ -42,11 +43,11 @@
         return localStorage.getItem("install-banner-dismissed") === "true"
     }
 
-    function isMobile(): boolean {
-        return /Android|iPhone|iPad|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+    function isMobileWeb(): boolean {
+        return /Android|iPhone|iPad/i.test(navigator.userAgent)
     }
 
-    let showBanner = !(isElectron() || isTauri() || isMobile() || isBannerClosed())
+    let showBanner = !(isElectron() || isTauri() || isAndroidOriOS() || isBannerClosed())
     let platform = detectPlatform()
 
     function closeBanner() {
