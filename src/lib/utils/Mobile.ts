@@ -1,4 +1,5 @@
 import { Device } from "@capacitor/device"
+import { log } from "./Logger"
 
 export function checkMobile(): boolean {
     return window.matchMedia("screen and (max-width: 800px)").matches
