@@ -28,7 +28,7 @@
     import Market from "$lib/components/market/Market.svelte"
     import { swipe } from "$lib/components/ui/Swipe"
     import { ScreenOrientation } from "@capacitor/screen-orientation"
-    import { isAndroidOriOS } from "$lib/utils/Mobile"
+    import { fetchDeviceInfo } from "$lib/utils/Mobile"
 
     log.debug("Initializing app, layout routes page.")
 
@@ -276,9 +276,10 @@
     }
 
     onMount(async () => {
-        if (await isAndroidOriOS()) {
+        if (await fetchDeviceInfo()) {
             lockOrientation()
         }
+
         await checkIfUserIsLogged($page.route.id)
         await initializeLocale()
         buildStyle()
