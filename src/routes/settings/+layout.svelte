@@ -81,7 +81,7 @@
 
     let loading = false
     let sidebarOpen: boolean = get(UIStore.state.sidebarOpen)
-    let activeRoute = SettingsRoute.Profile
+    let activeRoute: SettingsRoute = SettingsRoute.Developer
 
     function toggleSidebar() {
         UIStore.toggleSidebar()
@@ -189,6 +189,10 @@
             routes={setRoutes}
             vertical
             on:navigate={e => {
+                let sideBarIsOpened = get(UIStore.state.sidebarOpen)
+                if (sideBarIsOpened) {
+                    UIStore.toggleSidebar()
+                }
                 goto(e.detail)
                 activeRoute = e.detail
             }}

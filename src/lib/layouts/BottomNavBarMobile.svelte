@@ -6,7 +6,7 @@
     import { Store } from "$lib/state/Store"
     import { UIStore } from "$lib/state/ui"
     import type { FriendRequest, NavRoute } from "$lib/types"
-    import { checkMobile } from "$lib/utils/Mobile"
+    import { checkMobile, isAndroidOriOS } from "$lib/utils/Mobile"
     import { createEventDispatcher, onDestroy } from "svelte"
     import { get } from "svelte/store"
 
@@ -50,6 +50,11 @@
 
     function handleNavigate(route: NavRoute) {
         if (checkMobile() && !overrides(route)) UIStore.state.sidebarOpen.set(false)
+        if (isAndroidOriOS() && (route.to === Route.Settings || (route.to === Route.Chat && get(UIStore.state.chats).length === 0))) {
+            if (get(UIStore.state.sidebarOpen) === false) {
+                UIStore.toggleSidebar()
+            }
+        }
         dispatch("navigate", route.to.toString())
     }
 
