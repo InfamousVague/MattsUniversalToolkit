@@ -2,12 +2,12 @@
     import Button from "$lib/elements/Button.svelte"
     import { ConversationStore } from "$lib/state/conversation"
     import { Store } from "$lib/state/Store"
-    import { AssetType, shortenAddr, Transfer, wallet, type Asset } from "$lib/utils/Wallet"
+    import { AssetType, getValidPaymentRequest, shortenAddr, Transfer, wallet, type Asset } from "$lib/utils/Wallet"
     import { RaygunStoreInstance } from "$lib/wasm/RaygunStore"
     import { get } from "svelte/store"
     import { _ } from "svelte-i18n"
     import { Icon, Input, Label, Select, Text } from "$lib/elements"
-    import { Appearance, Shape, Size } from "$lib/enums"
+    import { Appearance, PaymentRequestsEnum, Shape, Size } from "$lib/enums"
 
     export let onClose
     enum ViewMode {
@@ -20,16 +20,33 @@
     let transfer = new Transfer()
     let sendCoin = ViewMode.None
     async function sendMessage(text: string) {
-        let chat = get(Store.state.activeChat)
-        let txt = text.split("\n")
-        let result = await RaygunStoreInstance.send(chat.id, txt, [])
-        result.onSuccess(res => {
-            ConversationStore.addPendingMessages(chat.id, res.message, txt)
-        })
+        if (sendCoin === ViewMode.Send) {
+            let chat = get(Store.state.activeChat)
+            let txt = text.split("\n")
+            let whatReturned = await getValidPaymentRequest(txt[0])?.execute()
+            console.log(whatReturned)
+            if (whatReturned !== undefined) {
+                let result = await RaygunStoreInstance.send(chat.id, txt, [])
+                result.onSuccess(res => {
+                    console.log(txt)
+                    // getValidPaymentRequest(txt[0])?.execute()
+                    ConversationStore.addPendingMessages(chat.id, res.message, txt)
+                })
+            }
+        }
+        if (sendCoin === ViewMode.Receive) {
+            let chat = get(Store.state.activeChat)
+            let txt = text.split("\n")
+            let result = await RaygunStoreInstance.send(chat.id, txt, [])
+            result.onSuccess(res => {
+                console.log(txt)
+                // getValidPaymentRequest(txt[0])?.execute()
+                ConversationStore.addPendingMessages(chat.id, res.message, txt)
+            })
+        }
     }
 
     let inputAmount = ""
-    let currentView: ViewMode = ViewMode.None
     function onInputAmount() {
         inputAmount = inputAmount.replace(/[^0-9.]/g, "")
         if (inputAmount.split(".").length > 2) {
@@ -48,7 +65,6 @@
         wallet.myAddress(transfer.asset).then(address => {
             transfer.toAddress = addressInput
         })
-        console.log(addressInput)
     }
     onInputAmount()
     function onChangeAssetKind() {
@@ -63,8 +79,6 @@
             wallet.myAddress(transfer.asset).then(address => {
                 transfer.toAddress = addressInput
             })
-            console.log(addressInput)
-            // transfer.toAddress = addressInput
         }
     }
     onChangeAssetKind()

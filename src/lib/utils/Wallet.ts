@@ -501,12 +501,14 @@ export class Transfer {
     toDisplayString(kind: string, amount: string, to: string): string {
         const transfer = JSON.stringify(this, (key, value) => (key === "amount" && typeof value === "bigint" ? value.toString() : value))
         console.log(transfer)
+        getValidPaymentRequest(transfer)
         return `/send {"kind":"${kind}", "amount":"${amount}", "details":${transfer}}`
     }
 
     async execute() {
         if (this.isValid()) {
             await wallet.transfer(this.asset, this.amount, this.toAddress)
+            return true
         }
     }
 }
@@ -550,26 +552,46 @@ export function getValidPaymentRequest(msg: string, msgId?: string): Transfer | 
         }
     } else if (msg.startsWith(PaymentRequestsEnum.Send)) {
         let json = msg.substring(PaymentRequestsEnum.Send.length, msg.length).trim()
+        console.log(msg)
         let jsonStartIndex = json.indexOf("{")
         if (jsonStartIndex !== -1) {
             json = json.substring(jsonStartIndex).trim()
 
             try {
-                let parsed = JSON.parse(json, (k, v) => (k === "amount" && typeof v === "string" ? BigInt(v) : v))
-                transfer.asset = parsed.asset
-                transfer.amount = parsed.amount
-                transfer.toAddress = parsed.toAddress
-                transfer.amountPreview = parsed.amountPreview
+                let parsed = JSON.parse(json, (key, value) => {
+                    if (key === "amount" && typeof value === "string") {
+                        // Check if the value can be converted to BigInt
+                        if (/^\d+$/.test(value)) {
+                            return BigInt(value) // Convert to BigInt if it's an integer
+                        } else {
+                            return value // Keep as string if it's a decimal
+                        }
+                    }
+                    return value
+                })
+
+                // Extract the details object for nested properties
+                const details = parsed.details || {}
+
+                transfer.asset = details.asset || {} // Ensure asset is retrieved from details
+                transfer.amount = details.amount || "0" // Use the nested amount
+                transfer.toAddress = details.toAddress || "" // Use the nested toAddress
+                transfer.amountPreview = details.amountPreview || "" // Use the nested amountPreview
             } catch (err) {
                 console.error("Parse Failed", err)
+                return undefined // Early return on parse failure
             }
         } else {
             console.error("Send message is not JSON:", json)
-            return undefined
+            return undefined // Early return if message is not JSON
         }
 
-        if (transfer.asset.kind !== AssetType.None && transfer.isValid()) {
+        // Validate transfer object properties safely
+        if (transfer.asset && transfer.asset.kind !== undefined && transfer.asset.kind !== AssetType.None && transfer.isValid()) {
             return transfer
+        } else {
+            console.error("Invalid transfer object:", transfer)
+            return undefined
         }
     }
 

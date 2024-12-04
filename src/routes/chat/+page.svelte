@@ -350,7 +350,7 @@
 
     $: rejectedPayments = Store.state.paymentTracker
 
-    async function sendPaymentMessage(message: MessageType, paymentType: string) {
+    async function sendPaymentMessage(message: MessageType, line: string, paymentType: string) {
         let transfer = new Transfer()
         let chat = get(Store.state.activeChat)
         if (paymentType === PaymentRequestsEnum.Request) {
@@ -401,26 +401,28 @@
                 const paymentDetails = JSON.parse(jsonPart)
                 const kind = paymentDetails.asset?.kind || "unknown"
                 const amount = paymentDetails.amountPreview || "0"
-                const formattedMessage = transfer.toDisplayString(kind, amount)
+                const formattedMessage = transfer.toDisplayString(kind, amount, message.id)
 
                 let chat = get(Store.state.activeChat)
                 let txt = formattedMessage.split("\n")
 
-                console.log("Formatted Transfer Message", formattedMessage)
-                let result = await RaygunStoreInstance.send(chat.id, txt, [])
-                result.onSuccess(res => {
-                    Store.state.paymentTracker.update(payments => {
-                        const alreadyRejected = payments.some(payment => payment.messageId === message.id)
+                let walletSuccess = await getValidPaymentRequest(line, message.id)?.execute()
+                if (walletSuccess) {
+                    let result = await RaygunStoreInstance.send(chat.id, txt, [])
+                    result.onSuccess(res => {
+                        Store.state.paymentTracker.update(payments => {
+                            const alreadyRejected = payments.some(payment => payment.messageId === message.id)
 
-                        if (!alreadyRejected) {
-                            return [...payments, { messageId: message.id, senderId: message.details.origin, rejectedPayment: true }]
-                        } else {
-                            console.error(`MessageId ${message.id} is already in the rejected payments list`)
-                            return payments
-                        }
+                            if (!alreadyRejected) {
+                                return [...payments, { messageId: message.id, senderId: message.details.origin, rejectedPayment: true }]
+                            } else {
+                                console.error(`MessageId ${message.id} is already in the rejected payments list`)
+                                return payments
+                            }
+                        })
+                        ConversationStore.addPendingMessages(chat.id, res.message, txt)
                     })
-                    ConversationStore.addPendingMessages(chat.id, res.message, txt)
-                })
+                }
             } catch (error) {
                 console.error("Error extracting payment details or sending message:", error)
             }
@@ -926,14 +928,14 @@
                                                                             class="send_coin"
                                                                             text={sanitizePaymentRequest(line, resolved.name)}
                                                                             on:click={async () => {
-                                                                                sendPaymentMessage(message, PaymentRequestsEnum.Send)
+                                                                                sendPaymentMessage(message, line, PaymentRequestsEnum.Send)
                                                                             }}>
                                                                             <Icon icon={Shape.DollarOut}></Icon></Button>
                                                                         <Button
                                                                             hook="text-chat-message"
                                                                             text={$_("payments.decline")}
                                                                             appearance={Appearance.Error}
-                                                                            on:click={async () => sendPaymentMessage(message, PaymentRequestsEnum.Reject)}>
+                                                                            on:click={async () => sendPaymentMessage(message, line, PaymentRequestsEnum.Reject)}>
                                                                             <Icon icon={Shape.NoSymbol}></Icon>
                                                                         </Button>
                                                                     </div>
@@ -943,7 +945,7 @@
                                                                         hook="text-chat-message"
                                                                         text={$_("payments.cancel_request")}
                                                                         appearance={Appearance.Error}
-                                                                        on:click={async () => sendPaymentMessage(message, PaymentRequestsEnum.Reject)}>
+                                                                        on:click={async () => sendPaymentMessage(message, line, PaymentRequestsEnum.Reject)}>
                                                                         <Icon icon={Shape.XMark}></Icon>
                                                                     </Button>
                                                                 {:else}
@@ -952,7 +954,7 @@
                                                                         hook="text-chat-message"
                                                                         text={$_("payments.canceledRequest")}
                                                                         appearance={Appearance.Error}
-                                                                        on:click={async () => sendPaymentMessage(message, PaymentRequestsEnum.Reject)}>
+                                                                        on:click={async () => sendPaymentMessage(message, line, PaymentRequestsEnum.Reject)}>
                                                                         <Icon icon={Shape.XMark}></Icon>
                                                                     </Button>
                                                                 {/if}
