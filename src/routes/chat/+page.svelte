@@ -163,6 +163,7 @@
     function sanitizePaymentSent(message: string, sender: string, receiver: string): string {
         const jsonStartIndex = message.indexOf("{")
         const jsonEndIndex = message.lastIndexOf("}")
+        // console.log(message)
 
         if (jsonStartIndex === -1 || jsonEndIndex === -1 || jsonStartIndex > jsonEndIndex) {
             return "Invalid message format"
@@ -174,7 +175,7 @@
         try {
             parsedMessage = JSON.parse(jsonPart)
         } catch (error) {
-            console.error("Error parsing JSON:", error, message)
+            // console.error("Error parsing JSON:", error, message)
             return "Invalid message format"
         }
 
@@ -405,6 +406,7 @@
 
                 let chat = get(Store.state.activeChat)
                 let txt = formattedMessage.split("\n")
+                console.log(txt)
 
                 let walletSuccess = await getValidPaymentRequest(line, message.id)?.execute()
                 if (walletSuccess) {
@@ -420,6 +422,7 @@
                                 return payments
                             }
                         })
+                        console.log(txt)
                         ConversationStore.addPendingMessages(chat.id, res.message, txt)
                     })
                 }

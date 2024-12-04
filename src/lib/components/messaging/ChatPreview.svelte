@@ -85,6 +85,7 @@
                     return "Invalid message format"
                 }
                 const jsonPart = chat.last_message_preview.slice(jsonStartIndex)
+                console.log(JSON.parse(jsonPart))
                 let parsedMessage
                 try {
                     parsedMessage = JSON.parse(jsonPart)
@@ -92,14 +93,14 @@
                     console.error("Error parsing JSON:", error, chat.last_message_preview)
                     return "Invalid message format"
                 }
-                let amount = parsedMessage.details.amountPreview || "unknown"
+                let amount = parsedMessage.amount || "unknown"
 
                 amount = amount.replace(/(\.\d*?[1-9])0+$|\.0*$/, "$1")
                 if (sendingUserDetails.key !== ownId.key) {
                     return `${sendingUserDetails.name} sent you ${amount}`
                 } else {
                     const recipientId = parsedMessage.details?.toAddress || "unknown address"
-                    return `You sent ${amount} to ${recipientId}`
+                    return `You sent ${amount} to ${sendingUserDetails.name}`
                 }
             } catch (error) {
                 console.error("Error in PaymentRequestsEnum.Send condition:", error)
