@@ -39,6 +39,7 @@
     let isValidFriendDid: boolean = false
     let newGroup: boolean = false
 
+    $: console.log("tab ", $tab)
     $: tab = PageState.friends
     $: addFriend = PageState.addFriend
 
@@ -431,7 +432,7 @@
                         {/each}
                     </div>
                 </div>
-            {:else if FriendPage.ACTIVE}
+            {:else if $tab === FriendPage.ACTIVE}
                 <div class="section column" data-cy="friends-section-requests">
                     <Label hook="label-outgoing-requests" text={$_("friends.outgoing_requests")} />
                     {#each outgoingRequests as request}
