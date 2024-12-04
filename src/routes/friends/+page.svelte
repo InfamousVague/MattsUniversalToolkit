@@ -22,6 +22,12 @@
     import CreateGroup from "$lib/components/group/CreateGroup.svelte"
     import AddFriendPopup from "$lib/components/friends/AddFriendPopup.svelte"
 
+    enum DIDCopy {
+        DEFAULT,
+        SHORT,
+        LINK,
+    }
+
     let loading: boolean = false
     $: sidebarOpen = UIStore.state.sidebarOpen
     $: friends = Store.getUsers(Store.state.friends)
@@ -140,13 +146,22 @@
     let activeChat: Chat = get(Store.state.activeChat)
     Store.state.activeChat.subscribe(c => (activeChat = c))
 
-    async function copy_did(short: boolean) {
+    async function copy_did(conf: DIDCopy) {
         let user = get(Store.state.user)
-        if (short) {
-            await navigator.clipboard.writeText(`${user.name}#${user.id.short}`)
-        } else {
-            const updatedKey = user.key.replace("did:key:", "")
-            await navigator.clipboard.writeText(updatedKey)
+        switch (conf) {
+            case DIDCopy.DEFAULT: {
+                const updatedKey = user.key.replace("did:key:", "")
+                await navigator.clipboard.writeText(updatedKey)
+                break
+            }
+            case DIDCopy.SHORT: {
+                await navigator.clipboard.writeText(`${user.name}#${user.id.short}`)
+                break
+            }
+            case DIDCopy.LINK: {
+                const updatedKey = user.key.replace("did:key:", "")
+                await navigator.clipboard.writeText(`${window.location.origin}/friends/add/${updatedKey}`)
+            }
         }
     }
 
@@ -268,17 +283,24 @@
                                 icon: Shape.Users,
                                 text: $_("settings.profile.copy_id"),
                                 appearance: Appearance.Default,
-                                onClick: async () => await copy_did(true),
+                                onClick: async () => await copy_did(DIDCopy.SHORT),
                             },
                             {
                                 id: "copy-did",
                                 icon: Shape.Clipboard,
                                 text: $_("settings.profile.copy_did"),
                                 appearance: Appearance.Default,
-                                onClick: async () => await copy_did(false),
+                                onClick: async () => await copy_did(DIDCopy.DEFAULT),
+                            },
+                            {
+                                id: "copy-link",
+                                icon: Shape.Clipboard,
+                                text: $_("settings.profile.copy_did_link"),
+                                appearance: Appearance.Default,
+                                onClick: async () => await copy_did(DIDCopy.LINK),
                             },
                         ]}>
-                        <Button hook="button-copy-id" slot="content" appearance={Appearance.Alt} icon tooltip={$_("friends.copy_did")} let:open on:contextmenu={open} on:click={async _ => await copy_did(false)}>
+                        <Button hook="button-copy-id" slot="content" appearance={Appearance.Alt} icon tooltip={$_("friends.copy_did")} let:open on:contextmenu={open} on:click={async _ => await copy_did(DIDCopy.DEFAULT)}>
                             <Icon icon={Shape.Clipboard} />
                         </Button>
                     </ContextMenu>
