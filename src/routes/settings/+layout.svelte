@@ -138,8 +138,8 @@
 
     UIStore.state.sidebarOpen.subscribe(s => (sidebarOpen = s))
     $: setRoutes = get(settingsRoutes)
-    SettingsStore.state.subscribe(value => {
-        let isMobile: boolean = checkMobile()
+    SettingsStore.state.subscribe(async value => {
+        let isMobile: boolean = await isAndroidOriOS()
         if (value.devmode) {
             if (!get(settingsRoutes).find(route => route.to === SettingsRoute.Developer)) {
                 settingsRoutes.update(routes => [
