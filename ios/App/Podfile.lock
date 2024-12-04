@@ -10,9 +10,11 @@ PODS:
     - Capacitor
   - CapacitorFilesystem (6.0.2):
     - Capacitor
+  - CapacitorKeyboard (6.0.3):
+    - Capacitor
   - CapacitorScreenOrientation (6.0.3):
     - Capacitor
-  - CapacitorSplashScreen (6.0.3):
+  - CapacitorSplashScreen (6.0.2):
     - Capacitor
 
 DEPENDENCIES:
@@ -22,6 +24,7 @@ DEPENDENCIES:
   - "CapacitorCordova (from `../../node_modules/@capacitor/ios`)"
   - "CapacitorDevice (from `../../node_modules/@capacitor/device`)"
   - "CapacitorFilesystem (from `../../node_modules/@capacitor/filesystem`)"
+  - "CapacitorKeyboard (from `../../node_modules/@capacitor/keyboard`)"
   - "CapacitorScreenOrientation (from `../../node_modules/@capacitor/screen-orientation`)"
   - "CapacitorSplashScreen (from `../../node_modules/@capacitor/splash-screen`)"
 
@@ -38,6 +41,8 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/@capacitor/device"
   CapacitorFilesystem:
     :path: "../../node_modules/@capacitor/filesystem"
+  CapacitorKeyboard:
+    :path: "../../node_modules/@capacitor/keyboard"
   CapacitorScreenOrientation:
     :path: "../../node_modules/@capacitor/screen-orientation"
   CapacitorSplashScreen:
@@ -50,9 +55,10 @@ SPEC CHECKSUMS:
   CapacitorCordova: b33e7f4aa4ed105dd43283acdd940964374a87d9
   CapacitorDevice: 1a215717f0b5061503b21a03508b0ec458a57d78
   CapacitorFilesystem: c832a3f6d4870c3872688e782ae8e33665e6ecbf
+  CapacitorKeyboard: 460c6f9ec5e52c84f2742d5ce2e67bbc7ab0ebb0
   CapacitorScreenOrientation: 3bb823f5d265190301cdc5d58a568a287d98972a
-  CapacitorSplashScreen: 68893659d77b5f82d753b3a70475082845e3039c
+  CapacitorSplashScreen: 250df9ef8014fac5c7c1fd231f0f8b1d8f0b5624
 
-PODFILE CHECKSUM: 80366870d5c5081f271e0ddeab86b283217ebd9d
+PODFILE CHECKSUM: 0bfaa008b5f31bb57606a8c6259197a6af507ba4
 
 COCOAPODS: 1.16.2

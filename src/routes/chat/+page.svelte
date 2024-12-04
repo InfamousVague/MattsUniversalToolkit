@@ -647,6 +647,9 @@
                 <ChatPreview slot="content" let:open on:contextmenu={open} chat={chat} loading={loading} cta={$activeChat === chat} />
             </ContextMenu>
         {/each}
+        {#if isAndroidOriOS()}
+            <BottomNavBarMobile icons routes={routes} activeRoute={Route.Chat} on:navigate={e => goto(e.detail)} />
+        {/if}
     </Sidebar>
 
     <div class="content">
@@ -977,7 +980,7 @@
                 })
             }} />
 
-        {#if $activeChat.users.length > 0}
+        {#if $activeChat.users.length > 0 && (!isAndroidOriOS() || (isAndroidOriOS() && get(UIStore.state.sidebarOpen) === false))}
             <Chatbar
                 replyTo={replyTo}
                 activeChat={$activeChat}

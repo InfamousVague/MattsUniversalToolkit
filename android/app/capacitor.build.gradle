@@ -13,10 +13,12 @@ dependencies {
     implementation project(':capacitor-clipboard')
     implementation project(':capacitor-device')
     implementation project(':capacitor-filesystem')
+    implementation project(':capacitor-keyboard')
     implementation project(':capacitor-screen-orientation')
     implementation project(':capacitor-splash-screen')
 
 }
+
 
 if (hasProperty('postBuildExtras')) {
   postBuildExtras()

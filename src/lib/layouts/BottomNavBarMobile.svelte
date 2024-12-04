@@ -50,11 +50,13 @@
 
     function handleNavigate(route: NavRoute) {
         if (checkMobile() && !overrides(route)) UIStore.state.sidebarOpen.set(false)
-        if (isAndroidOriOS() && (route.to === Route.Settings || (route.to === Route.Chat && get(UIStore.state.chats).length === 0))) {
+        if (isAndroidOriOS() && (route.to === Route.Settings || (route.to === Route.Chat && get(UIStore.state.chats).length > 0))) {
             if (get(UIStore.state.sidebarOpen) === false) {
                 UIStore.toggleSidebar()
+                // Avoid keyboard when navigate to chat preview list
             }
         }
+
         dispatch("navigate", route.to.toString())
     }
 
@@ -76,7 +78,6 @@
         unsubscribeStore()
         unsubscribeUIStore()
     })
-
     $: settings = SettingsStore.state
 </script>
 
