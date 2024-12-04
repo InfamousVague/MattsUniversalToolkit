@@ -5,10 +5,10 @@
     import { PageState } from "$lib/state/page/PageStates"
     import { onMount } from "svelte"
 
-    let { key } = $page.data
+    let { user } = $page.params
 
     onMount(() => {
-        PageState.addFriend.set(key)
+        PageState.addFriend.set(user)
         goto(Route.Friends)
     })
 </script>
