@@ -23,6 +23,7 @@
     import { isAndroidOriOS } from "$lib/utils/Mobile"
     import { routes } from "$lib/defaults/routes"
     import BottomNavBarMobile from "$lib/layouts/BottomNavBarMobile.svelte"
+    import { Clipboard } from "@capacitor/clipboard"
 
     let loading: boolean = false
     $: sidebarOpen = UIStore.state.sidebarOpen
@@ -154,13 +155,19 @@
     let activeChat: Chat = get(Store.state.activeChat)
     Store.state.activeChat.subscribe(c => (activeChat = c))
 
+    const writeToClipboard = async (text: string) => {
+        await Clipboard.write({
+            string: text,
+        })
+    }
+
     async function copy_did(short: boolean) {
         let user = get(Store.state.user)
         if (short) {
-            await navigator.clipboard.writeText(`${user.name}#${user.id.short}`)
+            await writeToClipboard(`${user.name}#${user.id.short}`)
         } else {
             const updatedKey = user.key.replace("did:key:", "")
-            await navigator.clipboard.writeText(updatedKey)
+            await writeToClipboard(updatedKey)
         }
     }
 </script>

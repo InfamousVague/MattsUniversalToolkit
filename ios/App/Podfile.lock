@@ -3,20 +3,26 @@ PODS:
     - CapacitorCordova
   - CapacitorCamera (6.1.1):
     - Capacitor
+  - CapacitorClipboard (6.0.2):
+    - Capacitor
   - CapacitorCordova (6.2.0)
   - CapacitorDevice (6.0.2):
     - Capacitor
   - CapacitorFilesystem (6.0.2):
     - Capacitor
-  - CapacitorSplashScreen (6.0.2):
+  - CapacitorScreenOrientation (6.0.3):
+    - Capacitor
+  - CapacitorSplashScreen (6.0.3):
     - Capacitor
 
 DEPENDENCIES:
   - "Capacitor (from `../../node_modules/@capacitor/ios`)"
   - "CapacitorCamera (from `../../node_modules/@capacitor/camera`)"
+  - "CapacitorClipboard (from `../../node_modules/@capacitor/clipboard`)"
   - "CapacitorCordova (from `../../node_modules/@capacitor/ios`)"
   - "CapacitorDevice (from `../../node_modules/@capacitor/device`)"
   - "CapacitorFilesystem (from `../../node_modules/@capacitor/filesystem`)"
+  - "CapacitorScreenOrientation (from `../../node_modules/@capacitor/screen-orientation`)"
   - "CapacitorSplashScreen (from `../../node_modules/@capacitor/splash-screen`)"
 
 EXTERNAL SOURCES:
@@ -24,23 +30,29 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/@capacitor/ios"
   CapacitorCamera:
     :path: "../../node_modules/@capacitor/camera"
+  CapacitorClipboard:
+    :path: "../../node_modules/@capacitor/clipboard"
   CapacitorCordova:
     :path: "../../node_modules/@capacitor/ios"
   CapacitorDevice:
     :path: "../../node_modules/@capacitor/device"
   CapacitorFilesystem:
     :path: "../../node_modules/@capacitor/filesystem"
+  CapacitorScreenOrientation:
+    :path: "../../node_modules/@capacitor/screen-orientation"
   CapacitorSplashScreen:
     :path: "../../node_modules/@capacitor/splash-screen"
 
 SPEC CHECKSUMS:
   Capacitor: 1f3c7b9802d958cd8c4eb63895fff85dff2e1eea
   CapacitorCamera: b9904b48258a91a48930e72a400638a5fc223b27
+  CapacitorClipboard: 55e0a514f1e97b1409d533266c119dcbff3e78c3
   CapacitorCordova: b33e7f4aa4ed105dd43283acdd940964374a87d9
   CapacitorDevice: 1a215717f0b5061503b21a03508b0ec458a57d78
   CapacitorFilesystem: c832a3f6d4870c3872688e782ae8e33665e6ecbf
-  CapacitorSplashScreen: 250df9ef8014fac5c7c1fd231f0f8b1d8f0b5624
+  CapacitorScreenOrientation: 3bb823f5d265190301cdc5d58a568a287d98972a
+  CapacitorSplashScreen: 68893659d77b5f82d753b3a70475082845e3039c
 
-PODFILE CHECKSUM: 015bc35d2d66cac4def58809b8cd4edb68ad23f7
+PODFILE CHECKSUM: 80366870d5c5081f271e0ddeab86b283217ebd9d
 
 COCOAPODS: 1.16.2
