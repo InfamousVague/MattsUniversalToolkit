@@ -107,6 +107,7 @@
                 text={platformButtonProps[platform].text}
                 on:click={() => {
                     window.open(platformButtonProps[platform].download)
+                    closeBanner()
                 }}>
                 <Icon icon={platformButtonProps[platform].icon} highlight={Appearance.Success} />
             </Button>
