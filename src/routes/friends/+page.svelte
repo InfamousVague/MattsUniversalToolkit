@@ -21,6 +21,7 @@
     import { CommonInputRules } from "$lib/utils/CommonInputRules"
     import CreateGroup from "$lib/components/group/CreateGroup.svelte"
     import AddFriendPopup from "$lib/components/friends/AddFriendPopup.svelte"
+    import { Clipboard } from "@capacitor/clipboard"
 
     enum DIDCopy {
         DEFAULT,
@@ -146,21 +147,27 @@
     let activeChat: Chat = get(Store.state.activeChat)
     Store.state.activeChat.subscribe(c => (activeChat = c))
 
+    const writeToClipboard = async (text: string) => {
+        await Clipboard.write({
+            string: text,
+        })
+    }
+
     async function copy_did(conf: DIDCopy) {
         let user = get(Store.state.user)
         switch (conf) {
             case DIDCopy.DEFAULT: {
                 const updatedKey = user.key.replace("did:key:", "")
-                await navigator.clipboard.writeText(updatedKey)
+                await writeToClipboard(updatedKey)
                 break
             }
             case DIDCopy.SHORT: {
-                await navigator.clipboard.writeText(`${user.name}#${user.id.short}`)
+                await writeToClipboard(`${user.name}#${user.id.short}`)
                 break
             }
             case DIDCopy.LINK: {
                 const updatedKey = user.key.replace("did:key:", "")
-                await navigator.clipboard.writeText(`${window.location.origin}/friends/add/${updatedKey}`)
+                await writeToClipboard(`${window.location.origin}/friends/add/${updatedKey}`)
             }
         }
     }
