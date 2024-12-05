@@ -9,6 +9,7 @@
     import { checkMobile, isAndroidOriOS } from "$lib/utils/Mobile"
     import { createEventDispatcher, onDestroy } from "svelte"
     import { get } from "svelte/store"
+    import { Keyboard } from "@capacitor/keyboard"
 
     export let routes: NavRoute[] = []
     export let activeRoute: Route | SettingsRoute | CommunitySettingsRoute = Route.Home
@@ -79,30 +80,41 @@
         unsubscribeUIStore()
     })
     $: settings = SettingsStore.state
+
+    $: isKeyboardOpened = false
+    Keyboard.addListener("keyboardWillShow", info => {
+        isKeyboardOpened = true
+    })
+
+    Keyboard.addListener("keyboardWillHide", () => {
+        isKeyboardOpened = false
+    })
 </script>
 
-<div class="content"></div>
+{#if !isKeyboardOpened}
+    <div class="content"></div>
 
-<div class="navigation {vertical ? 'vertical' : 'horizontal'} {icons ? 'icons' : ''}">
-    {#each routes as route}
-        <div class="navigation-control {!icons ? 'fill' : ''}">
-            <Button
-                hook="button-{route.name}"
-                badge={badgeCounts[route.to]}
-                fill={!icons}
-                tooltip={route.name}
-                icon={icons}
-                outline={activeRoute !== route.to && !icons}
-                appearance={activeRoute === route.to ? Appearance.Primary : Appearance.Alt}
-                on:click={() => handleNavigate(route)}>
-                <Icon alt={activeRoute === route.to} icon={route.icon} />
-                {#if !icons}
-                    <Text appearance={activeRoute !== route.to ? Appearance.Default : Appearance.Alt}>{route.name}</Text>
-                {/if}
-            </Button>
-        </div>
-    {/each}
-</div>
+    <div class="navigation {vertical ? 'vertical' : 'horizontal'} {icons ? 'icons' : ''}">
+        {#each routes as route}
+            <div class="navigation-control {!icons ? 'fill' : ''}">
+                <Button
+                    hook="button-{route.name}"
+                    badge={badgeCounts[route.to]}
+                    fill={!icons}
+                    tooltip={route.name}
+                    icon={icons}
+                    outline={activeRoute !== route.to && !icons}
+                    appearance={activeRoute === route.to ? Appearance.Primary : Appearance.Alt}
+                    on:click={() => handleNavigate(route)}>
+                    <Icon alt={activeRoute === route.to} icon={route.icon} />
+                    {#if !icons}
+                        <Text appearance={activeRoute !== route.to ? Appearance.Default : Appearance.Alt}>{route.name}</Text>
+                    {/if}
+                </Button>
+            </div>
+        {/each}
+    </div>
+{/if}
 
 <style lang="scss">
     .content {
