@@ -91,7 +91,8 @@
     $: statusMessage = $activeChat.kind === ChatType.DirectMessage ? $users[$activeChat.users[1]]?.profile?.status_message : $activeChat.motd
     $: pinned = getPinned($conversation)
 
-    Store.state.activeChat.subscribe(chat => {
+    UIStore.state.sidebarOpen.subscribe(_ => {
+        let chat = get(Store.state.activeChat)
         Keyboard.removeAllListeners().then(() => {
             Keyboard.addListener("keyboardWillShow", info => {
                 const chatbar = document.getElementById(`chatbat-container-${chat.id}`)
