@@ -14,6 +14,7 @@
     import { Slimbar } from "."
     import WidgetBar from "$lib/components/widgets/WidgetBar.svelte"
     import { SettingsStore, type ISettingsState } from "$lib/state"
+    import { isAndroidOriOS } from "$lib/utils/Mobile"
 
     export let activeRoute: Route = Route.Chat
     export let open: boolean = true
@@ -81,7 +82,9 @@
             <div class="popups">
                 <CallControls activeRoute={activeRoute} />
             </div>
-            <Navigation icons routes={routes} activeRoute={activeRoute} on:navigate={e => goto(e.detail)} />
+            {#if !isAndroidOriOS()}
+                <Navigation icons routes={routes} activeRoute={activeRoute} on:navigate={e => goto(e.detail)} />
+            {/if}
         </div>
     {/if}
 </div>
