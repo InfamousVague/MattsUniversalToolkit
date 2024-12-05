@@ -297,11 +297,15 @@
         use:swipe
         on:swipeleft={() => {
             UIStore.closeSidebar()
-            Keyboard.hide()
+            if (isAndroidOriOS()) {
+                Keyboard.hide()
+            }
         }}
         on:swiperight={() => {
             UIStore.openSidebar()
-            Keyboard.hide()
+            if (isAndroidOriOS()) {
+                Keyboard.hide()
+            }
         }}>
         {@html `<style>${style}</style>`}
         <link rel="stylesheet" href={`/assets/themes/${theme}.css`} />

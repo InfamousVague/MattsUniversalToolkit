@@ -199,6 +199,7 @@
     onDestroy(() => {
         Store.setUsername(userReference.name)
         Store.setStatusMessage(userReference.profile.status_message)
+        Keyboard.removeAllListeners()
     })
 
     $: user = Store.state.user
