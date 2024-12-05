@@ -4,6 +4,7 @@ import { createPersistentState } from ".."
 import { EmojiFont, Font, Identicon, Route } from "$lib/enums"
 import { Store as MainStore } from "../Store"
 import { page } from "$app/stores"
+import { checkMobile } from "$lib/utils/Mobile"
 
 export interface IUIState {
     color: Writable<string>
@@ -36,7 +37,7 @@ class Store {
             emojiFont: createPersistentState("uplink.ui.emojiFont", EmojiFont.Fluent),
             theme: createPersistentState("uplink.ui.theme", "default"),
             cssOverride: createPersistentState("uplink.ui.cssOverride", ""),
-            sidebarOpen: createPersistentState("uplink.ui.sidebarOpen", true),
+            sidebarOpen: createPersistentState("uplink.ui.sidebarOpen", !checkMobile()),
             chats: createPersistentState("uplink.ui.chats", [], {
                 deserializer: (c: Chat[]) => {
                     // The typing indicator is read as an {}. Init it properly here
