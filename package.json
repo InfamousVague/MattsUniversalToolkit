@@ -42,6 +42,7 @@
         "@capacitor/device": "^6.0.2",
         "@capacitor/filesystem": "^6.0.1",
         "@capacitor/ios": "^6.2.0",
+        "@capacitor/keyboard": "^6.0.3",
         "@capacitor/screen-orientation": "^6.0.3",
         "@capacitor/splash-screen": "^6.0.2",
         "@dicebear/collection": "^9.0.1",
