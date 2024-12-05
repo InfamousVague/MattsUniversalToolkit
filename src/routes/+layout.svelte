@@ -28,7 +28,8 @@
     import Market from "$lib/components/market/Market.svelte"
     import { swipe } from "$lib/components/ui/Swipe"
     import { ScreenOrientation } from "@capacitor/screen-orientation"
-    import { fetchDeviceInfo, isAndroidOriOS } from "$lib/utils/Mobile"
+    import { fetchDeviceInfo, isAndroid, isAndroidOriOS } from "$lib/utils/Mobile"
+    import { changeSafeAreaColorsOnAndroid } from "$lib/plugins/safeAreaColorAndroid"
 
     log.debug("Initializing app, layout routes page.")
 
@@ -224,7 +225,18 @@
     UIStore.state.theme.subscribe(f => {
         theme = f
         style = buildStyle()
+        changeSafeAreaColors()
     })
+
+    function changeSafeAreaColors() {
+        setTimeout(() => {
+            if (isAndroid()) {
+                const rootStyles = getComputedStyle(document.documentElement)
+                let mainBgColor = rootStyles.getPropertyValue("--background").trim()
+                changeSafeAreaColorsOnAndroid(mainBgColor)
+            }
+        }, 50)
+    }
 
     SettingsStore.state.subscribe(settings => {
         keybinds = settings.keybinds
@@ -284,6 +296,7 @@
         await checkIfUserIsLogged($page.route.id)
         await initializeLocale()
         buildStyle()
+        changeSafeAreaColors()
     })
 </script>
 
