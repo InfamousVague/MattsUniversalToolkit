@@ -163,13 +163,11 @@
     function sanitizePaymentSent(message: string, sender: string, receiver: string): string {
         const jsonStartIndex = message.indexOf("{")
         const jsonEndIndex = message.lastIndexOf("}")
-
         if (jsonStartIndex === -1 || jsonEndIndex === -1 || jsonStartIndex > jsonEndIndex) {
             return "Invalid message format"
         }
 
-        const jsonPart = message.slice(jsonStartIndex, jsonEndIndex + 1)
-
+        const jsonPart = message.slice(jsonStartIndex, jsonEndIndex + 1).trim()
         let parsedMessage
         try {
             parsedMessage = JSON.parse(jsonPart)
@@ -178,26 +176,12 @@
             return "Invalid message format"
         }
 
-        const kind = parsedMessage.kind || "unknown"
         const amount = parsedMessage.amount || "unknown"
-        const amountPreview = parsedMessage.details?.amountPreview || "unknown"
 
-        let cleanedAmountPreview = amountPreview
-        if (amountPreview.includes(kind)) {
-            cleanedAmountPreview = amountPreview.replace(kind, "").trim()
-        }
-
-        cleanedAmountPreview = cleanedAmountPreview.replace(/(\.\d*?[1-9])0+$|\.0*$/, "$1")
-
-        if (cleanedAmountPreview === "unknown" && amount !== "unknown") {
-            cleanedAmountPreview = amount.replace(kind, "").trim()
-            cleanedAmountPreview = cleanedAmountPreview.replace(/(\.\d*?[1-9])0+$|\.0*$/, "$1")
-        }
-        const formattedAmount = cleanedAmountPreview
         if (sender !== "") {
-            return `${sender} sent you ${formattedAmount}`
+            return `${sender} sent you ${amount}`
         } else {
-            return `You sent ${formattedAmount} to ${$users[$activeChat.users[1]]?.name}`
+            return `You sent ${amount} to ${$users[$activeChat.users[1]]?.name}`
         }
     }
 
@@ -457,14 +441,37 @@
     })
 
     function checkForActiveRequest(message: MessageType, messageLine: string) {
-        const idMatch = messageLine.match(/^\/reject\s([a-f0-9-]{36})$/)
-        if (idMatch) {
-            const messageId = idMatch[1]
+        const rejectidMatch = messageLine.match(/^\/reject\s([a-f0-9-]{36})$/)
+        const sendidMatch = messageLine.match(/^\/send\s.*"messageID":"([a-f0-9-]{36})"/)
+        const requestMatch = messageLine.match(/^\/request\s.*"messageID":"([a-f0-9-]{36})"/)
+
+        console.log(messageLine)
+
+        if (rejectidMatch) {
+            const messageId = rejectidMatch[1]
 
             let wasAdded = false
+            console.log("Reject Match:", message)
             Store.state.paymentTracker.update(payments => {
                 const alreadyRejected = payments.some(payment => payment.messageId === messageId)
-                console.log(message, payments)
+
+                if (!alreadyRejected) {
+                    wasAdded = true
+                    return [...payments, { messageId, senderId: message.details.origin, rejectedPayment: true }]
+                }
+                return payments
+            })
+
+            return wasAdded
+        }
+        if (sendidMatch) {
+            const messageId = sendidMatch[1]
+
+            let wasAdded = false
+            // console.log(":SEND", message, messageId)
+            Store.state.paymentTracker.update(payments => {
+                const alreadyRejected = payments.some(payment => payment.messageId === messageId)
+
                 if (!alreadyRejected) {
                     wasAdded = true
                     return [...payments, { messageId, senderId: message.details.origin, rejectedPayment: false }]
@@ -939,7 +946,7 @@
                                                                             <Icon icon={Shape.NoSymbol}></Icon>
                                                                         </Button>
                                                                     </div>
-                                                                {:else if !checkForActiveRequest(message, line)}
+                                                                {:else if !checkForActiveRequest(message, line) && !$rejectedPayments.some(payment => payment.messageId === message.id)}
                                                                     <Text hook="text-chat-message" class="send_coin" markdown={$_("payments.sentRequest")}></Text>
                                                                     <Button
                                                                         hook="text-chat-message"
@@ -949,17 +956,17 @@
                                                                         <Icon icon={Shape.XMark}></Icon>
                                                                     </Button>
                                                                 {:else}
-                                                                    <!-- <Text hook="text-chat-message" class="send_coin" markdown={$_("payments.sentRequest")}></Text>
+                                                                    <Text hook="text-chat-message" class="send_coin" markdown={$_("payments.sentRequest")}></Text>
                                                                     <Button
                                                                         hook="text-chat-message"
-                                                                        text={$_("payments.canceledRequest")}
+                                                                        text="Payments succenssfull;"
                                                                         appearance={Appearance.Error}
                                                                         on:click={async () => sendPaymentMessage(message, line, PaymentRequestsEnum.Reject)}>
                                                                         <Icon icon={Shape.XMark}></Icon>
-                                                                    </Button> -->
+                                                                    </Button>
                                                                 {/if}
-                                                            {:else if line.startsWith(PaymentRequestsEnum.Send) && $rejectedPayments.find(payments => payments.messageId === message.id && payments.rejectedPayment)}
-                                                                <Button hook="text-chat-message" disabled text={$_("payments.Success")} appearance={Appearance.Success} />
+                                                            {:else if !line.startsWith(PaymentRequestsEnum.Send) && $rejectedPayments.some(payment => payment.messageId === message.id && !payment.rejectedPayment)}
+                                                                <Button hook="text-chat-message" disabled text={$_("payments.payment_success")} appearance={Appearance.Success} />
                                                             {:else}
                                                                 <Button hook="text-chat-message" disabled text={$_("payments.paymentCanceled")} appearance={Appearance.Error} />
                                                             {/if}

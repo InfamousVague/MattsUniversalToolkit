@@ -227,6 +227,7 @@
         "cancel_request": "Cancel Request",
         "canceledRequest": "Canceled Request",
         "network": "Network",
+        "payment_success": "Payment Success",
         "payment_declined": "Payment Declined",
         "you_canceled_request": "You Canceled Request",
         "paymentCanceled": "Payment Canceled",
