@@ -27,7 +27,8 @@
     import InstallBanner from "$lib/components/ui/InstallBanner.svelte"
     import Market from "$lib/components/market/Market.svelte"
     import { swipe } from "$lib/components/ui/Swipe"
-    import { fetchDeviceInfo } from "$lib/utils/Mobile"
+    import { ScreenOrientation } from "@capacitor/screen-orientation"
+    import { fetchDeviceInfo, isAndroidOriOS } from "$lib/utils/Mobile"
 
     log.debug("Initializing app, layout routes page.")
 
@@ -265,8 +266,21 @@
         isLocaleSet = true
     }
 
+    const lockOrientation = async () => {
+        try {
+            await ScreenOrientation.lock({ orientation: "portrait" })
+            log.info("Screen orientation locked to portrait.")
+        } catch (error) {
+            log.error("Failed to lock screen orientation:", error)
+        }
+    }
+
     onMount(async () => {
         await fetchDeviceInfo()
+        if (await isAndroidOriOS()) {
+            lockOrientation()
+        }
+
         await checkIfUserIsLogged($page.route.id)
         await initializeLocale()
         buildStyle()
