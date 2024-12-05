@@ -25,6 +25,9 @@
     import { Store } from "$lib/state/Store"
     import path from "path"
     import { MultipassStoreInstance } from "$lib/wasm/MultipassStore"
+    import { routes } from "$lib/defaults/routes"
+    import { isAndroidOriOS } from "$lib/utils/Mobile"
+    import BottomNavBarMobile from "$lib/layouts/BottomNavBarMobile.svelte"
 
     export let browseFilesForChatMode: boolean = false
 
@@ -806,6 +809,9 @@
         </div>
     </div>
 </div>
+{#if isAndroidOriOS()}
+    <BottomNavBarMobile icons routes={routes} activeRoute={Route.Files} on:navigate={e => goto(e.detail)} />
+{/if}
 
 <style lang="scss">
     #page {
