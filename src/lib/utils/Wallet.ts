@@ -560,33 +560,30 @@ export function getValidPaymentRequest(msg: string, msgId?: string): Transfer | 
             try {
                 let parsed = JSON.parse(json, (key, value) => {
                     if (key === "amount" && typeof value === "string") {
-                        // Check if the value can be converted to BigInt
                         if (/^\d+$/.test(value)) {
-                            return BigInt(value) // Convert to BigInt if it's an integer
+                            return BigInt(value)
                         } else {
-                            return value // Keep as string if it's a decimal
+                            return value
                         }
                     }
                     return value
                 })
 
-                // Extract the details object for nested properties
                 const details = parsed.details || {}
 
-                transfer.asset = details.asset || {} // Ensure asset is retrieved from details
-                transfer.amount = details.amount || "0" // Use the nested amount
-                transfer.toAddress = details.toAddress || "" // Use the nested toAddress
-                transfer.amountPreview = details.amountPreview || "" // Use the nested amountPreview
+                transfer.asset = details.asset || {}
+                transfer.amount = details.amount || "0"
+                transfer.toAddress = details.toAddress || ""
+                transfer.amountPreview = details.amountPreview || ""
             } catch (err) {
                 console.error("Parse Failed", err)
-                return undefined // Early return on parse failure
+                return undefined
             }
         } else {
             console.error("Send message is not JSON:", json)
-            return undefined // Early return if message is not JSON
+            return undefined
         }
 
-        // Validate transfer object properties safely
         if (transfer.asset && transfer.asset.kind !== undefined && transfer.asset.kind !== AssetType.None && transfer.isValid()) {
             return transfer
         } else {

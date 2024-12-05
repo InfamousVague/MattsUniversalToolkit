@@ -163,7 +163,6 @@
     function sanitizePaymentSent(message: string, sender: string, receiver: string): string {
         const jsonStartIndex = message.indexOf("{")
         const jsonEndIndex = message.lastIndexOf("}")
-        // console.log(message)
 
         if (jsonStartIndex === -1 || jsonEndIndex === -1 || jsonStartIndex > jsonEndIndex) {
             return "Invalid message format"
@@ -175,7 +174,7 @@
         try {
             parsedMessage = JSON.parse(jsonPart)
         } catch (error) {
-            // console.error("Error parsing JSON:", error, message)
+            console.error("Error parsing JSON:", error, message)
             return "Invalid message format"
         }
 
@@ -406,7 +405,6 @@
 
                 let chat = get(Store.state.activeChat)
                 let txt = formattedMessage.split("\n")
-                console.log(txt)
 
                 let walletSuccess = await getValidPaymentRequest(line, message.id)?.execute()
                 if (walletSuccess) {
@@ -416,13 +414,12 @@
                             const alreadyRejected = payments.some(payment => payment.messageId === message.id)
 
                             if (!alreadyRejected) {
-                                return [...payments, { messageId: message.id, senderId: message.details.origin, rejectedPayment: true }]
+                                return [...payments, { messageId: message.id, senderId: message.details.origin, rejectedPayment: false }]
                             } else {
                                 console.error(`MessageId ${message.id} is already in the rejected payments list`)
                                 return payments
                             }
                         })
-                        console.log(txt)
                         ConversationStore.addPendingMessages(chat.id, res.message, txt)
                     })
                 }
@@ -467,7 +464,7 @@
             let wasAdded = false
             Store.state.paymentTracker.update(payments => {
                 const alreadyRejected = payments.some(payment => payment.messageId === messageId)
-
+                console.log(message, payments)
                 if (!alreadyRejected) {
                     wasAdded = true
                     return [...payments, { messageId, senderId: message.details.origin, rejectedPayment: false }]
@@ -952,17 +949,19 @@
                                                                         <Icon icon={Shape.XMark}></Icon>
                                                                     </Button>
                                                                 {:else}
-                                                                    <Text hook="text-chat-message" class="send_coin" markdown={$_("payments.sentRequest")}></Text>
+                                                                    <!-- <Text hook="text-chat-message" class="send_coin" markdown={$_("payments.sentRequest")}></Text>
                                                                     <Button
                                                                         hook="text-chat-message"
                                                                         text={$_("payments.canceledRequest")}
                                                                         appearance={Appearance.Error}
                                                                         on:click={async () => sendPaymentMessage(message, line, PaymentRequestsEnum.Reject)}>
                                                                         <Icon icon={Shape.XMark}></Icon>
-                                                                    </Button>
+                                                                    </Button> -->
                                                                 {/if}
+                                                            {:else if line.startsWith(PaymentRequestsEnum.Send) && $rejectedPayments.find(payments => payments.messageId === message.id && payments.rejectedPayment)}
+                                                                <Button hook="text-chat-message" disabled text={$_("payments.Success")} appearance={Appearance.Success} />
                                                             {:else}
-                                                                <Button hook="text-chat-message" disabled text={$_("payments.paymentDeclined")} appearance={Appearance.Error} />
+                                                                <Button hook="text-chat-message" disabled text={$_("payments.paymentCanceled")} appearance={Appearance.Error} />
                                                             {/if}
                                                         {:else if !line.includes(tempCDN)}
                                                             <Text hook="text-chat-message" markdown={line} appearance={group.details.remote ? Appearance.Default : Appearance.Alt} />

@@ -85,7 +85,6 @@
                     return "Invalid message format"
                 }
                 const jsonPart = chat.last_message_preview.slice(jsonStartIndex)
-                console.log(JSON.parse(jsonPart))
                 let parsedMessage
                 try {
                     parsedMessage = JSON.parse(jsonPart)
