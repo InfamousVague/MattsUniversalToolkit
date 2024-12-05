@@ -92,22 +92,24 @@
     $: pinned = getPinned($conversation)
 
     UIStore.state.sidebarOpen.subscribe(_ => {
-        let chat = get(Store.state.activeChat)
-        Keyboard.removeAllListeners().then(() => {
-            Keyboard.addListener("keyboardWillShow", info => {
-                const chatbar = document.getElementById(`chatbat-container-${chat.id}`)
-                if (chatbar && isiOSMobile()) {
-                    chatbar.style.marginBottom = `${info.keyboardHeight - 30}px`
-                }
-            })
+        if (isiOSMobile()) {
+            let chat = get(Store.state.activeChat)
+            Keyboard.removeAllListeners().then(() => {
+                Keyboard.addListener("keyboardWillShow", info => {
+                    const chatbar = document.getElementById(`chatbat-container-${chat.id}`)
+                    if (chatbar) {
+                        chatbar.style.marginBottom = `${info.keyboardHeight - 30}px`
+                    }
+                })
 
-            Keyboard.addListener("keyboardWillHide", () => {
-                const chatbar = document.getElementById(`chatbat-container-${chat.id}`)
-                if (chatbar && isiOSMobile()) {
-                    chatbar.style.marginBottom = `0px`
-                }
+                Keyboard.addListener("keyboardWillHide", () => {
+                    const chatbar = document.getElementById(`chatbat-container-${chat.id}`)
+                    if (chatbar) {
+                        chatbar.style.marginBottom = `0px`
+                    }
+                })
             })
-        })
+        }
     })
 
     function toggleSidebar() {

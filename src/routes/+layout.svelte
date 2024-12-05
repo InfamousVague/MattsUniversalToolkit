@@ -277,10 +277,12 @@
     }
 
     onMount(async () => {
-        await Keyboard.setResizeMode({ mode: KeyboardResize.Native })
         await fetchDeviceInfo()
-        if (await isAndroidOriOS()) {
+        if (isAndroidOriOS()) {
             lockOrientation()
+        }
+        if (isiOSMobile()) {
+            await Keyboard.setResizeMode({ mode: KeyboardResize.Native })
         }
 
         await checkIfUserIsLogged($page.route.id)
