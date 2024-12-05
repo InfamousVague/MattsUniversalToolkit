@@ -12,6 +12,7 @@
     import FileUploadButton from "$lib/components/ui/FileUploadButton.svelte"
     import { Keyboard } from "@capacitor/keyboard"
     import { isiOSMobile } from "$lib/utils/Mobile"
+    import { onDestroy } from "svelte"
 
     export let page: LoginPage
     export let username = ""
@@ -36,6 +37,10 @@
         if (pageId && isiOSMobile()) {
             pageId.style.marginBottom = `0px`
         }
+    })
+
+    onDestroy(() => {
+        Keyboard.removeAllListeners()
     })
 </script>
 

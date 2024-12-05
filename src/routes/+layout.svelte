@@ -28,7 +28,8 @@
     import Market from "$lib/components/market/Market.svelte"
     import { swipe } from "$lib/components/ui/Swipe"
     import { ScreenOrientation } from "@capacitor/screen-orientation"
-    import { fetchDeviceInfo, isAndroidOriOS } from "$lib/utils/Mobile"
+    import { fetchDeviceInfo, isAndroidOriOS, isiOSMobile } from "$lib/utils/Mobile"
+    import { Keyboard, KeyboardResize } from "@capacitor/keyboard"
 
     log.debug("Initializing app, layout routes page.")
 
@@ -276,6 +277,7 @@
     }
 
     onMount(async () => {
+        await Keyboard.setResizeMode({ mode: KeyboardResize.Native })
         await fetchDeviceInfo()
         if (await isAndroidOriOS()) {
             lockOrientation()
@@ -293,9 +295,11 @@
         use:swipe
         on:swipeleft={() => {
             UIStore.closeSidebar()
+            Keyboard.hide()
         }}
         on:swiperight={() => {
             UIStore.openSidebar()
+            Keyboard.hide()
         }}>
         {@html `<style>${style}</style>`}
         <link rel="stylesheet" href={`/assets/themes/${theme}.css`} />

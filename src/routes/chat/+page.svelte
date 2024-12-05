@@ -49,7 +49,7 @@
     import { debounce, getTimeAgo } from "$lib/utils/Functions"
     import Controls from "$lib/layouts/Controls.svelte"
     import { tempCDN } from "$lib/utils/CommonVariables"
-    import { checkMobile, isAndroidOriOS } from "$lib/utils/Mobile"
+    import { checkMobile, isAndroidOriOS, isiOSMobile } from "$lib/utils/Mobile"
     import BrowseFiles from "../files/BrowseFiles.svelte"
     import AttachmentRenderer from "$lib/components/messaging/AttachmentRenderer.svelte"
     import ShareFile from "$lib/components/files/ShareFile.svelte"
@@ -57,6 +57,7 @@
     import AddMembers from "$lib/components/group/AddMembers.svelte"
     import { routes } from "$lib/defaults/routes"
     import BottomNavBarMobile from "$lib/layouts/BottomNavBarMobile.svelte"
+    import { Keyboard } from "@capacitor/keyboard"
 
     let loading = false
     let contentAsideOpen = false
@@ -89,6 +90,24 @@
     $: chatName = $activeChat.kind === ChatType.DirectMessage ? $users[$activeChat.users[1]]?.name : ($activeChat.name ?? $users[$activeChat.users[1]]?.name)
     $: statusMessage = $activeChat.kind === ChatType.DirectMessage ? $users[$activeChat.users[1]]?.profile?.status_message : $activeChat.motd
     $: pinned = getPinned($conversation)
+
+    Store.state.activeChat.subscribe(chat => {
+        Keyboard.removeAllListeners().then(() => {
+            Keyboard.addListener("keyboardWillShow", info => {
+                const chatbar = document.getElementById(`chatbat-container-${chat.id}`)
+                if (chatbar && isiOSMobile()) {
+                    chatbar.style.marginBottom = `${info.keyboardHeight - 30}px`
+                }
+            })
+
+            Keyboard.addListener("keyboardWillHide", () => {
+                const chatbar = document.getElementById(`chatbat-container-${chat.id}`)
+                if (chatbar && isiOSMobile()) {
+                    chatbar.style.marginBottom = `0px`
+                }
+            })
+        })
+    })
 
     function toggleSidebar() {
         UIStore.toggleSidebar()

@@ -21,28 +21,11 @@
     import { MessageEvent } from "warp-wasm"
     import StoreResolver from "$lib/components/utils/StoreResolver.svelte"
     import MessageText from "$lib/components/messaging/message/MessageText.svelte"
-    import { Keyboard } from "@capacitor/keyboard"
-
-    onDestroy(() => {
-        Keyboard.removeAllListeners()
-    })
+    import { ToastMessage } from "$lib/state/ui/toast"
 
     export let replyTo: MessageType | undefined = undefined
     export let emojiClickHook: (emoji: string) => boolean
     export let activeChat: Chat
-    const chatbar = document.getElementById(activeChat.id)
-
-    Keyboard.addListener("keyboardWillShow", info => {
-        if (chatbar && isiOSMobile()) {
-            chatbar.style.marginBottom = `${info.keyboardHeight - 30}px`
-        }
-    })
-
-    Keyboard.addListener("keyboardWillHide", () => {
-        if (chatbar && isiOSMobile()) {
-            chatbar.style.marginBottom = `0px`
-        }
-    })
 
     const dispatch = createEventDispatcher()
 
@@ -180,7 +163,7 @@
     })
 </script>
 
-<div class="chatbar" data-cy="chatbar" id={activeChat.id}>
+<div class="chatbar" data-cy="chatbar" id={`chatbat-container-${activeChat.id}`}>
     <Controls>
         <slot name="pre-controls"></slot>
     </Controls>
