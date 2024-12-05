@@ -23,6 +23,24 @@
     import { log } from "$lib/utils/Logger"
     import Modal from "$lib/components/ui/Modal.svelte"
     import PinInput from "$lib/components/PinInput.svelte"
+    import { isiOSMobile } from "$lib/utils/Mobile"
+    import { Keyboard } from "@capacitor/keyboard"
+
+    if (isiOSMobile()) {
+        Keyboard.removeAllListeners().then(() => {
+            Keyboard.addListener("keyboardWillShow", _ => {
+                const focusedElement = document.activeElement
+                if (focusedElement && (focusedElement.tagName === "INPUT" || focusedElement.tagName === "TEXTAREA")) {
+                    setTimeout(() => {
+                        focusedElement.scrollIntoView({
+                            behavior: "smooth",
+                            block: "center",
+                        })
+                    }, 100)
+                }
+            })
+        })
+    }
 
     enum SeedState {
         Hidden,
@@ -352,7 +370,7 @@
     {/if}
     <!-- svelte-ignore missing-declaration -->
     <!-- svelte-ignore a11y-no-static-element-interactions -->
-    <div class="profile">
+    <div id="profile" class="profile">
         <!-- svelte-ignore a11y-click-events-have-key-events -->
         <ContextMenu
             hook="context-menu-banner-picture"
