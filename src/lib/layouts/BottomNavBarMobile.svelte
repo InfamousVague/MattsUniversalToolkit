@@ -78,11 +78,12 @@
 
         unsubscribeStore()
         unsubscribeUIStore()
+        Keyboard.removeAllListeners()
     })
     $: settings = SettingsStore.state
 
     $: isKeyboardOpened = false
-    Keyboard.addListener("keyboardWillShow", info => {
+    Keyboard.addListener("keyboardWillShow", _ => {
         isKeyboardOpened = true
     })
 

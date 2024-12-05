@@ -7,24 +7,42 @@
     import { get, writable } from "svelte/store"
     import { SettingsStore } from "$lib/state"
     import { RaygunStoreInstance, type FileAttachment } from "$lib/wasm/RaygunStore"
-    import { createEventDispatcher, onMount } from "svelte"
+    import { createEventDispatcher, onDestroy, onMount } from "svelte"
     import { ConversationStore } from "$lib/state/conversation"
     import type { Chat, FileInfo, GiphyGif } from "$lib/types"
     import { Message, PopupButton } from "$lib/components"
     import { type Message as MessageType } from "$lib/types"
     import { ProfilePicture } from "$lib/components"
     import CombinedSelector from "$lib/components/messaging/CombinedSelector.svelte"
-    import { checkMobile } from "$lib/utils/Mobile"
+    import { checkMobile, isiOSMobile } from "$lib/utils/Mobile"
     import { UIStore } from "$lib/state/ui"
     import { emojiList, emojiRegexMap } from "$lib/components/messaging/emoji/EmojiList"
     import { tempCDN } from "$lib/utils/CommonVariables"
     import { MessageEvent } from "warp-wasm"
     import StoreResolver from "$lib/components/utils/StoreResolver.svelte"
     import MessageText from "$lib/components/messaging/message/MessageText.svelte"
+    import { Keyboard } from "@capacitor/keyboard"
+
+    onDestroy(() => {
+        Keyboard.removeAllListeners()
+    })
 
     export let replyTo: MessageType | undefined = undefined
     export let emojiClickHook: (emoji: string) => boolean
     export let activeChat: Chat
+    const chatbar = document.getElementById(activeChat.id)
+
+    Keyboard.addListener("keyboardWillShow", info => {
+        if (chatbar && isiOSMobile()) {
+            chatbar.style.marginBottom = `${info.keyboardHeight - 30}px`
+        }
+    })
+
+    Keyboard.addListener("keyboardWillHide", () => {
+        if (chatbar && isiOSMobile()) {
+            chatbar.style.marginBottom = `0px`
+        }
+    })
 
     const dispatch = createEventDispatcher()
 
