@@ -15,7 +15,6 @@ dependencies {
     implementation project(':capacitor-filesystem')
     implementation project(':capacitor-screen-orientation')
     implementation project(':capacitor-splash-screen')
-
 }
 
 if (hasProperty('postBuildExtras')) {
