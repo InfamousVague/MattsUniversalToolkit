@@ -190,7 +190,7 @@
             vertical
             on:navigate={e => {
                 let sideBarIsOpened = get(UIStore.state.sidebarOpen)
-                if (sideBarIsOpened) {
+                if (sideBarIsOpened && checkMobile()) {
                     UIStore.toggleSidebar()
                 }
                 goto(e.detail)
