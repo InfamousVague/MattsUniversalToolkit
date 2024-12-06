@@ -91,6 +91,12 @@
 
 <style lang="scss">
     .sidebar-layout {
+        top: 0;
+        left: 0;
+        height: 100vh;
+        z-index: 10;
+        background-color: var(--background);
+        opacity: 1;
         width: fit-content;
         display: inline-flex;
         flex-direction: row;
@@ -128,18 +134,25 @@
 
     @media (max-width: 800px) {
         .sidebar-layout {
+            position: absolute;
             width: 100vw;
             overflow: hidden;
+            opacity: 1;
+            transition:
+                transform 0.3s ease,
+                opacity 0.3s ease;
 
             .sidebar {
                 min-width: 0;
             }
         }
+
         .sidebar-layout.closed {
-            min-width: 0;
-            width: 0;
+            transform: translateX(-100%);
+            pointer-events: none;
             :global(.slimbar) {
-                display: none;
+                opacity: 0;
+                pointer-events: none;
             }
         }
     }
