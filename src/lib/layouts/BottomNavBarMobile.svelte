@@ -56,7 +56,6 @@
                 // Avoid keyboard when navigate to chat preview list
             }
         }
-
         dispatch("navigate", route.to.toString())
     }
 

@@ -6,7 +6,7 @@
     import GamepadListener from "$lib/components/ui/GamepadListener.svelte"
     import KeyboardListener from "$lib/components/ui/KeyboardListener.svelte"
     import { playSound, Sounds } from "$lib/components/utils/SoundHandler"
-    import { EmojiFont, KeybindAction, KeybindState } from "$lib/enums"
+    import { EmojiFont, getRoute, KeybindAction, KeybindState, Route } from "$lib/enums"
     import { VoiceRTCInstance } from "$lib/media/Voice"
     import { SettingsStore } from "$lib/state"
     import { checkIfUserIsLogged } from "$lib/state/auth"
@@ -29,6 +29,9 @@
     import { swipe } from "$lib/components/ui/Swipe"
     import { ScreenOrientation } from "@capacitor/screen-orientation"
     import { fetchDeviceInfo, isAndroidOriOS } from "$lib/utils/Mobile"
+    import BottomNavBarMobile from "$lib/layouts/BottomNavBarMobile.svelte"
+    import { goto, onNavigate } from "$app/navigation"
+    import { routes } from "$lib/defaults/routes"
 
     log.debug("Initializing app, layout routes page.")
 
@@ -285,6 +288,46 @@
         await initializeLocale()
         buildStyle()
     })
+
+    $: activeRoute = getRoute($page.route.id!)
+    let showBottomNavBarForMobile = isAndroidOriOS()
+
+    UIStore.state.sidebarOpen.subscribe(s => {
+        const isMobile = isAndroidOriOS()
+        const isChatRoute = $page.route.id === "/chat"
+        const activeChat = get(Store.state.activeChat)
+        const hasUsers = activeChat?.users.length > 0
+
+        if (isMobile) {
+            if (!isChatRoute) {
+                showBottomNavBarForMobile = true
+            } else if (isChatRoute) {
+                showBottomNavBarForMobile = !hasUsers
+            } else {
+                showBottomNavBarForMobile = true
+            }
+        }
+    })
+
+    onNavigate(async e => {
+        const routeId = e.to?.route.id
+        const isMobile = isAndroidOriOS()
+        const isChatRoute = routeId === "/chat"
+        const sidebarClosed = !get(UIStore.state.sidebarOpen)
+        const activeChat = get(Store.state.activeChat)
+        const hasUsers = activeChat?.users.length > 0
+
+        if (isMobile) {
+            if (!isChatRoute) {
+                showBottomNavBarForMobile = true
+            } else if (isChatRoute && sidebarClosed && hasUsers) {
+                showBottomNavBarForMobile = false
+            } else {
+                true
+            }
+        }
+        activeRoute = getRoute(routeId!)
+    })
 </script>
 
 {#if isLocaleSet}
@@ -312,6 +355,16 @@
         <InstallBanner />
         <slot></slot>
     </div>
+    {#if showBottomNavBarForMobile}
+        <BottomNavBarMobile
+            icons
+            routes={routes}
+            activeRoute={activeRoute}
+            on:navigate={e => {
+                activeRoute = e.detail
+                goto(e.detail)
+            }} />
+    {/if}
 {:else}
     <CircularProgressIndicator />
 {/if}
