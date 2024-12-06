@@ -6,7 +6,6 @@
     import { Appearance, Route, Shape } from "$lib/enums"
     import { createEventDispatcher } from "svelte"
     import { goto } from "$app/navigation"
-
     import { _ } from "svelte-i18n"
     import { get } from "svelte/store"
     import { Store } from "$lib/state/Store"
@@ -15,6 +14,7 @@
     import WidgetBar from "$lib/components/widgets/WidgetBar.svelte"
     import { SettingsStore, type ISettingsState } from "$lib/state"
     import { isAndroidOriOS } from "$lib/utils/Mobile"
+    import { slide } from "svelte/transition"
 
     export let activeRoute: Route = Route.Chat
     export let open: boolean = true
@@ -47,7 +47,7 @@
     <Slimbar sidebarOpen={open} on:toggle={handleToggle} activeRoute={activeRoute}></Slimbar>
 
     {#if open}
-        <div class="sidebar">
+        <div class="sidebar" in:slide={{ duration: 300, axis: "x" }} out:slide={{ duration: 300, axis: "x" }}>
             <div class="sidebar-pre">
                 <Input hook="input-sidebar-search" alt autoFocus={false} placeholder={$_("generic.search_placeholder")} bind:value={search} on:enter={handleEnter} on:input={handleSearch}>
                     <Icon icon={Shape.Search} />
