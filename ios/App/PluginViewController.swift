@@ -3,7 +3,7 @@ import Capacitor
 
 class PluginViewController: CAPBridgeViewController {
     override open func capacitorDidLoad() {
-        bridge?.registerPluginInstance(EchoPlugin())
+        bridge?.registerPluginInstance(SafeAreasColorPlugin())
     }
     
     override open func viewDidLoad() {

@@ -1,15 +1,15 @@
 import Capacitor
 import UIKit
 
-@objc(EchoPlugin)
-public class EchoPlugin: CAPPlugin, CAPBridgedPlugin {
-    public let identifier = "EchoPlugin"
-    public let jsName = "Echo"
+@objc(SafeAreasColorPlugin)
+public class SafeAreasColorPlugin: CAPPlugin, CAPBridgedPlugin {
+    public let identifier = "SafeAreasColorPlugin"
+    public let jsName = "SafeAreasColor"
     public let pluginMethods: [CAPPluginMethod] = [
-        CAPPluginMethod(name: "echo", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "changeSafeAreasColorOniOS", returnType: CAPPluginReturnPromise)
     ]
 
-    @objc func echo(_ call: CAPPluginCall) {
+    @objc func changeSafeAreasColorOniOS(_ call: CAPPluginCall) {
         let value = call.getString("color") ?? ""
         guard let uiColor = UIColor(hex: value) else {
               call.reject("Invalid color format")

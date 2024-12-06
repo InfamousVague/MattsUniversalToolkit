@@ -2,11 +2,11 @@ import { log } from "$lib/utils/Logger"
 import { registerPlugin } from "@capacitor/core"
 import { StatusBar, Style } from "@capacitor/status-bar"
 
-interface IEchoPlugin {
-    echo(options: { color: string }): Promise<{ value: string }>
+interface ISafeAreasColorPlugin {
+    changeSafeAreasColorOniOS(options: { color: string }): Promise<{ value: string }>
 }
 
-const Echo = registerPlugin<IEchoPlugin>("Echo")
+const Echo = registerPlugin<ISafeAreasColorPlugin>("SafeAreasColor")
 
 async function setNewSafeAreasColorOniOS(color: string) {
     try {
@@ -23,7 +23,7 @@ async function setNewSafeAreasColorOniOS(color: string) {
             log.debug("Change status bar style to dark")
         }
 
-        await Echo.echo({ color })
+        await Echo.changeSafeAreasColorOniOS({ color })
     } catch (error) {
         log.error("Error trying to call swift function:", error)
     }
