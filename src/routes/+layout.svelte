@@ -235,7 +235,7 @@
                 let mainBgColor = rootStyles.getPropertyValue("--background").trim()
                 changeSafeAreaColorsOnAndroid(mainBgColor)
             }
-        }, 50)
+        }, 1000)
     }
 
     SettingsStore.state.subscribe(settings => {
