@@ -16,6 +16,8 @@ dependencies {
     implementation project(':capacitor-keyboard')
     implementation project(':capacitor-screen-orientation')
     implementation project(':capacitor-splash-screen')
+    implementation project(':capacitor-status-bar')
+
 }
 
 

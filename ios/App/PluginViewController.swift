@@ -2,6 +2,10 @@ import UIKit
 import Capacitor
 
 class PluginViewController: CAPBridgeViewController {
+    override open func capacitorDidLoad() {
+        bridge?.registerPluginInstance(EchoPlugin())
+    }
+    
     override open func viewDidLoad() {
         super.viewDidLoad()
 
