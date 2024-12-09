@@ -94,6 +94,8 @@ npx cap run ios -l --external
 
 3. Select your device in the terminal and wait for the app to build.
 
+4. To show logs from Android app, run `adb logcat | grep Capacitor`
+
 ## Contributing
 
 All contributions are welcome! Please keep in mind we're still a relatively small team, and any work done to ensure contributions don't cause bugs or issues in the application is much appreciated.
