@@ -27,7 +27,7 @@
     import { type MessageGroup as MessageGroupType } from "$lib/types"
     import EncryptedNotice from "$lib/components/messaging/EncryptedNotice.svelte"
     import { Store } from "$lib/state/Store"
-    import { derived, get } from "svelte/store"
+    import { derived, get, writable } from "svelte/store"
     import { goto } from "$app/navigation"
     import { UIStore } from "$lib/state/ui"
     import CreateGroup from "$lib/components/group/CreateGroup.svelte"
@@ -56,23 +56,15 @@
     import { ToastMessage } from "$lib/state/ui/toast"
     import AddMembers from "$lib/components/group/AddMembers.svelte"
 
+    enum Permission {
+        UNDEFINED,
+        ALLOWED,
+        DENIED,
+    }
     let loading = false
     let contentAsideOpen = false
     let showBrowseFilesModal = false
-    let clipboardWrite = false
-
-    const checkClipboardPermission = async () => {
-        try {
-            let items = await navigator.clipboard.read()
-            await navigator.clipboard.write(items)
-            clipboardWrite = true
-        } catch (err) {
-            clipboardWrite = false
-        }
-    }
-    onMount(async () => {
-        await checkClipboardPermission()
-    })
+    $: clipboardWrite = writable(Permission.UNDEFINED)
 
     $: sidebarOpen = UIStore.state.sidebarOpen
     $: activeChat = Store.state.activeChat
@@ -225,7 +217,7 @@
                     copy(message.text.join("\n"))
                 },
             },
-            ...(file && file.kind === MessageAttachmentKind.Image && clipboardWrite
+            ...(file && file.kind === MessageAttachmentKind.Image && $clipboardWrite !== Permission.DENIED
                 ? [
                       {
                           id: "copy-image",
@@ -306,11 +298,16 @@
         if (attachment.kind !== MessageAttachmentKind.Image) return
         let result = await RaygunStoreInstance.getAttachmentRaw($conversation!.id, message, attachment.name, { size: attachment.size, type: "image/png" })
         result.onSuccess(async blob => {
-            await navigator.clipboard.write([
-                new ClipboardItem({
-                    [blob.type]: blob,
-                }),
-            ])
+            try {
+                await navigator.clipboard.write([
+                    new ClipboardItem({
+                        [blob.type]: blob,
+                    }),
+                ])
+                $clipboardWrite = Permission.ALLOWED
+            } catch (err) {
+                $clipboardWrite = Permission.DENIED
+            }
         })
     }
 
