@@ -92,14 +92,12 @@
                     console.error("Error parsing JSON:", error, chat.last_message_preview)
                     return "Invalid message format"
                 }
-                let amount = parsedMessage.amount || "unknown"
-
-                amount = amount.replace(/(\.\d*?[1-9])0+$|\.0*$/, "$1")
+                console.log(parsedMessage)
+                const amountWei = parsedMessage.details.transfer.amountPreview || BigInt(0)
                 if (sendingUserDetails.key !== ownId.key) {
-                    return `${sendingUserDetails.name} sent you ${amount}`
+                    return `${sendingUserDetails.name} sent you ${amountWei}`
                 } else {
-                    const recipientId = parsedMessage.details?.toAddress || "unknown address"
-                    return `You sent ${amount} to ${sendingUserDetails.name}`
+                    return `You sent ${amountWei} to ${sendingUserDetails.name}`
                 }
             } catch (error) {
                 console.error("Error in PaymentRequestsEnum.Send condition:", error)

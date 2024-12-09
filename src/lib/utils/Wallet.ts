@@ -490,6 +490,7 @@ export class Transfer {
 
     toCmdString(): string {
         let transfer = JSON.stringify(this, (k, v) => (k === "amount" && typeof v === "bigint" ? v.toString() : v))
+        console.log(transfer)
         return `/request ${transfer}`
     }
 
@@ -498,9 +499,18 @@ export class Transfer {
         return `/reject ${id} {"details":${transfer}}`
     }
 
-    toDisplayString(kind: string, amount: string, messageId: string): string {
+    toDisplayString(kind: string, amount: string, toAddress: string, messageId?: string): string {
         const transfer = JSON.stringify(this, (key, value) => (key === "amount" && typeof value === "bigint" ? value.toString() : value))
-        return `/send {"kind":"${kind}", "amount":"${amount}", "messageID":"${messageId}"}`
+        const message = {
+            kind,
+            details: {
+                amount,
+                toAddress,
+                messageID: messageId,
+                transfer: JSON.parse(transfer),
+            },
+        }
+        return `/send ${JSON.stringify(message)}`
     }
 
     async execute() {
@@ -549,8 +559,7 @@ export function getValidPaymentRequest(msg: string, msgId?: string): Transfer | 
             return transfer
         }
     } else if (msg.startsWith(PaymentRequestsEnum.Send)) {
-        let json = msg.substring(PaymentRequestsEnum.Send.length, msg.length).trim()
-        console.log(msg)
+        let json = msg.substring(PaymentRequestsEnum.Send.length).trim()
         let jsonStartIndex = json.indexOf("{")
         if (jsonStartIndex !== -1) {
             json = json.substring(jsonStartIndex).trim()
@@ -558,23 +567,22 @@ export function getValidPaymentRequest(msg: string, msgId?: string): Transfer | 
             try {
                 let parsed = JSON.parse(json, (key, value) => {
                     if (key === "amount" && typeof value === "string") {
-                        if (/^\d+$/.test(value)) {
-                            return BigInt(value)
-                        } else {
-                            return value
+                        if (/^\d+(\.\d+)?$/.test(value)) {
+                            return BigInt(Math.round(Number(value) * 1e18))
                         }
                     }
                     return value
                 })
-
                 const details = parsed.details || {}
+                transfer.asset = details.asset && typeof details.asset === "object" ? details.asset : { kind: details.asset || "Unknown" }
 
-                transfer.asset = details.asset || {}
-                transfer.amount = details.amount || "0"
+                transfer.amount = details.amount ? BigInt(Math.round(Number(details.amount) * 1e18)) : BigInt(0)
+
+                transfer.amountPreview = details.amount ? `${(Number(details.amount) / 1e18).toFixed(18)} ETH` : ""
+
                 transfer.toAddress = details.toAddress || ""
-                transfer.amountPreview = details.amountPreview || ""
             } catch (err) {
-                console.error("Parse Failed", err)
+                console.error("Parse Failed", err, "JSON Input:", json)
                 return undefined
             }
         } else {

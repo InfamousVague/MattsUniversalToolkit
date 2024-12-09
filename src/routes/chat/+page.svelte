@@ -157,7 +157,8 @@
             amountPreview = amountPreview.replace(kind, "").trim()
         }
         amountPreview = amountPreview.replace(/(\.\d*?[1-9])0+$|\.0*$/, "$1")
-        return `Send ${amountPreview} ${kind}`
+        const result = `Send ${amountPreview} ${kind}`
+        return result
     }
 
     function sanitizePaymentSent(message: string, sender: string, receiver: string): string {
@@ -170,18 +171,28 @@
         const jsonPart = message.slice(jsonStartIndex, jsonEndIndex + 1).trim()
         let parsedMessage
         try {
-            parsedMessage = JSON.parse(jsonPart)
+            parsedMessage = JSON.parse(jsonPart, (key, value) => {
+                if (key === "amount" && typeof value === "string") {
+                    if (/^\d+$/.test(value)) {
+                        return BigInt(value) // Parse amount as BigInt
+                    }
+                }
+                return value
+            })
         } catch (error) {
             console.error("Error parsing JSON:", error, message)
             return "Invalid message format"
         }
 
-        const amount = parsedMessage.amount || "unknown"
+        const details = parsedMessage.details || {}
+        const amountWei = details.amount || BigInt(0)
+        const amountEther = `${(Number(amountWei) / 1e18).toFixed(18)} ETH`
 
         if (sender !== "") {
-            return `${sender} sent you ${amount}`
+            return `${sender} sent you ${amountEther}`
         } else {
-            return `You sent ${amount} to ${$users[$activeChat.users[1]]?.name}`
+            const recipientName = $users[$activeChat.users[1]]?.name || receiver || "unknown recipient"
+            return `You sent ${amountEther} to ${recipientName}`
         }
     }
 
@@ -344,7 +355,6 @@
             result.onSuccess(res => {
                 Store.state.paymentTracker.update(payments => {
                     const alreadyRejected = payments.some(payment => payment.messageId === message.id)
-
                     if (!alreadyRejected) {
                         return [...payments, { messageId: message.id, senderId: message.details.origin, rejectedPayment: false }]
                     } else {
@@ -385,7 +395,8 @@
                 const paymentDetails = JSON.parse(jsonPart)
                 const kind = paymentDetails.asset?.kind || "unknown"
                 const amount = paymentDetails.amountPreview || "0"
-                const formattedMessage = transfer.toDisplayString(kind, amount, message.id)
+                const toAddress = paymentDetails.toAddress || "0"
+                const formattedMessage = transfer.toDisplayString(kind, amount, toAddress, message.id)
 
                 let chat = get(Store.state.activeChat)
                 let txt = formattedMessage.split("\n")
@@ -443,15 +454,10 @@
     function checkForActiveRequest(message: MessageType, messageLine: string) {
         const rejectidMatch = messageLine.match(/^\/reject\s([a-f0-9-]{36})$/)
         const sendidMatch = messageLine.match(/^\/send\s.*"messageID":"([a-f0-9-]{36})"/)
-        const requestMatch = messageLine.match(/^\/request\s.*"messageID":"([a-f0-9-]{36})"/)
-
-        console.log(messageLine)
-
+        console.log(message, sendidMatch)
         if (rejectidMatch) {
             const messageId = rejectidMatch[1]
-
             let wasAdded = false
-            console.log("Reject Match:", message)
             Store.state.paymentTracker.update(payments => {
                 const alreadyRejected = payments.some(payment => payment.messageId === messageId)
 
@@ -466,9 +472,7 @@
         }
         if (sendidMatch) {
             const messageId = sendidMatch[1]
-
             let wasAdded = false
-            // console.log(":SEND", message, messageId)
             Store.state.paymentTracker.update(payments => {
                 const alreadyRejected = payments.some(payment => payment.messageId === messageId)
 
@@ -515,7 +519,6 @@
                 if (group.details.at > $activeChat.last_view_date) {
                     unreads.push(group)
                 } else {
-                    // Individual messages in a group can still be new since messages are grouped each min
                     let [readMessages, unreadsMessages] = splitMessages(group)
                     if (unreadsMessages.length > 0) {
                         unreads.push({
@@ -910,11 +913,11 @@
                                                         {#if line.startsWith(PaymentRequestsEnum.Reject)}
                                                             {#if !checkForActiveRequest(message, line)}
                                                                 {#if $own_user.key === message.details.origin}
-                                                                    <Text hook="text-chat-message" markdown={$_("payments.youCanceledRequest")} appearance={group.details.remote ? Appearance.Default : Appearance.Alt} />
+                                                                    <Text hook="text-chat-message" markdown={$_("payments.you_canceled_request")} appearance={group.details.remote ? Appearance.Default : Appearance.Alt} />
                                                                 {:else}
                                                                     <Text
                                                                         hook="text-chat-message"
-                                                                        markdown={$_("payments.declinedPayment", { values: { user: resolved.name } })}
+                                                                        markdown={$_("payments.declined_payment", { values: { user: resolved.name } })}
                                                                         appearance={group.details.remote ? Appearance.Default : Appearance.Alt} />
                                                                 {/if}
                                                             {/if}
@@ -922,7 +925,7 @@
                                                             {#if !checkForActiveRequest(message, line)}
                                                                 {#if $own_user.key !== message.details.origin}
                                                                     <Text hook="text-chat-message" markdown={sanitizePaymentSent(line, resolved.name, "")} appearance={group.details.remote ? Appearance.Default : Appearance.Alt} />
-                                                                {:else}
+                                                                {:else if $own_user.key === message.details.origin}
                                                                     <Text hook="text-chat-message" markdown={sanitizePaymentSent(line, "", message.details.origin)} appearance={group.details.remote ? Appearance.Default : Appearance.Alt} />
                                                                 {/if}
                                                             {/if}
@@ -968,7 +971,7 @@
                                                             {:else if !line.startsWith(PaymentRequestsEnum.Send) && $rejectedPayments.some(payment => payment.messageId === message.id && !payment.rejectedPayment)}
                                                                 <Button hook="text-chat-message" disabled text={$_("payments.payment_success")} appearance={Appearance.Success} />
                                                             {:else}
-                                                                <Button hook="text-chat-message" disabled text={$_("payments.paymentCanceled")} appearance={Appearance.Error} />
+                                                                <Button hook="text-chat-message" disabled text={$_("payments.payment_canceled")} appearance={Appearance.Error} />
                                                             {/if}
                                                         {:else if !line.includes(tempCDN)}
                                                             <Text hook="text-chat-message" markdown={line} appearance={group.details.remote ? Appearance.Default : Appearance.Alt} />

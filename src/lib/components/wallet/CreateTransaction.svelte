@@ -24,12 +24,9 @@
             let chat = get(Store.state.activeChat)
             let txt = text.split("\n")
             let whatReturned = await getValidPaymentRequest(txt[0])?.execute()
-            console.log(whatReturned)
             if (whatReturned !== undefined) {
                 let result = await RaygunStoreInstance.send(chat.id, txt, [])
                 result.onSuccess(res => {
-                    console.log(txt)
-                    // getValidPaymentRequest(txt[0])?.execute()
                     ConversationStore.addPendingMessages(chat.id, res.message, txt)
                 })
             }
@@ -40,7 +37,6 @@
             let result = await RaygunStoreInstance.send(chat.id, txt, [])
             result.onSuccess(res => {
                 console.log(txt)
-                // getValidPaymentRequest(txt[0])?.execute()
                 ConversationStore.addPendingMessages(chat.id, res.message, txt)
             })
         }
