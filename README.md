@@ -78,7 +78,7 @@ npm run dev
 
 ### Live Reload for Mobile Development
 
-1. Update the port to 3000 in the `vite.config.js` file, as Capacitor commands require this port.
+1. Update the port to 3000 in the `vite.config.js` file, as Capacitor commands require this port and run server with `npm run dev`
 
 2. Build the mobile app for Android or iOS with live reload enabled by running:
 
@@ -93,6 +93,8 @@ npx cap run ios -l --external
 ```
 
 3. Select your device in the terminal and wait for the app to build.
+
+4. To show logs from Android app, run `adb logcat | grep Capacitor`
 
 ## Contributing
 

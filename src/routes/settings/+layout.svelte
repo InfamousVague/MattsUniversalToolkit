@@ -1,7 +1,9 @@
 <script lang="ts">
     import { goto } from "$app/navigation"
     import { page } from "$app/stores"
+    import { routes } from "$lib/defaults/routes"
     import { Route, SettingsRoute, Shape } from "$lib/enums"
+    import BottomNavBarMobile from "$lib/layouts/BottomNavBarMobile.svelte"
 
     import Navigation from "$lib/layouts/Navigation.svelte"
     import Sidebar from "$lib/layouts/Sidebar.svelte"
@@ -79,7 +81,7 @@
 
     let loading = false
     let sidebarOpen: boolean = get(UIStore.state.sidebarOpen)
-    let activeRoute = SettingsRoute.Profile
+    let activeRoute: SettingsRoute = SettingsRoute.Developer
 
     function toggleSidebar() {
         UIStore.toggleSidebar()
@@ -187,6 +189,10 @@
             routes={setRoutes}
             vertical
             on:navigate={e => {
+                let sideBarIsOpened = get(UIStore.state.sidebarOpen)
+                if (sideBarIsOpened && checkMobile()) {
+                    UIStore.toggleSidebar()
+                }
                 goto(e.detail)
                 activeRoute = e.detail
             }}
@@ -202,6 +208,9 @@
         </div>
     </div>
 </div>
+{#if isAndroidOriOS()}
+    <BottomNavBarMobile icons routes={routes} activeRoute={Route.Settings} on:navigate={e => goto(e.detail)} />
+{/if}
 
 <style lang="scss">
     #settings {

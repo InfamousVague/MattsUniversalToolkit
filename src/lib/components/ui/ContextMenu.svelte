@@ -19,6 +19,7 @@
     export let hook: string = ""
 
     const dispatch = createEventDispatcher()
+
     function onClose(event: CustomEvent<MouseEvent> | MouseEvent) {
         visible = false
         dispatch("close", event)
@@ -28,21 +29,24 @@
     function calculatePos(evt: MouseEvent): [number, number] {
         if (context === undefined) return [evt.clientX, evt.clientY]
         const { width, height } = context.getBoundingClientRect()
-        let offsetX = evt.pageX
-        let offsetY = evt.pageY
-        let screenWidth = evt.view!.innerWidth
-        let screenHeight = evt.view!.innerHeight
-        let overFlowX = screenWidth < width + offsetX
-        let overFlowY = screenHeight < height + offsetY
-        let topX = overFlowX ? Math.max(5, screenWidth - width - 5) : Math.max(5, offsetX)
-        if (screenHeight - offsetY < height + 30) {
-            let adjustedY = offsetY - height
-            let topY = Math.max(5, adjustedY)
-            return [topX, topY]
-        } else {
-            let topY = Math.max(5, overFlowY ? offsetY - height : offsetY)
-            return [topX, topY]
-        }
+
+        const offsetX = evt.pageX
+        const offsetY = evt.pageY
+        const screenWidth = evt.view!.innerWidth
+        const screenHeight = evt.view!.innerHeight
+
+        const overFlowX = screenWidth < width + offsetX
+        const overFlowY = screenHeight < height + offsetY
+
+        const topX = overFlowX ? Math.max(5, screenWidth - width - 5) : Math.max(5, offsetX)
+
+        // Calculate Y position, prioritizing space above the cursor if not enough below
+        const adjustedY = offsetY - height
+        const topY = screenHeight - offsetY < height + 30 
+            ? Math.max(5, adjustedY) 
+            : Math.max(5, overFlowY ? offsetY - height : offsetY)
+
+        return [topX, topY]
     }
 
     async function openContext(evt: MouseEvent) {
@@ -70,7 +74,13 @@
 
 <slot name="content" open={openContext} />
 {#if visible}
-    <div id="context-menu" data-cy={hook} bind:this={context} use:clickoutside on:clickoutside={onClose} style={`left: ${coords[0]}px; top: ${coords[1]}px;`}>
+    <div 
+        id="context-menu" 
+        data-cy={hook} 
+        bind:this={context} 
+        use:clickoutside 
+        on:clickoutside={onClose} 
+        style={`position: fixed; left: ${coords[0]}px; top: ${coords[1]}px;`}>
         <slot name="items" close={onClose}></slot>
         {#each items as item}
             <Button
