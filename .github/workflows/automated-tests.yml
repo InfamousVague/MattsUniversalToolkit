@@ -145,8 +145,6 @@ jobs:
               run: echo "timestamp=$(date --utc +%Y%m%d_%H%M%SZ)" >> "$GITHUB_OUTPUT"
 
             - id: deploy-playwright-report
-              if: always()
-              name: Deploy Playwright HTML report to Github Pages
               uses: Wandalen/wretry.action@master
               with:
                   attempt_limit: 3
@@ -220,8 +218,6 @@ jobs:
                   github_repo_owner: Satellite-im
 
             - id: deploy-allure-report
-              if: always()
-              name: Deploy Allure report to Github Pages
               uses: Wandalen/wretry.action@master
               with:
                   attempt_limit: 3
