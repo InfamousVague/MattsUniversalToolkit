@@ -144,15 +144,19 @@ jobs:
               id: timestampidone
               run: echo "timestamp=$(date --utc +%Y%m%d_%H%M%SZ)" >> "$GITHUB_OUTPUT"
 
-            - name: Deploy Playwright HTML report to Github Pages
+            - id: deploy-playwright-report
               if: always()
-              uses: peaceiris/actions-gh-pages@v4
+              name: Deploy Playwright HTML report to Github Pages
+              uses: Wandalen/wretry.action@master
               with:
-                  deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
-                  external_repository: Satellite-im/test-reports
-                  publish_branch: gh-pages
-                  publish_dir: ./playwright-report
-                  destination_dir: ${{ steps.timestampidone.outputs.timestamp }}
+                  attempt_limit: 3
+                  action: peaceiris/actions-gh-pages@v4
+                  with: |
+                      deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
+                      external_repository: Satellite-im/test-reports
+                      publish_branch: gh-pages
+                      publish_dir: ./playwright-report
+                      destination_dir: ${{ steps.timestampidone.outputs.timestamp }}
 
             - name: Set Playwright report URL output
               id: comment
@@ -170,6 +174,12 @@ jobs:
         concurrency:
             group: ${{ github.workflow }}-${{ github.ref }}
         steps:
+            - uses: actions/checkout@v4.2.2
+              with:
+                  repository: Satellite-im/test-reports
+                  ref: gh-pages
+                  path: gh-pages
+
             - name: Download Allure results artifact for desktop
               uses: actions/download-artifact@v4.1.8
               with:
@@ -209,14 +219,18 @@ jobs:
                   github_repo: Satellite-im/test-reports
                   github_repo_owner: Satellite-im
 
-            - name: Deploy report to Github Pages
-              uses: peaceiris/actions-gh-pages@v4
+            - id: deploy-allure-report
               if: always()
+              name: Deploy Allure report to Github Pages
+              uses: Wandalen/wretry.action@master
               with:
-                  deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
-                  external_repository: Satellite-im/test-reports
-                  publish_branch: gh-pages
-                  publish_dir: ./allure-history
+                  attempt_limit: 3
+                  action: peaceiris/actions-gh-pages@v4
+                  with: |
+                      deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
+                      external_repository: Satellite-im/test-reports
+                      publish_branch: gh-pages
+                      publish_dir: ./allure-history
 
             - name: Comment PR with Allure test results
               if: always() && github.event_name == 'pull_request'
