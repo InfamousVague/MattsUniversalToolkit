@@ -14,14 +14,13 @@
     import { type Message as MessageType } from "$lib/types"
     import { ProfilePicture } from "$lib/components"
     import CombinedSelector from "$lib/components/messaging/CombinedSelector.svelte"
-    import { checkMobile, isiOSMobile } from "$lib/utils/Mobile"
+    import { checkMobile, isAndroidOriOS, isiOSMobile } from "$lib/utils/Mobile"
     import { UIStore } from "$lib/state/ui"
     import { emojiList, emojiRegexMap } from "$lib/components/messaging/emoji/EmojiList"
     import { tempCDN } from "$lib/utils/CommonVariables"
     import { MessageEvent } from "warp-wasm"
     import StoreResolver from "$lib/components/utils/StoreResolver.svelte"
     import MessageText from "$lib/components/messaging/message/MessageText.svelte"
-    import { ToastMessage } from "$lib/state/ui/toast"
 
     export let replyTo: MessageType | undefined = undefined
     export let emojiClickHook: (emoji: string) => boolean
@@ -159,7 +158,7 @@
         return result
     }
 
-    onMount(() => {
+    onMount(async () => {
         hackVariableToRefocusChatBar.set(Math.random().toString())
     })
 </script>
@@ -172,7 +171,7 @@
         hook={`${activeChat.id}-${$hackVariableToRefocusChatBar}`}
         alt
         placeholder={$_("generic.placeholder")}
-        autoFocus={true}
+        autoFocus={isAndroidOriOS() ? false : true}
         bind:value={$message}
         rounded
         rich={markdown}
