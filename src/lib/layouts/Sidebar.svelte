@@ -95,7 +95,7 @@
         top: 0;
         left: 0;
         z-index: 5;
-        height: 100vh;
+        height: 100%;
         background-color: var(--background);
         opacity: 1;
         width: fit-content;
