@@ -55,6 +55,7 @@
     }
 
     async function sendMessage(text: string, isStickerOrGif: boolean = false) {
+        hackVariableToRefocusChatBar.set(Math.random().toString())
         message.set("")
         let filesSelected = get(Store.state.chatAttachmentsToSend)[activeChat.id]?.localFiles
         let filesSelectedFromStorage: FileInfo[] = get(Store.state.chatAttachmentsToSend)[activeChat.id]?.storageFiles
