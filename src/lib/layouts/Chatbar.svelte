@@ -21,6 +21,7 @@
     import { MessageEvent } from "warp-wasm"
     import StoreResolver from "$lib/components/utils/StoreResolver.svelte"
     import MessageText from "$lib/components/messaging/message/MessageText.svelte"
+    import { Keyboard } from "@capacitor/keyboard"
 
     export let replyTo: MessageType | undefined = undefined
     export let emojiClickHook: (emoji: string) => boolean
@@ -158,7 +159,14 @@
         return result
     }
 
+    let mobileAutoFocus: boolean
+
+    Keyboard.addListener("keyboardWillShow", () => {
+        mobileAutoFocus = true
+    })
+
     onMount(async () => {
+        mobileAutoFocus = false
         hackVariableToRefocusChatBar.set(Math.random().toString())
     })
 </script>
@@ -171,7 +179,7 @@
         hook={`${activeChat.id}-${$hackVariableToRefocusChatBar}`}
         alt
         placeholder={$_("generic.placeholder")}
-        autoFocus={isAndroidOriOS() ? false : true}
+        autoFocus={isAndroidOriOS() ? mobileAutoFocus : true}
         bind:value={$message}
         rounded
         rich={markdown}
