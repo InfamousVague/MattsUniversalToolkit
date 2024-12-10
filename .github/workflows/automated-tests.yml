@@ -39,6 +39,7 @@ jobs:
         with:
           repository: Satellite-im/automated-tests-web
           path: automated-tests
+          ref: luis/only-one-test
       - name: "Setup Node.js for Uplink Web \U0001F528"
         uses: actions/setup-node@v4.1.0
         with:
