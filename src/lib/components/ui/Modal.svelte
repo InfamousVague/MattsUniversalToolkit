@@ -62,7 +62,7 @@
         align-items: center;
         gap: var(--gap);
         position: fixed;
-        z-index: 4;
+        z-index: 10;
         top: 0;
         left: 0;
         bottom: 0;
