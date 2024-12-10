@@ -14,7 +14,7 @@ on:
 
 jobs:
     playwright-run:
-        timeout-minutes: 60
+        timeout-minutes: 90
         runs-on: ubuntu-latest
         container:
             image: mcr.microsoft.com/playwright:v1.48.0-jammy
