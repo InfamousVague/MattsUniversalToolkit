@@ -1,250 +1,267 @@
 name: Automated Tests
-'on':
-  pull_request:
-    types:
-      - opened
-      - synchronize
-      - reopened
-      - edited
-    paths-ignore:
-      - .github/workflows/**
-      - '!.github/workflows/automated-tests.yml'
-      - .gitignore
-      - .prettierrc.json
-      - PULL_REQUEST_TEMPLATE.md
-      - README.md
-  workflow_dispatch: null
+
+on:
+    pull_request:
+        types: [opened, synchronize, reopened, edited]
+        paths-ignore:
+            - ".github/workflows/**"
+            - "!.github/workflows/automated-tests.yml"
+            - ".gitignore"
+            - ".prettierrc.json"
+            - "PULL_REQUEST_TEMPLATE.md"
+            - "README.md"
+    workflow_dispatch:
+
 jobs:
-  playwright-run:
-    timeout-minutes: 90
-    runs-on: ubuntu-latest
-    container:
-      image: 'mcr.microsoft.com/playwright:v1.48.0-jammy'
-    strategy:
-      fail-fast: false
-      matrix:
-        project:
-          - desktop-chrome
-          - mobile-chrome
-    permissions:
-      checks: write
-      pull-requests: write
-      contents: write
-      issues: read
-    steps:
-      - name: "Checkout Uplink Web directory \U0001F516"
-        uses: actions/checkout@v4.2.2
-      - name: "Checkout Automated Tests directory \U0001F516"
-        uses: actions/checkout@v4.2.2
-        with:
-          repository: Satellite-im/automated-tests-web
-          path: automated-tests
-          ref: luis/only-one-test
-      - name: "Setup Node.js for Uplink Web \U0001F528"
-        uses: actions/setup-node@v4.1.0
-        with:
-          node-version: 20
-      - name: "Install dependencies for Uplink Web \U0001F4E6"
-        run: npm install
-      - name: "Install dependencies for Testing Repo \U0001F4E6"
-        working-directory: automated-tests
-        run: npm ci
-      - name: Run Playwright tests
-        working-directory: automated-tests
-        run: >-
-          npx playwright test -c playwright.ci.config.ts --project=${{
-          matrix.project }}
-      - uses: actions/upload-artifact@v4.4.3
+    playwright-run:
+        timeout-minutes: 60
+        runs-on: ubuntu-latest
+        container:
+            image: mcr.microsoft.com/playwright:v1.48.0-jammy
+        strategy:
+            fail-fast: false
+            matrix:
+                project: ["desktop-chrome", "mobile-chrome"]
+        permissions:
+            checks: write
+            pull-requests: write
+            contents: write
+            issues: read
+        steps:
+            - name: Checkout Uplink Web directory 🔖
+              uses: actions/checkout@v4.2.2
+
+            - name: Checkout Automated Tests directory 🔖
+              uses: actions/checkout@v4.2.2
+              with:
+                  repository: Satellite-im/automated-tests-web
+                  path: automated-tests
+
+            - name: Setup Node.js for Uplink Web 🔨
+              uses: actions/setup-node@v4.1.0
+              with:
+                  node-version: 20
+
+            - name: Install dependencies for Uplink Web 📦
+              run: npm install
+
+            - name: Install dependencies for Testing Repo 📦
+              working-directory: automated-tests
+              run: npm ci
+
+            - name: Run Playwright tests
+              working-directory: automated-tests
+              run: npx playwright test -c playwright.ci.config.ts --project=${{ matrix.project }}
+
+            - uses: actions/upload-artifact@v4.4.3
+              if: always()
+              with:
+                  name: playwright-report-${{ matrix.project }}
+                  path: automated-tests/blob-report/
+                  retention-days: 5
+
+            - name: Upload Allure results as artifact
+              if: always()
+              uses: actions/upload-artifact@v4.4.3
+              with:
+                  name: allure-results-${{ matrix.project }}
+                  path: automated-tests/allure-results
+                  retention-days: 5
+
+            - name: Add label if any of build jobs failed
+              if: failure()
+              uses: buildsville/add-remove-label@v2.0.1
+              with:
+                  token: ${{ secrets.GITHUB_TOKEN }}
+                  labels: |
+                      Failed Automated Test
+                  type: add
+
+    merge-reports:
         if: always()
-        with:
-          name: 'playwright-report-${{ matrix.project }}'
-          path: automated-tests/blob-report/
-          retention-days: 5
-      - name: Upload Allure results as artifact
+        needs: playwright-run
+        runs-on: ubuntu-latest
+        container:
+            image: mcr.microsoft.com/playwright:v1.48.0-jammy
+        steps:
+            - name: Download Blob Report from Desktop
+              uses: actions/download-artifact@v4.1.8
+              with:
+                  name: playwright-report-desktop-chrome
+                  path: blob-report
+
+            - name: Download Blob Report from Mobile
+              uses: actions/download-artifact@v4.1.8
+              with:
+                  name: playwright-report-mobile-chrome
+                  path: blob-report
+
+            - name: Merge Blob Reports into HTML Report
+              run: npx playwright merge-reports --reporter html ./blob-report
+
+            - name: Upload Merged Report
+              if: always()
+              uses: actions/upload-artifact@v4.4.3
+              with:
+                  name: playwright-merged-report
+                  path: playwright-report
+                  retention-days: 5
+
+            - name: Delete temporary artifacts
+              uses: geekyeggo/delete-artifact@v5.1.0
+              with:
+                  name: |
+                      playwright-report-desktop-chrome
+                      playwright-report-mobile-chrome
+
+    publish-playwright-report:
         if: always()
-        uses: actions/upload-artifact@v4.4.3
-        with:
-          name: 'allure-results-${{ matrix.project }}'
-          path: automated-tests/allure-results
-          retention-days: 5
-      - name: Add label if any of build jobs failed
-        if: failure()
-        uses: buildsville/add-remove-label@v2.0.1
-        with:
-          token: '${{ secrets.GITHUB_TOKEN }}'
-          labels: |
-            Failed Automated Test
-          type: add
-  merge-reports:
-    if: always()
-    needs: playwright-run
-    runs-on: ubuntu-latest
-    container:
-      image: 'mcr.microsoft.com/playwright:v1.48.0-jammy'
-    steps:
-      - name: Download Blob Report from Desktop
-        uses: actions/download-artifact@v4.1.8
-        with:
-          name: playwright-report-desktop-chrome
-          path: blob-report
-      - name: Download Blob Report from Mobile
-        uses: actions/download-artifact@v4.1.8
-        with:
-          name: playwright-report-mobile-chrome
-          path: blob-report
-      - name: Merge Blob Reports into HTML Report
-        run: npx playwright merge-reports --reporter html ./blob-report
-      - name: Upload Merged Report
+        needs: merge-reports
+        runs-on: ubuntu-latest
+        permissions:
+            checks: write
+            pull-requests: write
+            contents: write
+            issues: read
+        concurrency:
+            group: ${{ github.workflow }}-${{ github.ref }}
+        outputs:
+            playwright_report_url: ${{ steps.comment.outputs.playwright_report_url }}
+        steps:
+            - uses: actions/checkout@v4.2.2
+              with:
+                  repository: Satellite-im/test-reports
+                  ref: gh-pages
+                  path: gh-pages
+
+            - name: Download Merged Report
+              uses: actions/download-artifact@v4.1.8
+              with:
+                  name: playwright-merged-report
+                  path: playwright-report
+
+            - name: Set a timestamp one
+              id: timestampidone
+              run: echo "timestamp=$(date --utc +%Y%m%d_%H%M%SZ)" >> "$GITHUB_OUTPUT"
+
+            - id: deploy-playwright-report
+              if: always()
+              name: Deploy Playwright report to Github Pages
+              uses: Wandalen/wretry.action@master
+              with:
+                  attempt_limit: 3
+                  action: peaceiris/actions-gh-pages@v4
+                  with: |
+                      deploy_key: |
+                          ${{ secrets.ACTIONS_DEPLOY_KEY }}
+                      external_repository: Satellite-im/test-reports
+                      publish_branch: gh-pages
+                      publish_dir: ./playwright-report
+                      destination_dir: ${{ steps.timestampidone.outputs.timestamp }}
+
+            - name: Set Playwright report URL output
+              id: comment
+              run: echo "playwright_report_url=https://satellite-im.github.io/test-reports/${{ steps.timestampidone.outputs.timestamp }}/" >> "$GITHUB_OUTPUT"
+
+    publish-allure-report:
         if: always()
-        uses: actions/upload-artifact@v4.4.3
-        with:
-          name: playwright-merged-report
-          path: playwright-report
-          retention-days: 5
-      - name: Delete temporary artifacts
-        uses: geekyeggo/delete-artifact@v5.1.0
-        with:
-          name: |
-            playwright-report-desktop-chrome
-            playwright-report-mobile-chrome
-  publish-playwright-report:
-    if: always()
-    needs: merge-reports
-    runs-on: ubuntu-latest
-    permissions:
-      checks: write
-      pull-requests: write
-      contents: write
-      issues: read
-    concurrency:
-      group: '${{ github.workflow }}-${{ github.ref }}'
-    outputs:
-      playwright_report_url: '${{ steps.comment.outputs.playwright_report_url }}'
-    steps:
-      - uses: actions/checkout@v4.2.2
-        with:
-          repository: Satellite-im/test-reports
-          ref: gh-pages
-          path: gh-pages
-      - name: Download Merged Report
-        uses: actions/download-artifact@v4.1.8
-        with:
-          name: playwright-merged-report
-          path: playwright-report
-      - name: Set a timestamp one
-        id: timestampidone
-        run: echo "timestamp=$(date --utc +%Y%m%d_%H%M%SZ)" >> "$GITHUB_OUTPUT"
-      - id: deploy-playwright-report
-        uses: Wandalen/wretry.action@master
-        with:
-          attempt_limit: 3
-          action: peaceiris/actions-gh-pages@v4
-          with: |
-            deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
-            external_repository: Satellite-im/test-reports
-            publish_branch: gh-pages
-            publish_dir: ./playwright-report
-            destination_dir: ${{ steps.timestampidone.outputs.timestamp }}
-      - name: Set Playwright report URL output
-        id: comment
-        run: >-
-          echo
-          "playwright_report_url=https://satellite-im.github.io/test-reports/${{steps.timestampidone.outputs.timestamp }}/" >> "$GITHUB_OUTPUT"
-  publish-allure-report:
-    if: always()
-    needs: publish-playwright-report
-    runs-on: ubuntu-latest
-    permissions:
-      checks: write
-      pull-requests: write
-      contents: write
-      issues: read
-    concurrency:
-      group: '${{ github.workflow }}-${{ github.ref }}'
-    steps:
-      - uses: actions/checkout@v4.2.2
-        with:
-          repository: Satellite-im/test-reports
-          ref: gh-pages
-          path: gh-pages
-      - name: Download Allure results artifact for desktop
-        uses: actions/download-artifact@v4.1.8
-        with:
-          name: allure-results-desktop-chrome
-          path: allure/desktop-chrome
-      - name: Download Allure results artifact for mobile
-        uses: actions/download-artifact@v4.1.8
-        with:
-          name: allure-results-mobile-chrome
-          path: allure/mobile-chrome
-      - name: Merge Allure results
-        run: |
-          mkdir -p allure-results
-          cp -r allure/desktop-chrome/* allure-results/
-          cp -r allure/mobile-chrome/* allure-results/
-      - name: Get Allure history
-        uses: actions/checkout@v4.2.2
-        if: always()
-        continue-on-error: true
-        with:
-          repository: Satellite-im/test-reports
-          ref: gh-pages
-          path: gh-pages
-      - name: Generate Allure Report
-        if: always()
-        uses: simple-elf/allure-report-action@master
-        with:
-          gh_pages: gh-pages
-          allure_results: allure-results
-          allure_report: allure-report
-          allure_history: allure-history
-          keep_reports: 20
-          github_repo: Satellite-im/test-reports
-          github_repo_owner: Satellite-im
-      - id: deploy-allure-report
-        uses: Wandalen/wretry.action@master
-        with:
-          attempt_limit: 3
-          action: peaceiris/actions-gh-pages@v4
-          with: |
-            deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
-            external_repository: Satellite-im/test-reports
-            publish_branch: gh-pages
-            publish_dir: ./allure-history
-      - name: Comment PR with Allure test results
-        if: always() && github.event_name == 'pull_request'
-        uses: mshick/add-pr-comment@v2.8.2
-        with:
-          message: >
-            Automated tests execution is complete! You can find the Playwright test report [here](${{needs.publish-playwright-report.outputs.playwright_report_url }}) and the Allure Test Report [here](https://satellite-im.github.io/test-reports/${{github.run_number }})
-        env:
-          GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
-  remove-label:
-    needs:
-      - playwright-run
-      - merge-reports
-      - publish-playwright-report
-      - publish-allure-report
-    runs-on: ubuntu-latest
-    permissions:
-      checks: write
-      pull-requests: write
-      contents: write
-      issues: read
-    steps:
-      - name: "Checkout directory \U0001F516"
-        uses: actions/checkout@v4.2.2
-      - name: Delete artifacts required on failed execution
-        uses: geekyeggo/delete-artifact@v5.1.0
-        with:
-          name: |
-            playwright-merged-report
-            allure-results-desktop-chrome
-            allure-results-mobile-chrome
-      - name: Remove label if all test jobs succeeded
-        uses: buildsville/add-remove-label@v2.0.1
-        with:
-          token: '${{ secrets.GITHUB_TOKEN }}'
-          labels: |
-            Failed Automated Test
-          type: remove
+        needs: publish-playwright-report
+        runs-on: ubuntu-latest
+        permissions:
+            checks: write
+            pull-requests: write
+            contents: write
+            issues: read
+        concurrency:
+            group: ${{ github.workflow }}-${{ github.ref }}
+        steps:
+            - name: Download Allure results artifact for desktop
+              uses: actions/download-artifact@v4.1.8
+              with:
+                  name: allure-results-desktop-chrome
+                  path: allure/desktop-chrome
+
+            - name: Download Allure results artifact for mobile
+              uses: actions/download-artifact@v4.1.8
+              with:
+                  name: allure-results-mobile-chrome
+                  path: allure/mobile-chrome
+
+            - name: Merge Allure results
+              run: |
+                  mkdir -p allure-results
+                  cp -r allure/desktop-chrome/* allure-results/
+                  cp -r allure/mobile-chrome/* allure-results/
+
+            - name: Get Allure history
+              uses: actions/checkout@v4.2.2
+              if: always()
+              continue-on-error: true
+              with:
+                  repository: Satellite-im/test-reports
+                  ref: gh-pages
+                  path: gh-pages
+
+            - name: Generate Allure Report
+              if: always()
+              uses: simple-elf/allure-report-action@master
+              with:
+                  gh_pages: gh-pages
+                  allure_results: allure-results
+                  allure_report: allure-report
+                  allure_history: allure-history
+                  keep_reports: 20
+                  github_repo: Satellite-im/test-reports
+                  github_repo_owner: Satellite-im
+
+            - id: deploy-allure-report
+              if: always()
+              name: Deploy Allure report to Github Pages
+              uses: Wandalen/wretry.action@master
+              with:
+                  attempt_limit: 3
+                  action: peaceiris/actions-gh-pages@v4
+                  with: |
+                      deploy_key: |
+                          ${{ secrets.ACTIONS_DEPLOY_KEY }}
+                      external_repository: Satellite-im/test-reports
+                      publish_branch: gh-pages
+                      publish_dir: ./allure-history
+
+            - name: Comment PR with Allure test results
+              if: always() && github.event_name == 'pull_request'
+              uses: mshick/add-pr-comment@v2.8.2
+              with:
+                  message: |
+                      Automated tests execution is complete! You can find the Playwright test report [here](${{ needs.publish-playwright-report.outputs.playwright_report_url }}) and the Allure Test Report [here](https://satellite-im.github.io/test-reports/${{ github.run_number }})
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    remove-label:
+        needs: [playwright-run, merge-reports, publish-playwright-report, publish-allure-report]
+        runs-on: ubuntu-latest
+        permissions:
+            checks: write
+            pull-requests: write
+            contents: write
+            issues: read
+
+        steps:
+            - name: Checkout directory 🔖
+              uses: actions/checkout@v4.2.2
+
+            - name: Delete artifacts required on failed execution
+              uses: geekyeggo/delete-artifact@v5.1.0
+              with:
+                  name: |
+                      playwright-merged-report
+                      allure-results-desktop-chrome
+                      allure-results-mobile-chrome
+
+            - name: Remove label if all test jobs succeeded
+              uses: buildsville/add-remove-label@v2.0.1
+              with:
+                  token: ${{ secrets.GITHUB_TOKEN }}
+                  labels: |
+                      Failed Automated Test
+                  type: remove
