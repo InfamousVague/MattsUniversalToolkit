@@ -148,8 +148,7 @@ jobs:
         id: comment
         run: >-
           echo
-          "playwright_report_url=https://satellite-im.github.io/test-reports/${{
-          steps.timestampidone.outputs.timestamp }}/" >> "$GITHUB_OUTPUT"
+          "playwright_report_url=https://satellite-im.github.io/test-reports/${{steps.timestampidone.outputs.timestamp }}/" >> "$GITHUB_OUTPUT"
   publish-allure-report:
     if: always()
     needs: publish-playwright-report
@@ -216,12 +215,7 @@ jobs:
         uses: mshick/add-pr-comment@v2.8.2
         with:
           message: >
-            Automated tests execution is complete! You can find the Playwright
-            test report [here](${{
-            needs.publish-playwright-report.outputs.playwright_report_url }})
-            and the Allure Test Report
-            [here](https://satellite-im.github.io/test-reports/${{
-            github.run_number }})
+            Automated tests execution is complete! You can find the Playwright test report [here](${{needs.publish-playwright-report.outputs.playwright_report_url }}) and the Allure Test Report [here](https://satellite-im.github.io/test-reports/${{github.run_number }})
         env:
           GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
   remove-label:
