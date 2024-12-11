@@ -149,15 +149,14 @@ jobs:
               name: Deploy Playwright report to Github Pages
               uses: Wandalen/wretry.action@master
               with:
-                  attempt_limit: 3
-                  action: peaceiris/actions-gh-pages@v4
-                  with: |
-                      deploy_key: |
-                          ${{ secrets.ACTIONS_DEPLOY_KEY }}
-                      external_repository: Satellite-im/test-reports
-                      publish_branch: gh-pages
-                      publish_dir: ./playwright-report
-                      destination_dir: ${{ steps.timestampidone.outputs.timestamp }}
+                attempt_limit: 3
+                action: peaceiris/actions-gh-pages@v4
+                args: >
+                 --deploy_key "${{ secrets.ACTIONS_DEPLOY_KEY }}"
+                 --external_repository "Satellite-im/test-reports"
+                 --publish_branch "gh-pages"
+                 --publish_dir "./playwright-report"
+                 --destination_dir "${{ steps.timestampidone.outputs.timestamp }}"
 
             - name: Set Playwright report URL output
               id: comment
