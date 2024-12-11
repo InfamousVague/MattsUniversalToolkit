@@ -151,7 +151,7 @@ jobs:
               with:
                 attempt_limit: 3
                 action: peaceiris/actions-gh-pages@v4
-                with: >
+                with: |
                  deploy_key=${{ secrets.ACTIONS_DEPLOY_KEY }}
                  external_repository=Satellite-im/test-reports
                  publish_branch=gh-pages
