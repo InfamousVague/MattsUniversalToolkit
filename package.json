@@ -72,6 +72,6 @@
         "uuid": "^9.0.1",
         "vite-plugin-node-polyfills": "^0.21.0",
         "voice-activity-detection": "^0.0.5",
-        "warp-wasm": "1.6.2"
+        "warp-wasm": "^1.7.0"
     }
 }
