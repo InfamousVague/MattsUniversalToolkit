@@ -41,7 +41,7 @@
             await WarpStore.initWarpInstances(addressed)
         }
         let ownIdentity = await MultipassStoreInstance.getOwnIdentity()
-        ownIdentity.fold(
+        await ownIdentity.fold(
             async (_: any) => {
                 if (username === "") return
                 AuthStore.setStoredPin(pin)
@@ -92,6 +92,7 @@
         create={!exist()}
         on:pin={async e => {
             await auth(e.detail.pin)
+            console.log("done")
             e.detail.done()
         }} />
 {:else if currentPage == LoginPage.RecoveryCopy}
