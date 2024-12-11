@@ -92,7 +92,6 @@
                     console.error("Error parsing JSON:", error, chat.last_message_preview)
                     return "Invalid message format"
                 }
-                console.log(parsedMessage)
                 const amountWei = parsedMessage.details.transfer.amountPreview || BigInt(0)
                 if (sendingUserDetails.key !== ownId.key) {
                     return `${sendingUserDetails.name} sent you ${amountWei}`

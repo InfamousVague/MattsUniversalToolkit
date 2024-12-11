@@ -456,7 +456,6 @@
     function checkForActiveRequest(message: MessageType, messageLine: string) {
         const rejectidMatch = messageLine.match(/^\/reject\s([a-f0-9-]{36})$/)
         const sendidMatch = messageLine.match(/^\/send\s.*"messageID":"([a-f0-9-]{36})"/)
-        console.log(message, sendidMatch)
         if (rejectidMatch) {
             const messageId = rejectidMatch[1]
             let wasAdded = false

@@ -19,6 +19,7 @@
     }
     let transfer = new Transfer()
     let sendCoin = ViewMode.None
+    let initialSelect = "Select an asset"
     async function sendMessage(text: string) {
         if (sendCoin === ViewMode.Send) {
             let chat = get(Store.state.activeChat)
@@ -44,24 +45,50 @@
 
     let inputAmount = ""
     function onInputAmount() {
+        isAmountTouched = true
+        console.log(transfer.asset.kind)
         inputAmount = inputAmount.replace(/[^0-9.]/g, "")
         if (inputAmount.split(".").length > 2) {
-            let i = inputAmount.indexOf(".")
-            inputAmount = inputAmount.substring(0, i + 1) + inputAmount.substring(i + 1, inputAmount.length).replace(".", "")
+            const i = inputAmount.indexOf(".")
+            inputAmount = inputAmount.substring(0, i + 1) + inputAmount.substring(i + 1).replace(".", "")
         }
-        wallet.toBigIntAmount(transfer.asset, inputAmount).then(amount => {
-            transfer.amount = amount
-            wallet.toAmountPreviewString(transfer.asset, transfer.amount).then(amountPreview => {
-                transfer.amountPreview = amountPreview
+
+        const decimalPlaces = 18 // Max decimals for the asset type
+        const parts = inputAmount.split(".")
+        if (parts[1] && parts[1].length > decimalPlaces) {
+            inputAmount = parts[0] + "." + parts[1].substring(0, decimalPlaces)
+        }
+
+        isValidAmount = /^[0-9]+(\.[0-9]+)?$/.test(inputAmount)
+
+        if (isValidAmount) {
+            wallet.toBigIntAmount(transfer.asset, inputAmount).then(amount => {
+                transfer.amount = amount
+                wallet.toAmountPreviewString(transfer.asset, transfer.amount).then(amountPreview => {
+                    transfer.amountPreview = amountPreview
+                })
             })
-        })
+        }
     }
+
     let addressInput = ""
+    let isValidAddress = false
+    let isAddressTouched = false
+    let isValidAmount = false
+    let isAmountTouched = false
     function onAddressInput() {
-        wallet.myAddress(transfer.asset).then(address => {
+        isAddressTouched = true
+
+        const bitcoinRegex = /^(1|3|bc1|tb1)[a-zA-HJ-NP-Z0-9]{25,62}$/
+        const ethereumRegex = /^0x[a-fA-F0-9]{40}$/
+
+        isValidAddress = bitcoinRegex.test(addressInput) || ethereumRegex.test(addressInput)
+
+        if (isValidAddress) {
             transfer.toAddress = addressInput
-        })
+        }
     }
+
     onInputAmount()
     function onChangeAssetKind() {
         transfer.asset.id = ""
@@ -102,35 +129,49 @@
     </div>
     {#if sendCoin === ViewMode.Send}
         <div class="asset_selector">
-            <Label text={$_("payments.type") + ":"}></Label><Select bind:selected={transfer.asset.kind} options={Object.values(AssetType).map(value => ({ value: value, text: value }))} on:change={onChangeAssetKind} />
+            <Label text={$_("payments.type") + ":"}></Label>
+            <Select bind:selected={transfer.asset.kind} options={Object.values(AssetType).map(value => ({ value: value, text: value }))} on:change={onChangeAssetKind} />
         </div>
-        <div class="address">
-            <Label text={$_("payments.address")} />
-            <div class="address_QR">
-                <Input bind:value={addressInput} on:input={onAddressInput} />
-                <!-- <div class="address_button">
-                        <Button icon><Icon icon={Shape.QRCode}></Icon></Button>
-                    </div> -->
+
+        {#if transfer.asset.kind !== initialSelect}
+            <div class="address">
+                <Label text={$_("payments.address")} />
+                <div class="address_QR">
+                    <Input bind:value={addressInput} on:input={onAddressInput} />
+                    {#if isAddressTouched && !isValidAddress}
+                        <span class="error">Invalid wallet address.</span>
+                    {/if}
+                </div>
             </div>
-        </div>
-        {#if addressInput !== ""}
+        {/if}
+
+        {#if isValidAddress && addressInput !== ""}
             <div class="amount">
                 <Label text={$_("payments.amount")} />
                 <Input bind:value={inputAmount} on:input={onInputAmount} />
+                {#if isAmountTouched && !isValidAmount && inputAmount.length > 1}
+                    <span class="error">Invalid amount format.</span>
+                {/if}
             </div>
         {/if}
 
         {#if needsAssetId()}
-            <div class="payment_amount">{$_("payments.assetId") + ":"}<Input bind:value={transfer.asset.id} on:change={onInputAmount} /></div>
+            <div class="payment_amount">
+                {$_("payments.assetId") + ":"}
+                <Input bind:value={transfer.asset.id} on:change={onInputAmount} />
+            </div>
         {/if}
-        <div class="send_button">
-            <Button
-                disabled={!transfer.isValid()}
-                on:click={async () => {
-                    await sendMessage(transfer.toDisplayString(transfer.asset.kind, inputAmount, transfer.toAddress))
-                    onClose()
-                }}>{$_("payments.create_transaction")}</Button>
-        </div>
+
+        {#if isValidAddress && isValidAmount}
+            <div class="send_button">
+                <Button
+                    disabled={!transfer.isValid()}
+                    on:click={async () => {
+                        await sendMessage(transfer.toDisplayString(transfer.asset.kind, inputAmount, transfer.toAddress))
+                        onClose()
+                    }}>{$_("payments.create_transaction")}</Button>
+            </div>
+        {/if}
     {:else if sendCoin === ViewMode.Receive}
         <div class="asset_selector">
             <Label text={$_("payments.type") + ":"}></Label><Select bind:selected={transfer.asset.kind} options={Object.values(AssetType).map(value => ({ value: value, text: value }))} on:change={onChangeAssetKind} />
@@ -140,9 +181,6 @@
                 <Label text={$_("payments.address")} />
                 <div class="address_QR">
                     <Input value={transfer.toAddress} />
-                    <!-- <div class="address_button">
-                        <Button icon><Icon icon={Shape.QRCode}></Icon></Button>
-                    </div> -->
                 </div>
             </div>
             <div class="amount">
