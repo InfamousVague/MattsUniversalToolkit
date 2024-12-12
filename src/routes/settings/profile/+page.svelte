@@ -25,22 +25,7 @@
     import PinInput from "$lib/components/PinInput.svelte"
     import { isiOSMobile } from "$lib/utils/Mobile"
     import { Keyboard } from "@capacitor/keyboard"
-
-    if (isiOSMobile()) {
-        Keyboard.removeAllListeners().then(() => {
-            Keyboard.addListener("keyboardWillShow", _ => {
-                const focusedElement = document.activeElement
-                if (focusedElement && (focusedElement.tagName === "INPUT" || focusedElement.tagName === "TEXTAREA")) {
-                    setTimeout(() => {
-                        focusedElement.scrollIntoView({
-                            behavior: "smooth",
-                            block: "center",
-                        })
-                    }, 100)
-                }
-            })
-        })
-    }
+    import type { PluginListenerHandle } from "@capacitor/core"
 
     enum SeedState {
         Hidden,
@@ -191,15 +176,31 @@
     let statusMessage: string = { ...get(Store.state.user) }.profile.status_message
     let seedWarning = false
 
-    onMount(() => {
+    let mobileKeyboardListener: PluginListenerHandle | undefined
+
+    onMount(async () => {
         userReference = { ...get(Store.state.user) }
         statusMessage = { ...get(Store.state.user) }.profile.status_message
+
+        if (isiOSMobile()) {
+            mobileKeyboardListener = await Keyboard.addListener("keyboardWillShow", _ => {
+                const focusedElement = document.activeElement
+                if (focusedElement && (focusedElement.tagName === "INPUT" || focusedElement.tagName === "TEXTAREA")) {
+                    setTimeout(() => {
+                        focusedElement.scrollIntoView({
+                            behavior: "smooth",
+                            block: "center",
+                        })
+                    }, 100)
+                }
+            })
+        }
     })
 
-    onDestroy(() => {
+    onDestroy(async () => {
         Store.setUsername(userReference.name)
         Store.setStatusMessage(userReference.profile.status_message)
-        Keyboard.removeAllListeners()
+        await mobileKeyboardListener?.remove()
     })
 
     $: user = Store.state.user

@@ -5,22 +5,7 @@
     import { animationDuration } from "$lib/globals/animations"
     import { slide } from "svelte/transition"
     import { Chatbar, Sidebar, Topbar, Profile } from "$lib/layouts"
-    import {
-        ImageEmbed,
-        ChatPreview,
-        Conversation,
-        Message as MessageComponent,
-        MessageGroup,
-        MessageReactions,
-        MessageReplyContainer,
-        ProfilePicture,
-        Modal,
-        ProfilePictureMany,
-        ChatFilter,
-        ContextMenu,
-        EmojiGroup,
-        ChatIcon,
-    } from "$lib/components"
+    import { ImageEmbed, ChatPreview, Conversation, Message as MessageComponent, MessageGroup, MessageReactions, MessageReplyContainer, Modal, ChatFilter, ContextMenu, EmojiGroup, ChatIcon } from "$lib/components"
     import CreateTransaction from "$lib/components/wallet/CreateTransaction.svelte"
     import { Button, FileInput, Icon, Label, Text } from "$lib/elements"
     import CallScreen from "$lib/components/calling/CallScreen.svelte"
@@ -82,27 +67,6 @@
     $: chatName = $activeChat.kind === ChatType.DirectMessage ? $users[$activeChat.users[1]]?.name : ($activeChat.name ?? $users[$activeChat.users[1]]?.name)
     $: statusMessage = $activeChat.kind === ChatType.DirectMessage ? $users[$activeChat.users[1]]?.profile?.status_message : $activeChat.motd
     $: pinned = getPinned($conversation)
-
-    UIStore.state.sidebarOpen.subscribe(_ => {
-        if (isiOSMobile()) {
-            let chat = get(Store.state.activeChat)
-            Keyboard.removeAllListeners().then(() => {
-                Keyboard.addListener("keyboardWillShow", info => {
-                    const chatbar = document.getElementById(`chatbat-container-${chat.id}`)
-                    if (chatbar) {
-                        chatbar.style.marginBottom = `${info.keyboardHeight - 30}px`
-                    }
-                })
-
-                Keyboard.addListener("keyboardWillHide", () => {
-                    const chatbar = document.getElementById(`chatbat-container-${chat.id}`)
-                    if (chatbar) {
-                        chatbar.style.marginBottom = `0px`
-                    }
-                })
-            })
-        }
-    })
 
     function toggleSidebar() {
         UIStore.toggleSidebar()

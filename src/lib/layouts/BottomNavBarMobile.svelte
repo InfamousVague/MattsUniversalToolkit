@@ -7,9 +7,10 @@
     import { UIStore } from "$lib/state/ui"
     import type { FriendRequest, NavRoute } from "$lib/types"
     import { checkMobile, isAndroidOriOS } from "$lib/utils/Mobile"
-    import { createEventDispatcher, onDestroy } from "svelte"
+    import { createEventDispatcher, onDestroy, onMount } from "svelte"
     import { get } from "svelte/store"
     import { Keyboard } from "@capacitor/keyboard"
+    import type { PluginListenerHandle } from "@capacitor/core"
 
     export let routes: NavRoute[] = []
     export let activeRoute: Route | SettingsRoute | CommunitySettingsRoute = Route.Home
@@ -68,8 +69,22 @@
         if (route.to === Route.Settings) return true
     }
 
+    let mobileKeyboardListener01: PluginListenerHandle | undefined
+    let mobileKeyboardListener02: PluginListenerHandle | undefined
+    $: isKeyboardOpened = false
+
+    onMount(async () => {
+        mobileKeyboardListener01 = await Keyboard.addListener("keyboardWillShow", () => {
+            isKeyboardOpened = true
+        })
+
+        mobileKeyboardListener02 = await Keyboard.addListener("keyboardWillHide", () => {
+            isKeyboardOpened = false
+        })
+    })
+
     // Clean up subscriptions when component is destroyed
-    onDestroy(() => {
+    onDestroy(async () => {
         setTimeout(() => {
             if (get(Store.state.activeCall)) {
                 Store.setActiveCall(Store.getCallingChat(VoiceRTCInstance.channel!)!)
@@ -78,18 +93,10 @@
 
         unsubscribeStore()
         unsubscribeUIStore()
-        Keyboard.removeAllListeners()
+        await mobileKeyboardListener01?.remove()
+        await mobileKeyboardListener02?.remove()
     })
     $: settings = SettingsStore.state
-
-    $: isKeyboardOpened = false
-    Keyboard.addListener("keyboardWillShow", _ => {
-        isKeyboardOpened = true
-    })
-
-    Keyboard.addListener("keyboardWillHide", () => {
-        isKeyboardOpened = false
-    })
 </script>
 
 {#if !isKeyboardOpened}

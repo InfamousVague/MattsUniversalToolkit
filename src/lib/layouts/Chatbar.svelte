@@ -22,6 +22,7 @@
     import StoreResolver from "$lib/components/utils/StoreResolver.svelte"
     import MessageText from "$lib/components/messaging/message/MessageText.svelte"
     import { Keyboard } from "@capacitor/keyboard"
+    import type { PluginListenerHandle } from "@capacitor/core"
 
     export let replyTo: MessageType | undefined = undefined
     export let emojiClickHook: (emoji: string) => boolean
@@ -159,19 +160,55 @@
         return result
     }
 
-    let mobileAutoFocus: boolean
-
-    Keyboard.addListener("keyboardWillShow", () => {
-        mobileAutoFocus = true
-    })
+    let mobileKeyboardListener01: PluginListenerHandle | undefined
+    let mobileKeyboardListener02: PluginListenerHandle | undefined
+    $: isMobileKeyboardOpened = false
 
     onMount(async () => {
-        mobileAutoFocus = false
         hackVariableToRefocusChatBar.set(Math.random().toString())
+
+        let chat = get(Store.state.activeChat)
+        const chatbar = document.getElementById(`chatbar-container-${chat.id}`)
+        chatbar?.addEventListener("click", _ => {
+            if (isMobileKeyboardOpened && !$emojiSelectorOpen) {
+                hackVariableToRefocusChatBar.set(Math.random().toString())
+            }
+        })
+
+        if (isAndroidOriOS()) {
+            mobileKeyboardListener01 = await Keyboard.addListener("keyboardWillShow", info => {
+                if (isiOSMobile()) {
+                    isMobileKeyboardOpened = true
+                    let chat = get(Store.state.activeChat)
+                    const chatbar = document.getElementById(`chatbar-container-${chat.id}`)
+                    if (chatbar) {
+                        chatbar.style.marginBottom = `${info.keyboardHeight - 30}px`
+                    }
+                }
+            })
+
+            mobileKeyboardListener02 = await Keyboard.addListener("keyboardWillHide", () => {
+                if (isiOSMobile()) {
+                    isMobileKeyboardOpened = false
+                    let chat = get(Store.state.activeChat)
+                    const chatbar = document.getElementById(`chatbar-container-${chat.id}`)
+                    if (chatbar) {
+                        chatbar.style.marginBottom = `0px`
+                    }
+                }
+            })
+        }
+    })
+
+    onDestroy(() => {
+        if (isAndroidOriOS()) {
+            mobileKeyboardListener01?.remove()
+            mobileKeyboardListener02?.remove()
+        }
     })
 </script>
 
-<div class="chatbar" data-cy="chatbar" id={`chatbat-container-${activeChat.id}`}>
+<div class="chatbar" data-cy="chatbar" id={`chatbar-container-${activeChat.id}`}>
     <Controls>
         <slot name="pre-controls"></slot>
     </Controls>
@@ -179,7 +216,7 @@
         hook={`${activeChat.id}-${$hackVariableToRefocusChatBar}`}
         alt
         placeholder={$_("generic.placeholder")}
-        autoFocus={isAndroidOriOS() ? mobileAutoFocus : true}
+        autoFocus={true}
         bind:value={$message}
         rounded
         rich={markdown}
