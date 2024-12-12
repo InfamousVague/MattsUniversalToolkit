@@ -17,7 +17,7 @@ public class SafeAreasColorPlugin: CAPPlugin, CAPBridgedPlugin {
           }
     
         DispatchQueue.main.async {
-                 if #available(iOS 13.0, *) {
+                 if #available(iOS 16.0, *) {
                      // Find the active window in iOS 13 or later
                      if let window = UIApplication.shared.connectedScenes
                          .compactMap({ $0 as? UIWindowScene })
@@ -30,13 +30,7 @@ public class SafeAreasColorPlugin: CAPPlugin, CAPBridgedPlugin {
                          call.reject("No active window found")
                      }
                  } else {
-                     // For iOS 12 and earlier
-                     if let window = UIApplication.shared.keyWindow {
-                         window.backgroundColor = uiColor
-                         call.resolve(["value": "Color set successfully"])
-                     } else {
-                         call.reject("No key window found")
-                     }
+                    call.reject("Earlier versions than iOS 16 are not supported")
                  }
              }
         
