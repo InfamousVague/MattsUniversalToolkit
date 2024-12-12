@@ -24,7 +24,7 @@ export default defineConfig({
     },
     resolve: {
         alias: {
-            $serviceworker: path.resolve(__dirname, "src/service-worker"),
+            $serviceworker: path.resolve(__dirname, "src/serviceworker"),
             $lib: path.resolve(__dirname, "src/lib"),
             "@": path.resolve(__dirname, "src"),
         },
@@ -63,7 +63,6 @@ export default defineConfig({
         target: process.env.TAURI_PLATFORM == "windows" ? "chrome105" : "safari13",
         minify: !process.env.TAURI_DEBUG ? "esbuild" : false,
         sourcemap: !!process.env.TAURI_DEBUG,
-        emptyOutDir: false,
     },
     esbuild: {
         supported: {
