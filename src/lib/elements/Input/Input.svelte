@@ -70,7 +70,7 @@
 
     let onsend: any[] = []
     let editor: MarkdownEditor
-
+    let mobileKeyboardWasAlreadyOpened = false
     $: if (rich && $input && (!editor || !Array.from($input.parentNode!.children).some(el => el === editor.codemirror.dom))) {
         if (editor) {
             editor.codemirror.destroy()
@@ -87,7 +87,7 @@
         editor.codemirror.dispatch({
             selection: { head: line.to, anchor: line.to },
         })
-        if ((autoFocus && !isAndroidOriOS()) || isKeyboardOpened) editor.codemirror.focus()
+        if ((autoFocus && !isAndroidOriOS()) || (autoFocus && mobileKeyboardWasAlreadyOpened) || isKeyboardOpened) editor.codemirror.focus()
         // @ts-ignore
         editor.updatePlaceholder(input.placeholder)
         editor.registerListener("input", ({ value: val }: { value: string }) => {
@@ -144,6 +144,7 @@
 
     onMount(async () => {
         mobileKeyboardListener01 = await Keyboard.addListener("keyboardWillShow", () => {
+            mobileKeyboardWasAlreadyOpened = true
             isKeyboardOpened = true
         })
 

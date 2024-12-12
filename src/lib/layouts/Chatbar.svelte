@@ -167,15 +167,15 @@
     onMount(async () => {
         hackVariableToRefocusChatBar.set(Math.random().toString())
 
-        let chat = get(Store.state.activeChat)
-        const chatbar = document.getElementById(`chatbar-container-${chat.id}`)
-        chatbar?.addEventListener("click", _ => {
-            if (isMobileKeyboardOpened && !$emojiSelectorOpen) {
-                hackVariableToRefocusChatBar.set(Math.random().toString())
-            }
-        })
-
         if (isAndroidOriOS()) {
+            let chat = get(Store.state.activeChat)
+            const chatbar = document.getElementById(`chatbar-container-${chat.id}`)
+            chatbar?.addEventListener("click", _ => {
+                if (isMobileKeyboardOpened && !$emojiSelectorOpen) {
+                    hackVariableToRefocusChatBar.set(Math.random().toString())
+                }
+            })
+
             mobileKeyboardListener01 = await Keyboard.addListener("keyboardWillShow", info => {
                 if (isiOSMobile()) {
                     isMobileKeyboardOpened = true
