@@ -23,6 +23,9 @@
     import { log } from "$lib/utils/Logger"
     import Modal from "$lib/components/ui/Modal.svelte"
     import PinInput from "$lib/components/PinInput.svelte"
+    import { isiOSMobile } from "$lib/utils/Mobile"
+    import { Keyboard } from "@capacitor/keyboard"
+    import type { PluginListenerHandle } from "@capacitor/core"
 
     enum SeedState {
         Hidden,
@@ -173,14 +176,31 @@
     let statusMessage: string = { ...get(Store.state.user) }.profile.status_message
     let seedWarning = false
 
-    onMount(() => {
+    let mobileKeyboardListener: PluginListenerHandle | undefined
+
+    onMount(async () => {
         userReference = { ...get(Store.state.user) }
         statusMessage = { ...get(Store.state.user) }.profile.status_message
+
+        if (isiOSMobile()) {
+            mobileKeyboardListener = await Keyboard.addListener("keyboardWillShow", _ => {
+                const focusedElement = document.activeElement
+                if (focusedElement && (focusedElement.tagName === "INPUT" || focusedElement.tagName === "TEXTAREA")) {
+                    setTimeout(() => {
+                        focusedElement.scrollIntoView({
+                            behavior: "smooth",
+                            block: "center",
+                        })
+                    }, 100)
+                }
+            })
+        }
     })
 
-    onDestroy(() => {
+    onDestroy(async () => {
         Store.setUsername(userReference.name)
         Store.setStatusMessage(userReference.profile.status_message)
+        await mobileKeyboardListener?.remove()
     })
 
     $: user = Store.state.user
@@ -372,7 +392,7 @@
     {/if}
     <!-- svelte-ignore missing-declaration -->
     <!-- svelte-ignore a11y-no-static-element-interactions -->
-    <div class="profile">
+    <div id="profile" class="profile">
         <!-- svelte-ignore a11y-click-events-have-key-events -->
         <ContextMenu
             hook="context-menu-banner-picture"
