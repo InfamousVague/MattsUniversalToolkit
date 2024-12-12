@@ -1,4 +1,5 @@
 <script lang="ts" context="module">
+    import { Keyboard } from "@capacitor/keyboard"
     // A close handler referencing the current open context menu
     let close_context: any
 </script>
@@ -9,8 +10,10 @@
     import { clickoutside } from "@svelte-put/clickoutside"
     import { Appearance } from "$lib/enums"
     import type { ContextItem } from "$lib/types"
-    import { createEventDispatcher, tick } from "svelte"
+    import { createEventDispatcher, onMount, tick } from "svelte"
     import { log } from "$lib/utils/Logger"
+    import type { PluginListenerHandle } from "@capacitor/core"
+    import { isAndroidOriOS } from "$lib/utils/Mobile"
 
     let visible: boolean = false
     let coords: [number, number] = [0, 0]
@@ -31,7 +34,7 @@
         const { width, height } = context.getBoundingClientRect()
 
         const offsetX = evt.pageX
-        const offsetY = evt.pageY
+        const offsetY = evt.pageY - keyboardHeight / 2.5
         const screenWidth = evt.view!.innerWidth
         const screenHeight = evt.view!.innerHeight
 
@@ -42,9 +45,7 @@
 
         // Calculate Y position, prioritizing space above the cursor if not enough below
         const adjustedY = offsetY - height
-        const topY = screenHeight - offsetY < height + 30 
-            ? Math.max(5, adjustedY) 
-            : Math.max(5, overFlowY ? offsetY - height : offsetY)
+        const topY = screenHeight - offsetY < height + 30 ? Math.max(5, adjustedY) : Math.max(5, overFlowY ? offsetY - height : offsetY)
 
         return [topX, topY]
     }
@@ -60,6 +61,29 @@
         await tick()
         coords = calculatePos(evt)
     }
+    let keyboardHeight = 0
+    onMount(() => {
+        let mobileKeyboardListener01: PluginListenerHandle | undefined
+        let mobileKeyboardListener02: PluginListenerHandle | undefined
+
+        async function setupListeners() {
+            mobileKeyboardListener01 = await Keyboard.addListener("keyboardWillShow", info => {
+                keyboardHeight = info.keyboardHeight
+            })
+
+            mobileKeyboardListener02 = await Keyboard.addListener("keyboardWillHide", () => {
+                keyboardHeight = 0
+            })
+        }
+        if (isAndroidOriOS()) {
+            setupListeners()
+        }
+
+        return () => {
+            if (mobileKeyboardListener01) mobileKeyboardListener01.remove()
+            if (mobileKeyboardListener02) mobileKeyboardListener02.remove()
+        }
+    })
 
     function handleItemClick(e: MouseEvent, item: ContextItem) {
         e.stopPropagation()
@@ -74,13 +98,7 @@
 
 <slot name="content" open={openContext} />
 {#if visible}
-    <div 
-        id="context-menu" 
-        data-cy={hook} 
-        bind:this={context} 
-        use:clickoutside 
-        on:clickoutside={onClose} 
-        style={`position: fixed; left: ${coords[0]}px; top: ${coords[1]}px;`}>
+    <div id="context-menu" data-cy={hook} bind:this={context} use:clickoutside on:clickoutside={onClose} style={`position: fixed; left: ${coords[0]}px; top: ${coords[1]}px;`}>
         <slot name="items" close={onClose}></slot>
         {#each items as item}
             <Button
