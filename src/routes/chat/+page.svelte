@@ -346,6 +346,7 @@
     async function sendPaymentMessage(message: MessageType, line: string, paymentType: string) {
         let transfer = new Transfer()
         let chat = get(Store.state.activeChat)
+        console.log("just testing push")
         if (paymentType === PaymentRequestsEnum.Request) {
             let rejectTranfser = transfer.toCmdString()
             let txt = rejectTranfser.split("\n")
