@@ -22,6 +22,9 @@
     const dispatch = createEventDispatcher()
 
     function onClose(event: CustomEvent<MouseEvent> | MouseEvent) {
+        if (isLongPress) {
+            return
+        }
         visible = false
         dispatch("close", event)
         close_context = undefined
@@ -52,10 +55,14 @@
         if (close_context !== undefined) {
             close_context()
         }
-        close_context = () => (visible = false)
+        close_context = () => {
+            if (!isLongPress) {
+                visible = false
+            }
+        }
         evt.preventDefault()
-        visible = true
         coords = [evt.clientX, evt.clientY]
+        visible = true
         await tick()
         coords = calculatePos(evt)
     }
@@ -66,6 +73,8 @@
     function handleTouchStart(evt: TouchEvent) {
         if (evt.touches.length === 1) {
             isLongPress = false
+            let longPressElement = evt.target as HTMLElement
+            longPressElement.style.pointerEvents = "none"
             touchTimer = window.setTimeout(() => {
                 isLongPress = true
                 openContext({
@@ -79,9 +88,19 @@
 
     function handleTouchEnd(evt: TouchEvent) {
         clearTimeout(touchTimer)
+        let longPressElement = evt.target as HTMLElement
+        longPressElement.style.pointerEvents = ""
         if (isLongPress) {
             evt.preventDefault()
         }
+        setTimeout(() => {
+            isLongPress = false
+        }, 100)
+    }
+
+    function handleTouchMove(evt: TouchEvent) {
+        clearTimeout(touchTimer)
+        isLongPress = false
     }
 
     function handleItemClick(e: MouseEvent, item: ContextItem) {
@@ -97,11 +116,13 @@
     onMount(() => {
         slotContainer.addEventListener("touchstart", handleTouchStart)
         slotContainer.addEventListener("touchend", handleTouchEnd)
+        slotContainer.addEventListener("touchmove", handleTouchMove)
     })
 
     onDestroy(() => {
         slotContainer.removeEventListener("touchstart", handleTouchStart)
         slotContainer.removeEventListener("touchend", handleTouchEnd)
+        slotContainer.removeEventListener("touchmove", handleTouchMove)
     })
 </script>
 
