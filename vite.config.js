@@ -24,6 +24,7 @@ export default defineConfig({
     },
     resolve: {
         alias: {
+            $serviceworker: path.resolve(__dirname, "src/service-worker"),
             $lib: path.resolve(__dirname, "src/lib"),
             "@": path.resolve(__dirname, "src"),
         },
