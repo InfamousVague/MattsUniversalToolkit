@@ -179,14 +179,13 @@
         }
 
         const details = parsedMessage.details || {}
-        const amountWei = details.amount || BigInt(0)
-        const amountEther = `${(Number(amountWei) / 1e18).toFixed(18)} ETH`
+        const amountWei = details.amount
 
         if (sender !== "") {
-            return `${sender} sent you ${amountEther}`
+            return `${sender} sent you ${amountWei}`
         } else {
             const recipientName = $users[$activeChat.users[1]]?.name || receiver || "unknown recipient"
-            return `You sent ${amountEther} to ${recipientName}`
+            return `You sent ${amountWei} to ${recipientName}`
         }
     }
 
