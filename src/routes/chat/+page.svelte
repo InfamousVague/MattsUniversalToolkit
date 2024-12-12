@@ -168,7 +168,7 @@
             parsedMessage = JSON.parse(jsonPart, (key, value) => {
                 if (key === "amount" && typeof value === "string") {
                     if (/^\d+$/.test(value)) {
-                        return BigInt(value) // Parse amount as BigInt
+                        return BigInt(value)
                     }
                 }
                 return value
@@ -450,7 +450,7 @@
     })
 
     function checkForActiveRequest(message: MessageType, messageLine: string) {
-        const rejectidMatch = messageLine.match(/^\/reject\s([a-f0-9-]{36})$/)
+        const rejectidMatch = messageLine.match(/^\/reject\s([a-f0-9-]{36})(?:\s|$)/)
         const sendidMatch = messageLine.match(/^\/send\s.*"messageID":"([a-f0-9-]{36})"/)
         if (rejectidMatch) {
             const messageId = rejectidMatch[1]
@@ -467,9 +467,11 @@
 
             return wasAdded
         }
+
         if (sendidMatch) {
             const messageId = sendidMatch[1]
             let wasAdded = false
+
             Store.state.paymentTracker.update(payments => {
                 const alreadyRejected = payments.some(payment => payment.messageId === messageId)
 
@@ -482,6 +484,7 @@
 
             return wasAdded
         }
+
         return false
     }
 
