@@ -22,6 +22,7 @@
     export let rich: boolean = false
     export let autoFocus: boolean = false
     export let rules: InputRules = new InputRules()
+    export let noCapitalize: boolean = false
 
     let errorMessage: string = ""
 
@@ -154,6 +155,8 @@
             <input
                 class="input {centered ? 'centered' : ''} {disabled ? 'disabled' : ''}"
                 type="text"
+                autocapitalize={noCapitalize ? "none" : undefined}
+                autocorrect={noCapitalize ? "off" : undefined}
                 bind:this={$input}
                 on:focus={handleFocus}
                 bind:value={$writableValue}
