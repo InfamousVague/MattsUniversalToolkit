@@ -168,10 +168,17 @@
         max-width: var(--max-component-width);
         flex-wrap: wrap;
         flex: 1;
+
         .import-button-group {
             width: 100%;
             display: flex;
             justify-content: center;
+
+            @media (max-width: 600px) {
+                flex-direction: column;
+                align-items: center;
+                gap: var(--gap);
+            }
         }
     }
 </style>
