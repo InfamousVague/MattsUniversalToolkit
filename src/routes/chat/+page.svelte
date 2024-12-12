@@ -179,7 +179,7 @@
         }
 
         const details = parsedMessage.details || {}
-        const amountWei = details?.amount
+        const amountWei = details.amount
 
         if (sender !== "") {
             return `${sender} sent you ${amountWei}`
