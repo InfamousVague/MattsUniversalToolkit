@@ -12,6 +12,7 @@
     import { createEventDispatcher, onDestroy, onMount } from "svelte"
     import { get } from "svelte/store"
     import { afterNavigate, onNavigate } from "$app/navigation"
+    import type { PluginListenerHandle } from "@capacitor/core"
 
     export let routes: NavRoute[] = []
     export let activeRoute: Route | SettingsRoute | CommunitySettingsRoute = Route.Home
@@ -69,16 +70,6 @@
         if (route.to === Route.Settings) return true
     }
 
-    if (isAndroidOriOS()) {
-        Keyboard.addListener("keyboardWillShow", () => {
-            showBottomNavBar = checkIfCanShowBottomNavBar(get(UIStore.state.sidebarOpen), null, true)
-        })
-
-        Keyboard.addListener("keyboardWillHide", () => {
-            showBottomNavBar = checkIfCanShowBottomNavBar(get(UIStore.state.sidebarOpen), null, false)
-        })
-    }
-
     UIStore.state.sidebarOpen.subscribe(open => {
         showBottomNavBar = checkIfCanShowBottomNavBar(open, null, false)
     })
@@ -110,8 +101,23 @@
 
     $: showBottomNavBar = checkIfCanShowBottomNavBar(get(UIStore.state.sidebarOpen), null, false)
 
+    let mobileKeyboardListener01: PluginListenerHandle | undefined
+    let mobileKeyboardListener02: PluginListenerHandle | undefined
+
+    onMount(async () => {
+        if (isAndroidOriOS()) {
+            mobileKeyboardListener01 = await Keyboard.addListener("keyboardWillShow", () => {
+                showBottomNavBar = checkIfCanShowBottomNavBar(get(UIStore.state.sidebarOpen), null, true)
+            })
+
+            mobileKeyboardListener02 = await Keyboard.addListener("keyboardWillHide", () => {
+                showBottomNavBar = checkIfCanShowBottomNavBar(get(UIStore.state.sidebarOpen), null, false)
+            })
+        }
+    })
+
     // Clean up subscriptions when component is destroyed
-    onDestroy(() => {
+    onDestroy(async () => {
         setTimeout(() => {
             if (get(Store.state.activeCall)) {
                 Store.setActiveCall(Store.getCallingChat(VoiceRTCInstance.channel!)!)
@@ -120,6 +126,8 @@
 
         unsubscribeStore()
         unsubscribeUIStore()
+        await mobileKeyboardListener01?.remove()
+        await mobileKeyboardListener02?.remove()
     })
     $: settings = SettingsStore.state
 </script>

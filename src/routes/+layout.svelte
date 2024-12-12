@@ -29,9 +29,10 @@
     import { swipe } from "$lib/components/ui/Swipe"
     import { ScreenOrientation } from "@capacitor/screen-orientation"
     import BottomNavBarMobile from "$lib/layouts/BottomNavBarMobile.svelte"
-    import { goto, onNavigate } from "$app/navigation"
+    import { goto } from "$app/navigation"
     import { routes } from "$lib/defaults/routes"
-    import { fetchDeviceInfo, isAndroid, isAndroidOriOS } from "$lib/utils/Mobile"
+    import { fetchDeviceInfo, isAndroid, isAndroidOriOS, isiOSMobile } from "$lib/utils/Mobile"
+    import { Keyboard, KeyboardResize } from "@capacitor/keyboard"
     import { changeSafeAreaColorsOnAndroid } from "$lib/plugins/safeAreaColorAndroid"
 
     log.debug("Initializing app, layout routes page.")
@@ -295,6 +296,9 @@
         if (isAndroidOriOS()) {
             lockOrientation()
         }
+        if (isiOSMobile()) {
+            await Keyboard.setResizeMode({ mode: KeyboardResize.Native })
+        }
 
         await checkIfUserIsLogged($page.route.id)
         await initializeLocale()
@@ -311,9 +315,15 @@
         use:swipe
         on:swipeleft={() => {
             UIStore.closeSidebar()
+            if (isAndroidOriOS()) {
+                Keyboard.hide()
+            }
         }}
         on:swiperight={() => {
             UIStore.openSidebar()
+            if (isAndroidOriOS()) {
+                Keyboard.hide()
+            }
         }}>
         {@html `<style>${style}</style>`}
         <link rel="stylesheet" href={`/assets/themes/${theme}.css`} />

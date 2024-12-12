@@ -10,7 +10,9 @@
     import { CommonInputRules } from "$lib/utils/CommonInputRules"
     import { LoginPage } from "$lib/layouts/login"
     import FileUploadButton from "$lib/components/ui/FileUploadButton.svelte"
-    import { get } from "svelte/store"
+    import { Keyboard } from "@capacitor/keyboard"
+    import { isiOSMobile } from "$lib/utils/Mobile"
+    import { onDestroy } from "svelte"
 
     export let page: LoginPage
     export let username = ""
@@ -23,6 +25,23 @@
     async function updateProfilePicture(picture: string) {
         profilePicture = picture
     }
+    Keyboard.addListener("keyboardWillShow", info => {
+        const pageId = document.getElementById("auth-recover")
+        if (pageId && isiOSMobile()) {
+            pageId.style.marginBottom = `${info.keyboardHeight}px`
+        }
+    })
+
+    Keyboard.addListener("keyboardWillHide", () => {
+        const pageId = document.getElementById("auth-recover")
+        if (pageId && isiOSMobile()) {
+            pageId.style.marginBottom = `0px`
+        }
+    })
+
+    onDestroy(() => {
+        Keyboard.removeAllListeners()
+    })
 </script>
 
 <div id="auth-recover">
