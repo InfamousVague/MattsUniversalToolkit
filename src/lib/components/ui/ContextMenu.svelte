@@ -1,4 +1,5 @@
 <script lang="ts" context="module">
+    import { Keyboard } from "@capacitor/keyboard"
     // A close handler referencing the current open context menu
     let close_context: any
 </script>
@@ -11,6 +12,8 @@
     import type { ContextItem } from "$lib/types"
     import { createEventDispatcher, onDestroy, onMount, tick } from "svelte"
     import { log } from "$lib/utils/Logger"
+    import type { PluginListenerHandle } from "@capacitor/core"
+    import { isAndroidOriOS } from "$lib/utils/Mobile"
 
     let visible: boolean = false
     let coords: [number, number] = [0, 0]
@@ -35,7 +38,7 @@
         const { width, height } = context.getBoundingClientRect()
 
         const offsetX = evt.pageX
-        const offsetY = evt.pageY
+        const offsetY = evt.pageY - keyboardHeight / 2.5
         const screenWidth = evt.view!.innerWidth
         const screenHeight = evt.view!.innerHeight
 
@@ -66,6 +69,29 @@
         await tick()
         coords = calculatePos(evt)
     }
+    let keyboardHeight = 0
+    onMount(() => {
+        let mobileKeyboardListener01: PluginListenerHandle | undefined
+        let mobileKeyboardListener02: PluginListenerHandle | undefined
+
+        async function setupListeners() {
+            mobileKeyboardListener01 = await Keyboard.addListener("keyboardWillShow", info => {
+                keyboardHeight = info.keyboardHeight
+            })
+
+            mobileKeyboardListener02 = await Keyboard.addListener("keyboardWillHide", () => {
+                keyboardHeight = 0
+            })
+        }
+        if (isAndroidOriOS()) {
+            setupListeners()
+        }
+
+        return () => {
+            if (mobileKeyboardListener01) mobileKeyboardListener01.remove()
+            if (mobileKeyboardListener02) mobileKeyboardListener02.remove()
+        }
+    })
 
     let touchTimer: number | undefined
     let isLongPress: boolean = false
