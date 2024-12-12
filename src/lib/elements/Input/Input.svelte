@@ -1,13 +1,16 @@
 <script lang="ts">
+    import { isAndroidOriOS } from "$lib/utils/Mobile"
     import { InputRules } from "./inputRules"
     import { Appearance } from "../../enums/index"
     import { MarkdownEditor } from "markdown-editor"
     import "./markdown.scss"
-    import { createEventDispatcher, onMount } from "svelte"
+    import { createEventDispatcher, onDestroy, onMount } from "svelte"
     import { EditorView } from "@codemirror/view"
     import { writable } from "svelte/store"
     import Text from "../Text.svelte"
     import { debounce } from "$lib/utils/Functions"
+    import type { PluginListenerHandle } from "@capacitor/core"
+    import { Keyboard } from "@capacitor/keyboard"
 
     export let placeholder: string = ""
     export let hook: string = ""
@@ -67,7 +70,7 @@
 
     let onsend: any[] = []
     let editor: MarkdownEditor
-
+    let mobileKeyboardWasAlreadyOpened = false
     $: if (rich && $input && (!editor || !Array.from($input.parentNode!.children).some(el => el === editor.codemirror.dom))) {
         if (editor) {
             editor.codemirror.destroy()
@@ -84,7 +87,7 @@
         editor.codemirror.dispatch({
             selection: { head: line.to, anchor: line.to },
         })
-        if (autoFocus) editor.codemirror.focus()
+        if ((autoFocus && !isAndroidOriOS()) || (autoFocus && mobileKeyboardWasAlreadyOpened) || isKeyboardOpened) editor.codemirror.focus()
         // @ts-ignore
         editor.updatePlaceholder(input.placeholder)
         editor.registerListener("input", ({ value: val }: { value: string }) => {
@@ -134,6 +137,26 @@
             input.addEventListener("mouseup", mouseupListener)
         })
     }
+
+    let mobileKeyboardListener01: PluginListenerHandle | undefined
+    let mobileKeyboardListener02: PluginListenerHandle | undefined
+    $: isKeyboardOpened = false
+
+    onMount(async () => {
+        mobileKeyboardListener01 = await Keyboard.addListener("keyboardWillShow", () => {
+            mobileKeyboardWasAlreadyOpened = true
+            isKeyboardOpened = true
+        })
+
+        mobileKeyboardListener02 = await Keyboard.addListener("keyboardWillHide", () => {
+            isKeyboardOpened = false
+        })
+    })
+
+    onDestroy(async () => {
+        if (mobileKeyboardListener01) await mobileKeyboardListener01.remove()
+        if (mobileKeyboardListener02) await mobileKeyboardListener02.remove()
+    })
 </script>
 
 {#key hook}
@@ -161,7 +184,7 @@
                 on:keydown={onKeyDown}
                 on:input={onInput}
                 on:blur={onBlur}
-                autofocus={autoFocus} />
+                autofocus={isAndroidOriOS() ? isKeyboardOpened : autoFocus} />
         </div>
     </div>
     {#if errorMessage}
