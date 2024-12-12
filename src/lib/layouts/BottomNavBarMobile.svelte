@@ -9,9 +9,9 @@
     import { UIStore } from "$lib/state/ui"
     import type { FriendRequest, NavRoute } from "$lib/types"
     import { checkMobile, isAndroidOriOS } from "$lib/utils/Mobile"
-    import { createEventDispatcher, onDestroy } from "svelte"
+    import { createEventDispatcher, onDestroy, onMount } from "svelte"
     import { get } from "svelte/store"
-    import { onNavigate } from "$app/navigation"
+    import { afterNavigate, onNavigate } from "$app/navigation"
 
     export let routes: NavRoute[] = []
     export let activeRoute: Route | SettingsRoute | CommunitySettingsRoute = Route.Home
@@ -69,13 +69,15 @@
         if (route.to === Route.Settings) return true
     }
 
-    Keyboard.addListener("keyboardWillShow", () => {
-        showBottomNavBar = checkIfCanShowBottomNavBar(get(UIStore.state.sidebarOpen), null, true)
-    })
+    if (isAndroidOriOS()) {
+        Keyboard.addListener("keyboardWillShow", () => {
+            showBottomNavBar = checkIfCanShowBottomNavBar(get(UIStore.state.sidebarOpen), null, true)
+        })
 
-    Keyboard.addListener("keyboardWillHide", () => {
-        showBottomNavBar = checkIfCanShowBottomNavBar(get(UIStore.state.sidebarOpen), null, false)
-    })
+        Keyboard.addListener("keyboardWillHide", () => {
+            showBottomNavBar = checkIfCanShowBottomNavBar(get(UIStore.state.sidebarOpen), null, false)
+        })
+    }
 
     UIStore.state.sidebarOpen.subscribe(open => {
         showBottomNavBar = checkIfCanShowBottomNavBar(open, null, false)
@@ -96,7 +98,7 @@
             if (currentRoute === "/friends") {
                 return true
             }
-            if (currentRoute?.includes("/settings") && sidebarOpen) {
+            if (currentRoute?.includes("/settings")) {
                 return true
             }
             if (currentRoute === "/files") {
@@ -123,7 +125,7 @@
 </script>
 
 {#if showBottomNavBar}
-    <div class="navigation {vertical ? 'vertical' : 'horizontal'} {icons ? 'icons' : ''}">
+    <div id="bottom-nav-bar-mobile" class="navigation {vertical ? 'vertical' : 'horizontal'} {icons ? 'icons' : ''}">
         {#each routes as route}
             <div class="navigation-control {!icons ? 'fill' : ''}">
                 <Button
@@ -156,7 +158,7 @@
         backdrop-filter: blur(10px);
         -webkit-backdrop-filter: blur(10px);
         z-index: 1000;
-        position: fixed;
+        position: sticky;
         bottom: 0;
         left: 0;
         right: 0;

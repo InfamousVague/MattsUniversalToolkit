@@ -329,15 +329,15 @@
         <Market on:close={() => UIStore.toggleMarket()} />
         <InstallBanner />
         <slot></slot>
+        <BottomNavBarMobile
+            icons
+            routes={routes}
+            activeRoute={activeRoute}
+            on:navigate={e => {
+                activeRoute = e.detail
+                goto(e.detail)
+            }} />
     </div>
-    <BottomNavBarMobile
-        icons
-        routes={routes}
-        activeRoute={activeRoute}
-        on:navigate={e => {
-            activeRoute = e.detail
-            goto(e.detail)
-        }} />
 {:else}
     <CircularProgressIndicator />
 {/if}
