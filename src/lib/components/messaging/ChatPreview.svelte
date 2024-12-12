@@ -92,7 +92,7 @@
                     console.error("Error parsing JSON:", error, chat.last_message_preview)
                     return "Invalid message format"
                 }
-                const amountWei = parsedMessage.details.amount
+                const amountWei = parsedMessage.details?.amount
                 if (sendingUserDetails.key !== ownId.key) {
                     return `${sendingUserDetails.name} sent you ${amountWei}`
                 } else {
