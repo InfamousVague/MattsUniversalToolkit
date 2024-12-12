@@ -1,4 +1,6 @@
 <script lang="ts">
+    import { Keyboard } from "@capacitor/keyboard"
+    import { page } from "$app/stores"
     import { Button, Icon, Text } from "$lib/elements"
     import { Appearance, CommunitySettingsRoute, Route, SettingsRoute } from "$lib/enums"
     import { VoiceRTCInstance } from "$lib/media/Voice"
@@ -9,6 +11,7 @@
     import { checkMobile, isAndroidOriOS } from "$lib/utils/Mobile"
     import { createEventDispatcher, onDestroy } from "svelte"
     import { get } from "svelte/store"
+    import { onNavigate } from "$app/navigation"
 
     export let routes: NavRoute[] = []
     export let activeRoute: Route | SettingsRoute | CommunitySettingsRoute = Route.Home
@@ -66,6 +69,45 @@
         if (route.to === Route.Settings) return true
     }
 
+    Keyboard.addListener("keyboardWillShow", () => {
+        showBottomNavBar = checkIfCanShowBottomNavBar(get(UIStore.state.sidebarOpen), null, true)
+    })
+
+    Keyboard.addListener("keyboardWillHide", () => {
+        showBottomNavBar = checkIfCanShowBottomNavBar(get(UIStore.state.sidebarOpen), null, false)
+    })
+
+    UIStore.state.sidebarOpen.subscribe(open => {
+        showBottomNavBar = checkIfCanShowBottomNavBar(open, null, false)
+    })
+
+    onNavigate(async e => {
+        const routeId = e.to?.route.id
+        showBottomNavBar = checkIfCanShowBottomNavBar(get(UIStore.state.sidebarOpen), routeId, false)
+    })
+
+    function checkIfCanShowBottomNavBar(sidebarOpen: boolean, routeId: string | null | undefined, isMobileKeyboardOpened: boolean): boolean {
+        let currentRoute = routeId ?? $page.route.id
+
+        if (isAndroidOriOS() && !isMobileKeyboardOpened) {
+            if (currentRoute === "/chat" && sidebarOpen) {
+                return true
+            }
+            if (currentRoute === "/friends") {
+                return true
+            }
+            if (currentRoute?.includes("/settings") && sidebarOpen) {
+                return true
+            }
+            if (currentRoute === "/files") {
+                return true
+            }
+        }
+        return false
+    }
+
+    $: showBottomNavBar = checkIfCanShowBottomNavBar(get(UIStore.state.sidebarOpen), null, false)
+
     // Clean up subscriptions when component is destroyed
     onDestroy(() => {
         setTimeout(() => {
@@ -80,36 +122,30 @@
     $: settings = SettingsStore.state
 </script>
 
-<div class="content"></div>
-
-<div class="navigation {vertical ? 'vertical' : 'horizontal'} {icons ? 'icons' : ''}">
-    {#each routes as route}
-        <div class="navigation-control {!icons ? 'fill' : ''}">
-            <Button
-                hook="button-{route.name}"
-                badge={badgeCounts[route.to]}
-                fill={!icons}
-                tooltip={route.name}
-                icon={icons}
-                outline={activeRoute !== route.to && !icons}
-                appearance={activeRoute === route.to ? Appearance.Primary : Appearance.Alt}
-                on:click={() => handleNavigate(route)}>
-                <Icon alt={activeRoute === route.to} icon={route.icon} />
-                {#if !icons}
-                    <Text appearance={activeRoute !== route.to ? Appearance.Default : Appearance.Alt}>{route.name}</Text>
-                {/if}
-            </Button>
-        </div>
-    {/each}
-</div>
+{#if showBottomNavBar}
+    <div class="navigation {vertical ? 'vertical' : 'horizontal'} {icons ? 'icons' : ''}">
+        {#each routes as route}
+            <div class="navigation-control {!icons ? 'fill' : ''}">
+                <Button
+                    hook="button-{route.name}"
+                    badge={badgeCounts[route.to]}
+                    fill={!icons}
+                    tooltip={route.name}
+                    icon={icons}
+                    outline={activeRoute !== route.to && !icons}
+                    appearance={activeRoute === route.to ? Appearance.Primary : Appearance.Alt}
+                    on:click={() => handleNavigate(route)}>
+                    <Icon alt={activeRoute === route.to} icon={route.icon} />
+                    {#if !icons}
+                        <Text appearance={activeRoute !== route.to ? Appearance.Default : Appearance.Alt}>{route.name}</Text>
+                    {/if}
+                </Button>
+            </div>
+        {/each}
+    </div>
+{/if}
 
 <style lang="scss">
-    .content {
-        height: 60px;
-        pointer-events: none;
-        background: transparent;
-        border: none;
-    }
     .navigation {
         display: inline-flex;
         gap: var(--gap);

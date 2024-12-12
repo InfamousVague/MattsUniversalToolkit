@@ -303,44 +303,6 @@
     })
 
     $: activeRoute = getRoute($page.route.id!)
-    let showBottomNavBarForMobile = isAndroidOriOS()
-
-    UIStore.state.sidebarOpen.subscribe(s => {
-        const isMobile = isAndroidOriOS()
-        const isChatRoute = $page.route.id === "/chat"
-        const activeChat = get(Store.state.activeChat)
-        const hasUsers = activeChat?.users.length > 0
-
-        if (isMobile) {
-            if (!isChatRoute) {
-                showBottomNavBarForMobile = true
-            } else if (isChatRoute) {
-                showBottomNavBarForMobile = !hasUsers
-            } else {
-                showBottomNavBarForMobile = true
-            }
-        }
-    })
-
-    onNavigate(async e => {
-        const routeId = e.to?.route.id
-        const isMobile = isAndroidOriOS()
-        const isChatRoute = routeId === "/chat"
-        const sidebarClosed = !get(UIStore.state.sidebarOpen)
-        const activeChat = get(Store.state.activeChat)
-        const hasUsers = activeChat?.users.length > 0
-
-        if (isMobile) {
-            if (!isChatRoute) {
-                showBottomNavBarForMobile = true
-            } else if (isChatRoute && sidebarClosed && hasUsers) {
-                showBottomNavBarForMobile = false
-            } else {
-                true
-            }
-        }
-        activeRoute = getRoute(routeId!)
-    })
 </script>
 
 {#if isLocaleSet}
@@ -368,16 +330,14 @@
         <InstallBanner />
         <slot></slot>
     </div>
-    {#if showBottomNavBarForMobile}
-        <BottomNavBarMobile
-            icons
-            routes={routes}
-            activeRoute={activeRoute}
-            on:navigate={e => {
-                activeRoute = e.detail
-                goto(e.detail)
-            }} />
-    {/if}
+    <BottomNavBarMobile
+        icons
+        routes={routes}
+        activeRoute={activeRoute}
+        on:navigate={e => {
+            activeRoute = e.detail
+            goto(e.detail)
+        }} />
 {:else}
     <CircularProgressIndicator />
 {/if}
