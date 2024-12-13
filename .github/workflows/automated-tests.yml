@@ -17,7 +17,8 @@ jobs:
         timeout-minutes: 60
         runs-on: ubuntu-latest
         container:
-            image: mcr.microsoft.com/playwright:v1.48.0-jammy
+            image: mcr.microsoft.com/playwright:v1.49.1-noble
+            options: --user 1001
         strategy:
             fail-fast: false
             matrix:
@@ -36,6 +37,10 @@ jobs:
               with:
                   repository: Satellite-im/automated-tests-web
                   path: automated-tests
+                  ref: luis/upgrade-image
+
+            - name: Configure Git safe directory
+              run: git config --global --add safe.directory '/__w/UplinkWeb/UplinkWeb'
 
             - name: Setup Node.js for Uplink Web 🔨
               uses: actions/setup-node@v4.1.0
@@ -82,7 +87,8 @@ jobs:
         needs: playwright-run
         runs-on: ubuntu-latest
         container:
-            image: mcr.microsoft.com/playwright:v1.48.0-jammy
+            image: mcr.microsoft.com/playwright:v1.49.1-noble
+            options: --user 1001
         steps:
             - name: Download Blob Report from Desktop
               uses: actions/download-artifact@v4.1.8
