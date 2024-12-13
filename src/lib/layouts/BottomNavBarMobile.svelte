@@ -1,4 +1,6 @@
 <script lang="ts">
+    import { Keyboard } from "@capacitor/keyboard"
+    import { page } from "$app/stores"
     import { Button, Icon, Text } from "$lib/elements"
     import { Appearance, CommunitySettingsRoute, Route, SettingsRoute } from "$lib/enums"
     import { VoiceRTCInstance } from "$lib/media/Voice"
@@ -9,7 +11,7 @@
     import { checkMobile, isAndroidOriOS } from "$lib/utils/Mobile"
     import { createEventDispatcher, onDestroy, onMount } from "svelte"
     import { get } from "svelte/store"
-    import { Keyboard } from "@capacitor/keyboard"
+    import { afterNavigate, onNavigate } from "$app/navigation"
     import type { PluginListenerHandle } from "@capacitor/core"
 
     export let routes: NavRoute[] = []
@@ -58,7 +60,6 @@
                 // Avoid keyboard when navigate to chat preview list
             }
         }
-
         dispatch("navigate", route.to.toString())
     }
 
@@ -69,18 +70,50 @@
         if (route.to === Route.Settings) return true
     }
 
+    UIStore.state.sidebarOpen.subscribe(open => {
+        showBottomNavBar = checkIfCanShowBottomNavBar(open, null, false)
+    })
+
+    onNavigate(async e => {
+        const routeId = e.to?.route.id
+        showBottomNavBar = checkIfCanShowBottomNavBar(get(UIStore.state.sidebarOpen), routeId, false)
+    })
+
+    function checkIfCanShowBottomNavBar(sidebarOpen: boolean, routeId: string | null | undefined, isMobileKeyboardOpened: boolean): boolean {
+        let currentRoute = routeId ?? $page.route.id
+
+        if (isAndroidOriOS() && !isMobileKeyboardOpened) {
+            if (currentRoute === "/chat" && sidebarOpen) {
+                return true
+            }
+            if (currentRoute === "/friends") {
+                return true
+            }
+            if (currentRoute?.includes("/settings")) {
+                return true
+            }
+            if (currentRoute === "/files") {
+                return true
+            }
+        }
+        return false
+    }
+
+    $: showBottomNavBar = checkIfCanShowBottomNavBar(get(UIStore.state.sidebarOpen), null, false)
+
     let mobileKeyboardListener01: PluginListenerHandle | undefined
     let mobileKeyboardListener02: PluginListenerHandle | undefined
-    $: isKeyboardOpened = false
 
     onMount(async () => {
-        mobileKeyboardListener01 = await Keyboard.addListener("keyboardWillShow", () => {
-            isKeyboardOpened = true
-        })
+        if (isAndroidOriOS()) {
+            mobileKeyboardListener01 = await Keyboard.addListener("keyboardWillShow", () => {
+                showBottomNavBar = checkIfCanShowBottomNavBar(get(UIStore.state.sidebarOpen), null, true)
+            })
 
-        mobileKeyboardListener02 = await Keyboard.addListener("keyboardWillHide", () => {
-            isKeyboardOpened = false
-        })
+            mobileKeyboardListener02 = await Keyboard.addListener("keyboardWillHide", () => {
+                showBottomNavBar = checkIfCanShowBottomNavBar(get(UIStore.state.sidebarOpen), null, false)
+            })
+        }
     })
 
     // Clean up subscriptions when component is destroyed
@@ -99,10 +132,8 @@
     $: settings = SettingsStore.state
 </script>
 
-{#if !isKeyboardOpened}
-    <div class="content"></div>
-
-    <div class="navigation {vertical ? 'vertical' : 'horizontal'} {icons ? 'icons' : ''}">
+{#if showBottomNavBar}
+    <div id="bottom-nav-bar-mobile" class="navigation {vertical ? 'vertical' : 'horizontal'} {icons ? 'icons' : ''}">
         {#each routes as route}
             <div class="navigation-control {!icons ? 'fill' : ''}">
                 <Button
@@ -125,12 +156,6 @@
 {/if}
 
 <style lang="scss">
-    .content {
-        height: 60px;
-        pointer-events: none;
-        background: transparent;
-        border: none;
-    }
     .navigation {
         display: inline-flex;
         gap: var(--gap);
@@ -141,7 +166,7 @@
         backdrop-filter: blur(10px);
         -webkit-backdrop-filter: blur(10px);
         z-index: 1000;
-        position: fixed;
+        position: sticky;
         bottom: 0;
         left: 0;
         right: 0;
