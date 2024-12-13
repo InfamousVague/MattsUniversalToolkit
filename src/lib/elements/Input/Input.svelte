@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { isAndroidOriOS } from "$lib/utils/Mobile"
+    import { isAndroidOriOS, isiOSMobile } from "$lib/utils/Mobile"
     import { InputRules } from "./inputRules"
     import { Appearance } from "../../enums/index"
     import { MarkdownEditor } from "markdown-editor"
@@ -143,14 +143,16 @@
     $: isKeyboardOpened = false
 
     onMount(async () => {
-        mobileKeyboardListener01 = await Keyboard.addListener("keyboardWillShow", () => {
-            mobileKeyboardWasAlreadyOpened = true
-            isKeyboardOpened = true
-        })
+        if (isAndroidOriOS()) {
+            mobileKeyboardListener01 = await Keyboard.addListener("keyboardWillShow", () => {
+                mobileKeyboardWasAlreadyOpened = true
+                isKeyboardOpened = true
+            })
 
-        mobileKeyboardListener02 = await Keyboard.addListener("keyboardWillHide", () => {
-            isKeyboardOpened = false
-        })
+            mobileKeyboardListener02 = await Keyboard.addListener("keyboardWillHide", () => {
+                isKeyboardOpened = false
+            })
+        }
     })
 
     onDestroy(async () => {
