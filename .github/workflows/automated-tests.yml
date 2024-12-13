@@ -37,7 +37,6 @@ jobs:
               with:
                   repository: Satellite-im/automated-tests-web
                   path: automated-tests
-                  ref: luis/upgrade-image
 
             - name: Configure Git safe directory
               run: git config --global --add safe.directory '/__w/UplinkWeb/UplinkWeb'
