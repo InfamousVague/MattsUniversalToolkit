@@ -6,7 +6,7 @@
     import GamepadListener from "$lib/components/ui/GamepadListener.svelte"
     import KeyboardListener from "$lib/components/ui/KeyboardListener.svelte"
     import { playSound, Sounds } from "$lib/components/utils/SoundHandler"
-    import { EmojiFont, KeybindAction, KeybindState } from "$lib/enums"
+    import { EmojiFont, getRoute, KeybindAction, KeybindState, Route } from "$lib/enums"
     import { VoiceRTCInstance } from "$lib/media/Voice"
     import { SettingsStore } from "$lib/state"
     import { checkIfUserIsLogged } from "$lib/state/auth"
@@ -28,6 +28,9 @@
     import Market from "$lib/components/market/Market.svelte"
     import { swipe } from "$lib/components/ui/Swipe"
     import { ScreenOrientation } from "@capacitor/screen-orientation"
+    import BottomNavBarMobile from "$lib/layouts/BottomNavBarMobile.svelte"
+    import { goto } from "$app/navigation"
+    import { routes } from "$lib/defaults/routes"
     import { fetchDeviceInfo, isAndroid, isAndroidOriOS, isiOSMobile } from "$lib/utils/Mobile"
     import { Keyboard, KeyboardResize } from "@capacitor/keyboard"
     import { changeSafeAreaColorsOnAndroid } from "$lib/plugins/safeAreaColorAndroid"
@@ -306,6 +309,8 @@
         buildStyle()
         changeSafeAreaColors()
     })
+
+    $: activeRoute = getRoute($page.route.id!)
 </script>
 
 {#if isLocaleSet}
@@ -338,6 +343,14 @@
         <Market on:close={() => UIStore.toggleMarket()} />
         <InstallBanner />
         <slot></slot>
+        <BottomNavBarMobile
+            icons
+            routes={routes}
+            activeRoute={activeRoute}
+            on:navigate={e => {
+                activeRoute = e.detail
+                goto(e.detail)
+            }} />
     </div>
 {:else}
     <CircularProgressIndicator />
