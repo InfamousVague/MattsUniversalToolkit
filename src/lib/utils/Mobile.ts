@@ -20,17 +20,18 @@ export function isAndroidOriOS(): boolean {
     return platform === "ios" || platform === "android"
 }
 
-export function isiOSMobile(): boolean {
-    if (platform === null) {
-        log.warn("Platform info not yet loaded. Assuming 'false'.")
-        return false
-    }
-    return platform === "ios"
-}
 export function isAndroid(): boolean {
     if (platform === null) {
         log.warn("Platform info not yet loaded. Assuming 'false'.")
         return false
     }
     return platform === "android"
+}
+
+export function isiOSMobile(): boolean {
+    if (platform === null) {
+        log.warn("Platform info not yet loaded. Assuming 'false'.")
+        return false
+    }
+    return platform === "ios"
 }
