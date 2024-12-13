@@ -34,6 +34,7 @@
     import { fetchDeviceInfo, isAndroid, isAndroidOriOS, isiOSMobile } from "$lib/utils/Mobile"
     import { Keyboard, KeyboardResize } from "@capacitor/keyboard"
     import { changeSafeAreaColorsOnAndroid } from "$lib/plugins/safeAreaColorAndroid"
+    import { changeSafeAreaColorsOniOS } from "$lib/plugins/safeAreaColoriOS"
 
     log.debug("Initializing app, layout routes page.")
 
@@ -234,10 +235,13 @@
 
     function changeSafeAreaColors() {
         setTimeout(() => {
+            const rootStyles = getComputedStyle(document.documentElement)
+            let mainBgColor = rootStyles.getPropertyValue("--background").trim()
             if (isAndroid()) {
-                const rootStyles = getComputedStyle(document.documentElement)
-                let mainBgColor = rootStyles.getPropertyValue("--background").trim()
                 changeSafeAreaColorsOnAndroid(mainBgColor)
+            }
+            if (isiOSMobile()) {
+                changeSafeAreaColorsOniOS(mainBgColor)
             }
         }, 1000)
     }
