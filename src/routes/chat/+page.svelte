@@ -40,9 +40,6 @@
     import ShareFile from "$lib/components/files/ShareFile.svelte"
     import { ToastMessage } from "$lib/state/ui/toast"
     import AddMembers from "$lib/components/group/AddMembers.svelte"
-    import { routes } from "$lib/defaults/routes"
-    import BottomNavBarMobile from "$lib/layouts/BottomNavBarMobile.svelte"
-    import { Keyboard } from "@capacitor/keyboard"
 
     enum Permission {
         UNDEFINED,
@@ -630,9 +627,6 @@
                 <ChatPreview slot="content" let:open on:contextmenu={open} chat={chat} loading={loading} cta={$activeChat === chat} />
             </ContextMenu>
         {/each}
-        {#if isAndroidOriOS()}
-            <BottomNavBarMobile icons routes={routes} activeRoute={Route.Chat} on:navigate={e => goto(e.detail)} />
-        {/if}
     </Sidebar>
 
     <div class="content">
@@ -1054,9 +1048,6 @@
         </div>
     {/if}
 </div>
-{#if isAndroidOriOS() && $activeChat.users.length === 0}
-    <BottomNavBarMobile icons routes={routes} activeRoute={Route.Chat} on:navigate={e => goto(e.detail)} />
-{/if}
 
 <style lang="scss">
     #page {

@@ -22,9 +22,7 @@
     import CreateGroup from "$lib/components/group/CreateGroup.svelte"
     import AddFriendPopup from "$lib/components/friends/AddFriendPopup.svelte"
     import { onDestroy } from "svelte"
-    import { isAndroidOriOS } from "$lib/utils/Mobile"
-    import { routes } from "$lib/defaults/routes"
-    import BottomNavBarMobile from "$lib/layouts/BottomNavBarMobile.svelte"
+
     import { Clipboard } from "@capacitor/clipboard"
 
     enum DIDCopy {
@@ -493,9 +491,6 @@
         </Modal>
     {/if}
 </div>
-{#if isAndroidOriOS()}
-    <BottomNavBarMobile icons routes={routes} activeRoute={Route.Friends} on:navigate={e => goto(e.detail)} />
-{/if}
 
 <style lang="scss">
     #page {
