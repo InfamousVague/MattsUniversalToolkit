@@ -38,9 +38,9 @@
         const { width, height } = context.getBoundingClientRect()
 
         const offsetX = evt.pageX
-        const offsetY = evt.pageY - keyboardHeight / 2.5
+        const offsetY = evt.pageY
         const screenWidth = evt.view!.innerWidth
-        const screenHeight = evt.view!.innerHeight
+        const screenHeight = evt.view!.innerHeight - keyboardHeight
 
         const overFlowX = screenWidth < width + offsetX
         const overFlowY = screenHeight < height + offsetY
@@ -69,6 +69,7 @@
         await tick()
         coords = calculatePos(evt)
     }
+
     let keyboardHeight = 0
     onMount(() => {
         let mobileKeyboardListener01: PluginListenerHandle | undefined
@@ -102,12 +103,16 @@
             let longPressElement = evt.target as HTMLElement
             longPressElement.style.pointerEvents = "none"
             touchTimer = window.setTimeout(() => {
+                const touch = evt.touches[0]
+                const mouseEvent = new MouseEvent("contextmenu", {
+                    bubbles: true,
+                    cancelable: true,
+                    view: window,
+                    clientX: touch.clientX,
+                    clientY: touch.clientY,
+                })
                 isLongPress = true
-                openContext({
-                    clientX: evt.touches[0].clientX,
-                    clientY: evt.touches[0].clientY,
-                    preventDefault: () => {},
-                } as unknown as MouseEvent)
+                openContext(mouseEvent)
             }, 500)
         }
     }
