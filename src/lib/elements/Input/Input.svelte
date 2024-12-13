@@ -187,7 +187,8 @@
                 on:keydown={onKeyDown}
                 on:input={onInput}
                 on:blur={onBlur}
-                autofocus={isAndroidOriOS() ? isKeyboardOpened : autoFocus} />
+                autofocus={isAndroidOriOS() ? isKeyboardOpened : autoFocus}
+                on:paste />
         </div>
     </div>
     {#if errorMessage}

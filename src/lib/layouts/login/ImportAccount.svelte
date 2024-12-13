@@ -56,7 +56,11 @@
         let file = files[0]
         let content = await file.text()
         // Allow splitting by new lines and/or whitespace
-        passphrase = content.split("\n").join(" ").split(" ")
+        passphrase = parsePhrase(content)
+    }
+
+    function parsePhrase(phrase: string) {
+        return phrase.trim().replace(/\s\s+/g, " ").split(" ")
     }
 
     async function importAccount(files?: File[]) {
@@ -98,7 +102,18 @@
             <Text hook="text-import-account-secondary" muted>{$_("pages.auth.import.description")}</Text>
         </div>
         {#each passphrase as word, i}
-            <OrderedPhrase number={i + 1} bind:word={word} editable loading={loading} />
+            <OrderedPhrase
+                number={i + 1}
+                bind:word={word}
+                editable
+                loading={loading}
+                on:paste={e => {
+                    if (i == 0) {
+                        passphrase = parsePhrase(e.clipboardData?.getData("Text") ?? "")
+                        e.preventDefault()
+                        e.stopPropagation()
+                    }
+                }} />
         {/each}
         <Button
             hook="upload-passphrase"

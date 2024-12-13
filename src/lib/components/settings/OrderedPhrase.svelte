@@ -27,7 +27,7 @@
         {:else}
             <div data-cy="ordered-phrase-word-{number}" in:fade={{ duration: animationDuration, delay: number * animationDelay }}>
                 {#if editable}
-                    <Input bind:value={word} noCapitalize></Input>
+                    <Input bind:value={word} noCapitalize on:paste></Input>
                 {:else}
                     <Text>{word}</Text>
                 {/if}
