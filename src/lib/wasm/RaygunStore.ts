@@ -323,6 +323,8 @@ class RaygunStore {
 
     private async sendTo(raygun: wasm.RayGunBox, conversation_id: string, message: string[], settings?: { attachments?: FileAttachment[]; replyTo?: string }): Promise<SendMessageResult> {
         if (settings?.attachments && settings?.attachments.length > 0) {
+            // Check for empty messages
+            message = message.filter(m => m.length !== 0).length === 0 ? [] : message
             let result = await raygun
                 .attach(
                     conversation_id,
