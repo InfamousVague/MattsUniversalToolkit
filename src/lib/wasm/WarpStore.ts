@@ -68,7 +68,8 @@ class Store {
             config = wasm.Config.minimal_basic()
         }
         // Shuttle address is temporary! For testing!
-        config.enable_shuttle_discovery(["/ip4/138.197.62.183/tcp/7008/ws/p2p/12D3KooW9tAgS6kZPmEtfRiBHsYC46dN2hv6hT6gQ8bqxzWw7y5X"])
+        // TODO: Uncomment later or add a flag to enable or disable
+        // config.enable_shuttle_discovery(["/ip4/138.197.62.183/tcp/7008/ws/p2p/12D3KooW9tAgS6kZPmEtfRiBHsYC46dN2hv6hT6gQ8bqxzWw7y5X"])
         config.set_save_phrase(get(AuthStore.state).saveSeedPhrase)
         config.set_thumbnail_size(500, 500)
         config.with_thumbnail_exact_format(true)
