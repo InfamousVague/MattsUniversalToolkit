@@ -155,9 +155,9 @@
             return "Invalid message format"
         }
         if (sendingUserDetails.key !== $own_user.key) {
-            return `${sendingUserDetails.name} sent you ${parsedMessage.details}`
+            return `${sendingUserDetails.name} sent you ${parsedMessage.details.amount}`
         } else {
-            return `You sent ${parsedMessage.details} to ${sendingUserDetails.name}`
+            return `You sent ${parsedMessage.details.amount} to ${sendingUserDetails.name}`
         }
     })()
 
