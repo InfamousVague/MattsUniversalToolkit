@@ -98,7 +98,6 @@
             UIStore.mutateChat(chat.id, c => {
                 c.last_view_date = new Date()
             })
-            ConversationStore.addPendingMessages(chat.id, res.message, txt)
         })
         if (!isStickerOrGif) {
             chatMessages.update(messages => {
