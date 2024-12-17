@@ -139,65 +139,6 @@
     }
 
     $: sanitizePaymentSent = (() => {
-        // const jsonStartIndex = message.indexOf("{")
-        // const jsonEndIndex = message.lastIndexOf("}")
-        // if (jsonStartIndex === -1 || jsonEndIndex === -1 || jsonStartIndex > jsonEndIndex) {
-        //     return "Invalid message format"
-        // }
-
-        // const jsonPart = message.slice(jsonStartIndex, jsonEndIndex + 1).trim()
-        // let parsedMessage
-        // try {
-        //     parsedMessage = JSON.parse(jsonPart, (key, value) => {
-        //         if (key === "amount" && typeof value === "string") {
-        //             if (/^\d+$/.test(value)) {
-        //                 return BigInt(value)
-        //             }
-        //         }
-        //         return value
-        //     })
-        // } catch (error) {
-        //     console.error("Error parsing JSON:", error, message)
-        //     return "Invalid message format"
-        // }
-
-        // const details = parsedMessage.details || {}
-        // const amountWei = details.amount
-
-        // if (sender !== "") {
-        //     return `${sender} sent you ${amountWei}`
-        // } else {
-        //     const recipientName = $users[$activeChat.users[1]]?.name || receiver || "unknown recipient"
-        //     return `You sent ${amountWei} to ${recipientName}`
-        // }
-        // try {
-        //     const sendingUserId = ConversationStore.getMessage($activeChat.id, $activeChat.last_message_id)?.details.origin
-        //     const sendingUserDetails = get(Store.getUser(sendingUserId!))
-        //     const jsonStartIndex = $activeChat.last_message_preview.indexOf("{")
-        //     if (jsonStartIndex === -1) {
-        //         console.error("No JSON found in last_message_preview:", $activeChat.last_message_preview)
-        //         return "Invalid message format"
-        //     }
-        //     const jsonPart = $activeChat.last_message_preview.slice(jsonStartIndex)
-        //     let parsedMessage
-        //     try {
-        //         parsedMessage = JSON.parse(jsonPart)
-        //     } catch (error) {
-        //         console.error("Error parsing JSON:", error, $activeChat.last_message_preview)
-        //         return "Invalid message format"
-        //     }
-        //     const amountWei = parsedMessage.details.amount
-        //     if (sender !== "") {
-        //         return `${sender} sent you ${amountWei}`
-        //     } else {
-        //         const recipientName = $users[$activeChat.users[1]]?.name || receiver || "unknown recipient"
-        //         return `You sent ${amountWei} to ${recipientName}`
-        //     }
-        // } catch (error) {
-        //     console.error("Error in PaymentRequestsEnum.Send condition:", error)
-        //     return "Invalid message format"
-        // }
-        // try {
         const sendingUserId = ConversationStore.getMessage($activeChat.id, $activeChat.last_message_id)?.details.origin
         const sendingUserDetails = get(Store.getUser(sendingUserId!))
         const jsonStartIndex = $activeChat.last_message_preview.indexOf("{")
@@ -218,10 +159,6 @@
         } else {
             return `You sent ${parsedMessage.details} to ${sendingUserDetails.name}`
         }
-        // } catch (error) {
-        //     console.error("Error in PaymentRequestsEnum.Send condition:", error)
-        //     return "Invalid message format"
-        // }
     })()
 
     function addFilesToUpload(selected: File[]) {

@@ -363,7 +363,7 @@ async function ethToBigIntAmount(amount: string): Promise<bigint> {
 }
 
 async function ethTransfer(ethWallet: EthWallet, amount: bigint, toAddress: string) {
-    let tx = await ethWallet.signer.sendTransaction({
+    return await ethWallet.signer.sendTransaction({
         to: toAddress,
         value: amount,
     })
