@@ -1,13 +1,15 @@
 <script lang="ts">
-    import { goto } from "$app/navigation"
     import { OrderedPhrase } from "$lib/components"
     import Controls from "$lib/layouts/Controls.svelte"
     import { Button, Icon, Text, Title } from "$lib/elements"
-    import { Appearance, Route, Shape } from "$lib/enums"
+    import { Appearance, Shape } from "$lib/enums"
 
     import { _ } from "svelte-i18n"
     import { createEventDispatcher } from "svelte"
     import { TesseractStoreInstance } from "$lib/wasm/TesseractStore"
+    import { isAndroidOriOS } from "$lib/utils/Mobile"
+    import { Share } from "@capacitor/share"
+    import { log } from "$lib/utils/Logger"
 
     const dispatch = createEventDispatcher()
 
@@ -15,11 +17,16 @@
     let loading = false
 
     // Function to handle downloading the seed phrase as a txt file
-    function downloadPhrase() {
+    async function downloadPhrase() {
         if (!phrase) return
 
         // Join the phrase array into a single string
         const phraseText = phrase.join(" ")
+
+        if (isAndroidOriOS()) {
+            await sharePhraseIfMobile(phraseText)
+            return
+        }
 
         const blob = new Blob([phraseText], { type: "text/plain" })
 
@@ -30,6 +37,20 @@
         link.click()
 
         URL.revokeObjectURL(link.href)
+    }
+
+    async function sharePhraseIfMobile(phraseText: string) {
+        try {
+            await Share.share({
+                title: $_("pages.auth.recovery.title"),
+                text: phraseText,
+                dialogTitle: $_("pages.auth.recovery.share"),
+            })
+
+            log.info("Seed phrase shared successfully")
+        } catch (error) {
+            log.error("Error to share seed phrase:", error)
+        }
     }
 </script>
 

@@ -14,6 +14,8 @@ PODS:
     - Capacitor
   - CapacitorScreenOrientation (6.0.3):
     - Capacitor
+  - CapacitorShare (6.0.3):
+    - Capacitor
   - CapacitorSplashScreen (6.0.3):
     - Capacitor
   - CapacitorStatusBar (6.0.2):
@@ -28,6 +30,7 @@ DEPENDENCIES:
   - "CapacitorFilesystem (from `../../node_modules/@capacitor/filesystem`)"
   - "CapacitorKeyboard (from `../../node_modules/@capacitor/keyboard`)"
   - "CapacitorScreenOrientation (from `../../node_modules/@capacitor/screen-orientation`)"
+  - "CapacitorShare (from `../../node_modules/@capacitor/share`)"
   - "CapacitorSplashScreen (from `../../node_modules/@capacitor/splash-screen`)"
   - "CapacitorStatusBar (from `../../node_modules/@capacitor/status-bar`)"
 
@@ -48,6 +51,8 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/@capacitor/keyboard"
   CapacitorScreenOrientation:
     :path: "../../node_modules/@capacitor/screen-orientation"
+  CapacitorShare:
+    :path: "../../node_modules/@capacitor/share"
   CapacitorSplashScreen:
     :path: "../../node_modules/@capacitor/splash-screen"
   CapacitorStatusBar:
@@ -62,9 +67,10 @@ SPEC CHECKSUMS:
   CapacitorFilesystem: c832a3f6d4870c3872688e782ae8e33665e6ecbf
   CapacitorKeyboard: 460c6f9ec5e52c84f2742d5ce2e67bbc7ab0ebb0
   CapacitorScreenOrientation: 3bb823f5d265190301cdc5d58a568a287d98972a
+  CapacitorShare: 7af6ca761ce62030e8e9fbd2eb82416f5ceced38
   CapacitorSplashScreen: 68893659d77b5f82d753b3a70475082845e3039c
   CapacitorStatusBar: 3b9ac7d0684770522c532d1158a1434512ab1477
 
-PODFILE CHECKSUM: 97c46b79f9ec807c302bf24e1511e3e277306740
+PODFILE CHECKSUM: cecd7e9afdf00b54ffac291bfc0edab8a2ebdc11
 
 COCOAPODS: 1.16.2
