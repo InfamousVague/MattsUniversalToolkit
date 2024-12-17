@@ -1,6 +1,6 @@
 {
     "name": "uplink",
-    "version": "2.0.5",
+    "version": "2.0.6",
     "private": true,
     "scripts": {
         "tauri": "tauri",
@@ -45,6 +45,7 @@
         "@capacitor/keyboard": "^6.0.3",
         "@capacitor/screen-orientation": "^6.0.3",
         "@capacitor/splash-screen": "^6.0.2",
+        "@capacitor/status-bar": "^6.0.2",
         "@dicebear/collection": "^9.0.1",
         "@dicebear/core": "^9.0.1",
         "@dicebear/identicon": "^9.0.1",

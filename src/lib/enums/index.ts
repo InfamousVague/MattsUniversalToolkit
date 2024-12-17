@@ -91,7 +91,7 @@ export const enum EmojiFont {
     Fluent = "Fluent",
 }
 
-export const enum Route {
+export enum Route {
     Home = "/",
     Chat = "/chat",
     Files = "/files",
@@ -100,6 +100,10 @@ export const enum Route {
     Settings = "/settings/profile",
     Unlock = "/auth",
     Pre = "/pre",
+}
+
+export function getRoute(value: string): Route {
+    return value.startsWith("/settings") ? Route.Settings : Object.values(Route).find(route => route === value) || Route.Home
 }
 
 export const enum FilesItemKind {

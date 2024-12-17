@@ -5,22 +5,7 @@
     import { animationDuration } from "$lib/globals/animations"
     import { slide } from "svelte/transition"
     import { Chatbar, Sidebar, Topbar, Profile } from "$lib/layouts"
-    import {
-        ImageEmbed,
-        ChatPreview,
-        Conversation,
-        Message as MessageComponent,
-        MessageGroup,
-        MessageReactions,
-        MessageReplyContainer,
-        ProfilePicture,
-        Modal,
-        ProfilePictureMany,
-        ChatFilter,
-        ContextMenu,
-        EmojiGroup,
-        ChatIcon,
-    } from "$lib/components"
+    import { ImageEmbed, ChatPreview, Conversation, Message as MessageComponent, MessageGroup, MessageReactions, MessageReplyContainer, Modal, ChatFilter, ContextMenu, EmojiGroup, ChatIcon } from "$lib/components"
     import CreateTransaction from "$lib/components/wallet/CreateTransaction.svelte"
     import { Button, FileInput, Icon, Label, Text } from "$lib/elements"
     import CallScreen from "$lib/components/calling/CallScreen.svelte"
@@ -49,15 +34,13 @@
     import { debounce, getTimeAgo } from "$lib/utils/Functions"
     import Controls from "$lib/layouts/Controls.svelte"
     import { tempCDN } from "$lib/utils/CommonVariables"
-    import { checkMobile, isAndroidOriOS } from "$lib/utils/Mobile"
+    import { checkMobile, isAndroidOriOS, isiOSMobile } from "$lib/utils/Mobile"
     import BrowseFiles from "../files/BrowseFiles.svelte"
     import AttachmentRenderer from "$lib/components/messaging/AttachmentRenderer.svelte"
     import ShareFile from "$lib/components/files/ShareFile.svelte"
     import { StateEffect } from "@codemirror/state"
     import { ToastMessage } from "$lib/state/ui/toast"
     import AddMembers from "$lib/components/group/AddMembers.svelte"
-    import { routes } from "$lib/defaults/routes"
-    import BottomNavBarMobile from "$lib/layouts/BottomNavBarMobile.svelte"
 
     enum Permission {
         UNDEFINED,
@@ -813,9 +796,6 @@
                 <ChatPreview slot="content" let:open on:contextmenu={open} chat={chat} loading={loading} cta={$activeChat === chat} />
             </ContextMenu>
         {/each}
-        {#if isAndroidOriOS()}
-            <BottomNavBarMobile icons routes={routes} activeRoute={Route.Chat} on:navigate={e => goto(e.detail)} />
-        {/if}
     </Sidebar>
 
     <div class="content">
@@ -1246,9 +1226,6 @@
         </div>
     {/if}
 </div>
-{#if isAndroidOriOS() && $activeChat.users.length === 0}
-    <BottomNavBarMobile icons routes={routes} activeRoute={Route.Chat} on:navigate={e => goto(e.detail)} />
-{/if}
 
 <style lang="scss">
     #page {
