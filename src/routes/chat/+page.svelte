@@ -155,39 +155,91 @@
         return result
     }
 
-    function sanitizePaymentSent(message: string, sender: string, receiver: string): string {
-        const jsonStartIndex = message.indexOf("{")
-        const jsonEndIndex = message.lastIndexOf("}")
-        if (jsonStartIndex === -1 || jsonEndIndex === -1 || jsonStartIndex > jsonEndIndex) {
+    $: sanitizePaymentSent = (() => {
+        // const jsonStartIndex = message.indexOf("{")
+        // const jsonEndIndex = message.lastIndexOf("}")
+        // if (jsonStartIndex === -1 || jsonEndIndex === -1 || jsonStartIndex > jsonEndIndex) {
+        //     return "Invalid message format"
+        // }
+
+        // const jsonPart = message.slice(jsonStartIndex, jsonEndIndex + 1).trim()
+        // let parsedMessage
+        // try {
+        //     parsedMessage = JSON.parse(jsonPart, (key, value) => {
+        //         if (key === "amount" && typeof value === "string") {
+        //             if (/^\d+$/.test(value)) {
+        //                 return BigInt(value)
+        //             }
+        //         }
+        //         return value
+        //     })
+        // } catch (error) {
+        //     console.error("Error parsing JSON:", error, message)
+        //     return "Invalid message format"
+        // }
+
+        // const details = parsedMessage.details || {}
+        // const amountWei = details.amount
+
+        // if (sender !== "") {
+        //     return `${sender} sent you ${amountWei}`
+        // } else {
+        //     const recipientName = $users[$activeChat.users[1]]?.name || receiver || "unknown recipient"
+        //     return `You sent ${amountWei} to ${recipientName}`
+        // }
+        // try {
+        //     const sendingUserId = ConversationStore.getMessage($activeChat.id, $activeChat.last_message_id)?.details.origin
+        //     const sendingUserDetails = get(Store.getUser(sendingUserId!))
+        //     const jsonStartIndex = $activeChat.last_message_preview.indexOf("{")
+        //     if (jsonStartIndex === -1) {
+        //         console.error("No JSON found in last_message_preview:", $activeChat.last_message_preview)
+        //         return "Invalid message format"
+        //     }
+        //     const jsonPart = $activeChat.last_message_preview.slice(jsonStartIndex)
+        //     let parsedMessage
+        //     try {
+        //         parsedMessage = JSON.parse(jsonPart)
+        //     } catch (error) {
+        //         console.error("Error parsing JSON:", error, $activeChat.last_message_preview)
+        //         return "Invalid message format"
+        //     }
+        //     const amountWei = parsedMessage.details.amount
+        //     if (sender !== "") {
+        //         return `${sender} sent you ${amountWei}`
+        //     } else {
+        //         const recipientName = $users[$activeChat.users[1]]?.name || receiver || "unknown recipient"
+        //         return `You sent ${amountWei} to ${recipientName}`
+        //     }
+        // } catch (error) {
+        //     console.error("Error in PaymentRequestsEnum.Send condition:", error)
+        //     return "Invalid message format"
+        // }
+        // try {
+        const sendingUserId = ConversationStore.getMessage($activeChat.id, $activeChat.last_message_id)?.details.origin
+        const sendingUserDetails = get(Store.getUser(sendingUserId!))
+        const jsonStartIndex = $activeChat.last_message_preview.indexOf("{")
+        if (jsonStartIndex === -1) {
+            console.error("No JSON found in last_message_preview:", $activeChat.last_message_preview)
             return "Invalid message format"
         }
-
-        const jsonPart = message.slice(jsonStartIndex, jsonEndIndex + 1).trim()
+        const jsonPart = $activeChat.last_message_preview.slice(jsonStartIndex)
         let parsedMessage
         try {
-            parsedMessage = JSON.parse(jsonPart, (key, value) => {
-                if (key === "amount" && typeof value === "string") {
-                    if (/^\d+$/.test(value)) {
-                        return BigInt(value)
-                    }
-                }
-                return value
-            })
+            parsedMessage = JSON.parse(jsonPart)
         } catch (error) {
-            console.error("Error parsing JSON:", error, message)
+            console.error("Error parsing JSON:", error, $activeChat.last_message_preview)
             return "Invalid message format"
         }
-
-        const details = parsedMessage.details || {}
-        const amountWei = details.amount
-
-        if (sender !== "") {
-            return `${sender} sent you ${amountWei}`
+        if (sendingUserDetails.key !== $own_user.key) {
+            return `${sendingUserDetails.name} sent you ${parsedMessage.details}`
         } else {
-            const recipientName = $users[$activeChat.users[1]]?.name || receiver || "unknown recipient"
-            return `You sent ${amountWei} to ${recipientName}`
+            return `You sent ${parsedMessage.details} to ${sendingUserDetails.name}`
         }
-    }
+        // } catch (error) {
+        //     console.error("Error in PaymentRequestsEnum.Send condition:", error)
+        //     return "Invalid message format"
+        // }
+    })()
 
     function addFilesToUpload(selected: File[]) {
         let files: [File?, string?][] = []
@@ -346,7 +398,6 @@
     async function sendPaymentMessage(message: MessageType, line: string, paymentType: string) {
         let transfer = new Transfer()
         let chat = get(Store.state.activeChat)
-        console.log("just testing push")
         if (paymentType === PaymentRequestsEnum.Request) {
             let rejectTranfser = transfer.toCmdString()
             let txt = rejectTranfser.split("\n")
@@ -357,7 +408,7 @@
                     if (!alreadyRejected) {
                         return [...payments, { messageId: message.id, senderId: message.details.origin, rejectedPayment: false }]
                     } else {
-                        console.log(`MessageId ${message.id} is already in the rejected payments list`)
+                        console.error(`MessageId ${message.id} is already in the rejected payments list`)
                         return payments
                     }
                 })
@@ -416,8 +467,45 @@
                         })
                         ConversationStore.addPendingMessages(chat.id, res.message, txt)
                     })
+                } else {
+                    let rejectTranfser = transfer.toRejectString(message.id)
+                    let txt = rejectTranfser.split("\n")
+                    let result = await RaygunStoreInstance.send(chat.id, txt, [])
+                    result.onSuccess(res => {
+                        Store.state.paymentTracker.update(payments => {
+                            const alreadyRejected = payments.some(payment => payment.messageId === message.id)
+
+                            if (!alreadyRejected) {
+                                return [...payments, { messageId: message.id, senderId: message.details.origin, rejectedPayment: true }]
+                            } else {
+                                console.error(`MessageId ${message.id} is already in the rejected payments list`)
+                                return payments
+                            }
+                        })
+                        transfer.toRejectString(message.id)
+                        ConversationStore.addPendingMessages(chat.id, res.message, txt)
+                    })
+                    Store.addToastNotification(new ToastMessage("", "Error extracting payment details or sending message:", 4, undefined, Appearance.Warning))
                 }
             } catch (error) {
+                let rejectTranfser = transfer.toRejectString(message.id)
+                let txt = rejectTranfser.split("\n")
+                let result = await RaygunStoreInstance.send(chat.id, txt, [])
+                result.onSuccess(res => {
+                    Store.state.paymentTracker.update(payments => {
+                        const alreadyRejected = payments.some(payment => payment.messageId === message.id)
+
+                        if (!alreadyRejected) {
+                            return [...payments, { messageId: message.id, senderId: message.details.origin, rejectedPayment: true }]
+                        } else {
+                            console.error(`MessageId ${message.id} is already in the rejected payments list`)
+                            return payments
+                        }
+                    })
+                    transfer.toRejectString(message.id)
+                    ConversationStore.addPendingMessages(chat.id, res.message, txt)
+                })
+                Store.addToastNotification(new ToastMessage("", "Error extracting payment details or sending message:", 4, undefined, Appearance.Warning))
                 console.error("Error extracting payment details or sending message:", error)
             }
         }
@@ -928,9 +1016,9 @@
                                                         {:else if line.startsWith(PaymentRequestsEnum.Send)}
                                                             {#if !checkForActiveRequest(message, line)}
                                                                 {#if $own_user.key !== message.details.origin}
-                                                                    <Text hook="text-chat-message" markdown={sanitizePaymentSent(line, resolved.name, "")} appearance={group.details.remote ? Appearance.Default : Appearance.Alt} />
+                                                                    <Text hook="text-chat-message" loading={loading} appearance={group.details.remote ? Appearance.Default : Appearance.Alt}>{sanitizePaymentSent}</Text>
                                                                 {:else if $own_user.key === message.details.origin}
-                                                                    <Text hook="text-chat-message" markdown={sanitizePaymentSent(line, "", message.details.origin)} appearance={group.details.remote ? Appearance.Default : Appearance.Alt} />
+                                                                    <Text hook="text-chat-message" loading={loading} appearance={group.details.remote ? Appearance.Default : Appearance.Alt}>{sanitizePaymentSent}</Text>
                                                                 {/if}
                                                             {/if}
                                                         {:else if getValidPaymentRequest(line) !== undefined}

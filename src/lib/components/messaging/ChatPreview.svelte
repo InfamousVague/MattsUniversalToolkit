@@ -34,7 +34,6 @@
     $: user = chat.typing_indicator.users().map(u => {
         return $lookupUsers[u]
     })
-    $: self = get(Store.state.user)
     let timeago = getTimeAgo(chat.last_message_at)
     const dispatch = createEventDispatcher()
     let ownId = get(Store.state.user)

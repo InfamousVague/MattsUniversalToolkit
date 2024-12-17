@@ -515,8 +515,12 @@ export class Transfer {
 
     async execute() {
         if (this.isValid()) {
-            await wallet.transfer(this.asset, this.amount, this.toAddress)
-            return true
+            let verifyTansfer = await wallet.transfer(this.asset, this.amount, this.toAddress)
+            if (verifyTansfer === undefined) {
+                return false
+            } else {
+                return true
+            }
         }
     }
 }
@@ -563,7 +567,6 @@ export function getValidPaymentRequest(msg: string, msgId?: string): Transfer | 
         let jsonStartIndex = json.indexOf("{")
         if (jsonStartIndex !== -1) {
             json = json.substring(jsonStartIndex).trim()
-
             try {
                 let parsed = JSON.parse(json, (key, value) => {
                     if (key === "amount" && typeof value === "string") {
