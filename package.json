@@ -44,7 +44,8 @@
         "@capacitor/ios": "^6.2.0",
         "@capacitor/keyboard": "^6.0.3",
         "@capacitor/screen-orientation": "^6.0.3",
-        "@capacitor/splash-screen": "^6.0.2",
+        "@capacitor/share": "^6.0.3",
+        "@capacitor/splash-screen": "^6.0.3",
         "@capacitor/status-bar": "^6.0.2",
         "@dicebear/collection": "^9.0.1",
         "@dicebear/core": "^9.0.1",
@@ -73,6 +74,6 @@
         "uuid": "^9.0.1",
         "vite-plugin-node-polyfills": "^0.21.0",
         "voice-activity-detection": "^0.0.5",
-        "warp-wasm": "1.6.2"
+        "warp-wasm": "^1.7.1"
     }
 }

@@ -6,7 +6,7 @@ import { UIStore } from "../state/ui"
 import { ConversationStore } from "../state/conversation"
 import { MessageOptions } from "warp-wasm"
 import { Appearance, ChatType, MessageAttachmentKind, Route } from "$lib/enums"
-import { type User, type Chat, defaultChat, type Message, mentions_user, type Attachment, messageTypeFromTexts, type Reaction } from "$lib/types"
+import { type User, type Chat, defaultChat, type Message, mentions_user, type Attachment, messageTypeFromTexts, type Reaction, type FileProgress } from "$lib/types"
 import { WarpError, handleErrors } from "./HandleWarpErrors"
 import { failure, success, type Result } from "$lib/utils/Result"
 import { create_cancellable_handler, type Cancellable } from "$lib/utils/CancellablePromise"
@@ -212,7 +212,7 @@ class RaygunStore {
                 },
             })
             let file = new wasm.AttachmentFile("", new wasm.AttachmentStream(len, stream))
-            banner ? r.update_conversation_banner(conversation_id, file) : r.update_conversation_icon(conversation_id, file)
+            return banner ? r.update_conversation_banner(conversation_id, file) : r.update_conversation_icon(conversation_id, file)
         }, "Error updating conversation icon")
     }
 
@@ -306,7 +306,7 @@ class RaygunStore {
 
     async send(conversation_id: string, message: string[], attachments?: FileAttachment[]): Promise<Result<WarpError, SendMessageResult>> {
         return await this.get(async r => {
-            return await this.sendTo(r, conversation_id, message, attachments)
+            return await this.sendTo(r, conversation_id, message, { attachments })
         }, "Error sending message")
     }
 
@@ -314,26 +314,28 @@ class RaygunStore {
         return await this.get(async r => {
             let sent = []
             for (let conversation_id of conversation_ids) {
-                let res: MultiSendMessageResult = { chat: conversation_id, result: await this.sendTo(r, conversation_id, message, attachments) }
+                let res: MultiSendMessageResult = { chat: conversation_id, result: await this.sendTo(r, conversation_id, message, { attachments }) }
                 sent.push(res)
             }
             return sent
         }, "Error sending message")
     }
 
-    private async sendTo(raygun: wasm.RayGunBox, conversation_id: string, message: string[], attachments?: FileAttachment[]): Promise<SendMessageResult> {
-        if (attachments && attachments.length > 0) {
+    private async sendTo(raygun: wasm.RayGunBox, conversation_id: string, message: string[], settings?: { attachments?: FileAttachment[]; replyTo?: string }): Promise<SendMessageResult> {
+        if (settings?.attachments && settings?.attachments.length > 0) {
+            // Check for empty messages
+            message = message.filter(m => m.length !== 0).length === 0 ? [] : message
             let result = await raygun
                 .attach(
                     conversation_id,
-                    undefined,
-                    attachments.map(f => new wasm.AttachmentFile(f.file, f.attachment ? new wasm.AttachmentStream(f.attachment[1], f.attachment[0]) : undefined)),
+                    settings?.replyTo,
+                    settings?.attachments.map(f => new wasm.AttachmentFile(f.file, f.attachment ? new wasm.AttachmentStream(f.attachment[1], f.attachment[0]) : undefined)),
                     message
                 )
                 .then(res => {
                     // message_sent event gets fired AFTER this returns
                     ConversationStore.addPendingMessages(conversation_id, res.get_message_id(), message)
-                    this.createFileAttachHandler(conversation_id, res)
+                    createFileAttachHandler(res, (file, updater) => ConversationStore.updatePendingMessages(conversation_id, res.get_message_id(), file, updater))
                     return res
                 })
             return {
@@ -342,7 +344,7 @@ class RaygunStore {
             }
         }
         return {
-            message: await raygun.send(conversation_id, message).then(messageId => {
+            message: await (settings?.replyTo ? raygun.reply(conversation_id, settings.replyTo, message) : raygun.send(conversation_id, message)).then(messageId => {
                 // message_sent event gets fired BEFORE this returns
                 // So to
                 // 1. unify this system
@@ -361,14 +363,14 @@ class RaygunStore {
     async downloadAttachment(conversation_id: string, message_id: string, file: string, size?: number) {
         return await this.get(async r => {
             let result = await r.download_stream(conversation_id, message_id, file)
-            return this.createFileDownloadHandler(file, result, size)
+            return createFileDownloadHandler(file, result, size)
         }, `Error downloading attachment from ${conversation_id} for message ${message_id}`)
     }
 
     async getAttachmentRaw(conversation_id: string, message_id: string, file: string, options?: { size?: number; type?: string }) {
         return await this.get(async r => {
             let result = await r.download_stream(conversation_id, message_id, file)
-            return this.createFileDownloadHandlerRaw(file, result, options)
+            return createFileDownloadHandlerRaw(file, result, options)
         }, `Error downloading attachment from ${conversation_id} for message ${message_id}`)
     }
 
@@ -385,26 +387,16 @@ class RaygunStore {
 
     async reply(conversation_id: string, message_id: string, message: string[], attachments?: FileAttachment[]): Promise<Result<WarpError, SendMessageResult>> {
         return await this.get(async r => {
-            if (attachments && attachments.length > 0) {
-                let result = await r.attach(
-                    conversation_id,
-                    message_id,
-                    attachments.map(f => new wasm.AttachmentFile(f.file, f.attachment ? new wasm.AttachmentStream(f.attachment[1], f.attachment[0]) : undefined)),
-                    message
-                )
-                return {
-                    message: result.get_message_id(),
-                    progress: result,
-                }
-            }
-            return {
-                message: await r.reply(conversation_id, message_id, message),
-            }
-        }, "Error replying to message")
+            return await this.sendTo(r, conversation_id, message, { attachments, replyTo: message_id })
+        }, "Error sending message")
     }
 
     async sendEvent(conversation_id: string, event: wasm.MessageEvent) {
         return await this.get(r => r.send_event(conversation_id, event), `Error sending event ${event}`)
+    }
+
+    async cancelEvent(conversation_id: string, event: wasm.MessageEvent) {
+        return await this.get(r => r.cancel_event(conversation_id, event), `Error cancelling event ${event}`)
     }
 
     private async handleRaygunEvent(raygun: wasm.RayGunBox) {
@@ -436,7 +428,7 @@ class RaygunStore {
                     let conv = await raygun.get_conversation(conversationId)
                     let chat = await this.convertWarpConversation(conv, raygun)
                     let listeners = get(this.messageListeners)
-                    let handler = await this.createConversationEventHandler(raygun, conversationId)
+                    let handler = await this.createMessageEventHandler(raygun, conversationId)
                     listeners[conversationId] = handler
                     this.messageListeners.set(listeners)
 
@@ -464,6 +456,35 @@ class RaygunStore {
                     }
                     break
                 }
+                case "conversation_archived":
+                case "conversation_unarchived": {
+                    //TODO
+                    break
+                }
+                case "community_created": {
+                    //TODO UI stuff
+                    let communityId: string = event.values["community_id"]
+                    let listeners = get(this.messageListeners)
+                    let handler = await this.createMessageEventHandler(raygun, communityId, true)
+                    listeners[communityId] = handler
+                    this.messageListeners.set(listeners)
+
+                    break
+                }
+                case "community_deleted": {
+                    let communityId: string = event.values["community_id"]
+                    let listeners = get(this.messageListeners)
+                    if (communityId in listeners) {
+                        listeners[communityId].cancel()
+                        delete listeners[communityId]
+                        this.messageListeners.set(listeners)
+                    }
+                    //TODO UI stuff
+                    break
+                }
+                case "community_invited": {
+                    break
+                }
             }
         }
     }
@@ -487,14 +508,19 @@ class RaygunStore {
         }
         let handlers: { [key: string]: Cancellable } = {}
         for (let conversation of conversations.convs()) {
-            let handler = await this.createConversationEventHandler(raygun, conversation.id())
+            let handler = await this.createMessageEventHandler(raygun, conversation.id())
             handlers[conversation.id()] = handler
+        }
+        let communities = await raygun.list_communities_joined()
+        for (let communitiy of communities) {
+            let handler = await this.createMessageEventHandler(raygun, communitiy, true)
+            handlers[communitiy] = handler
         }
         this.messageListeners.set(handlers)
     }
 
-    private async createConversationEventHandler(raygun: wasm.RayGunBox, conversation_id: string) {
-        let stream = await raygun.get_conversation_stream(conversation_id)
+    private async createMessageEventHandler(raygun: wasm.RayGunBox, identifier: string, community?: boolean) {
+        let stream = community ? await raygun.get_community_stream(identifier) : await raygun.get_conversation_stream(identifier)
         return create_cancellable_handler(async isCancelled => {
             let listener = {
                 [Symbol.asyncIterator]() {
@@ -504,8 +530,12 @@ class RaygunStore {
             streamLoop: for await (const value of listener) {
                 let event = parseJSValue(value)
                 log.info(`Handling message event: ${JSON.stringify(event)}`)
+                if (community) {
+                    //TODO UI Hookup etc not implemented
+                    continue
+                }
                 if (isCancelled()) {
-                    log.debug(`Breaking stream loop not necessary anymore from: ${conversation_id}`)
+                    log.debug(`Breaking stream loop not necessary anymore from: ${identifier}`)
                     break streamLoop
                 }
                 switch (event.type) {
@@ -702,109 +732,6 @@ class RaygunStore {
         return messages
     }
 
-    private async createFileDownloadHandlerRaw(name: string, it: wasm.AsyncIterator, options?: { size?: number; type?: string }): Promise<Blob> {
-        let listener = {
-            [Symbol.asyncIterator]() {
-                return it
-            },
-        }
-        let data: any[] = []
-        try {
-            for await (const value of listener) {
-                data = [...data, ...value]
-            }
-        } catch (_) {}
-        return new File([new Uint8Array(data)], name, { type: options?.type })
-    }
-
-    private async createFileDownloadHandler(name: string, it: wasm.AsyncIterator, size?: number) {
-        let blob = await this.createFileDownloadHandlerRaw(name, it, { size })
-        const elem = window.document.createElement("a")
-        elem.href = window.URL.createObjectURL(blob)
-        elem.download = name
-        document.body.appendChild(elem)
-        elem.click()
-        document.body.removeChild(elem)
-    }
-
-    /**
-     * Create a handler for attachment results that uploads the file to chat and updates pending message attachments
-     * TODO: verify it works as we dont have a way to upload files yet
-     */
-    private async createFileAttachHandler(conversationId: string, upload: wasm.AttachmentResult) {
-        let listener = {
-            [Symbol.asyncIterator]() {
-                return upload
-            },
-        }
-        let cancelled = false
-        try {
-            for await (const value of listener) {
-                let event = parseJSValue(value)
-                log.info(`Handling file progress event: ${JSON.stringify(event)}`)
-                switch (event.type) {
-                    case "AttachedProgress": {
-                        let locationKind = parseJSValue(event.values[0])
-                        // Only streams need progress update
-                        if (locationKind.type === "Stream") {
-                            let progress = parseJSValue(event.values[1])
-                            let file = progress.values["name"]
-                            ConversationStore.updatePendingMessages(conversationId, upload.get_message_id(), file, current => {
-                                if (current) {
-                                    let copy = { ...current }
-                                    switch (progress.type) {
-                                        case "CurrentProgress": {
-                                            copy.size = progress.values["current"]
-                                            copy.total = progress.values["total"]
-                                            break
-                                        }
-                                        case "ProgressComplete": {
-                                            copy.size = progress.values["total"]
-                                            copy.total = progress.values["total"]
-                                            copy.done = true
-                                            break
-                                        }
-                                        case "ProgressFailed": {
-                                            copy.size = progress.values["last_size"]
-                                            copy.error = `Error: ${progress.values["error"]}`
-                                            break
-                                        }
-                                    }
-                                    return copy
-                                } else if (progress.type === "CurrentProgress") {
-                                    return {
-                                        name: file,
-                                        size: progress.values["current"],
-                                        total: progress.values["total"],
-                                        cancellation: {
-                                            cancel: () => {
-                                                cancelled = true
-                                            },
-                                        },
-                                    }
-                                }
-                                return undefined
-                            })
-                        }
-                        break
-                    }
-                    case "Pending": {
-                        if (Object.keys(event.values).length > 0) {
-                            let res = parseJSValue(event.values)
-                            if (res.type === "Err") {
-                                log.error(`Error uploading file ${res.values}`)
-                            }
-                        }
-                        break
-                    }
-                }
-                if (cancelled) break
-            }
-        } catch (e) {
-            if (!`${e}`.includes(`Error: returned None`)) throw e
-        }
-    }
-
     /**
      * Convenient helper method to get data from raygun
      */
@@ -851,32 +778,9 @@ class RaygunStore {
             text: message.lines(),
             inReplyTo: message.replied() ? ConversationStore.getMessage(conversation_id, message.replied()!) : null,
             reactions: reactions,
-            attachments: attachments.map(f => this.convertWarpAttachment(f)),
+            attachments: attachments.map(f => convertWarpAttachment(f)),
             pinned: message.pinned(),
             type: messageTypeFromTexts(message.lines()),
-        }
-    }
-
-    private convertWarpAttachment(attachment: wasm.File): Attachment {
-        let kind: MessageAttachmentKind = MessageAttachmentKind.File
-        let type = attachment.file_type()
-        let mime = "application/octet-stream"
-        if (type !== "Generic") {
-            mime = type.Mime
-        }
-        if (mime.startsWith("image")) {
-            kind = MessageAttachmentKind.Image
-        } else if (mime.startsWith("video")) {
-            kind = MessageAttachmentKind.Video
-        }
-        let thumbnail = attachment.thumbnail()
-        let location = thumbnail.length > 0 ? imageFromData(thumbnail, type) : ""
-        return {
-            kind: kind,
-            name: attachment.name(),
-            size: attachment.size(),
-            location: location,
-            mime: mime,
         }
     }
 
@@ -913,6 +817,133 @@ class RaygunStore {
             last_message_at: msg.length > 0 ? msg[msg.length - 1].details.at : new Date(),
             last_message_preview: msg.length > 0 ? msg[msg.length - 1].text.join("\n") : "",
         }
+    }
+}
+
+export async function createFileDownloadHandlerRaw(name: string, it: wasm.AsyncIterator, options?: { size?: number; type?: string }): Promise<Blob> {
+    let listener = {
+        [Symbol.asyncIterator]() {
+            return it
+        },
+    }
+    let data: any[] = []
+    try {
+        for await (const value of listener) {
+            data = [...data, ...value]
+        }
+    } catch (_) {}
+    return new File([new Uint8Array(data)], name, { type: options?.type })
+}
+
+export async function createFileDownloadHandler(name: string, it: wasm.AsyncIterator, size?: number) {
+    let blob = await createFileDownloadHandlerRaw(name, it, { size })
+    const elem = window.document.createElement("a")
+    elem.href = window.URL.createObjectURL(blob)
+    elem.download = name
+    document.body.appendChild(elem)
+    elem.click()
+    document.body.removeChild(elem)
+}
+
+/**
+ * Create a handler for attachment results that uploads the file to chat and updates pending message attachments
+ * TODO: verify it works as we dont have a way to upload files yet
+ */
+export type ProgressHandler = (progress: FileProgress | undefined) => FileProgress | undefined
+export async function createFileAttachHandler(upload: wasm.AttachmentResult, updater: (name: string, handler: ProgressHandler) => void) {
+    let listener = {
+        [Symbol.asyncIterator]() {
+            return upload
+        },
+    }
+    let cancelled = false
+    try {
+        for await (const value of listener) {
+            let event = parseJSValue(value)
+            log.info(`Handling file progress event: ${JSON.stringify(event)}`)
+            switch (event.type) {
+                case "AttachedProgress": {
+                    let locationKind = parseJSValue(event.values[0])
+                    // Only streams need progress update
+                    if (locationKind.type === "Stream") {
+                        let progress = parseJSValue(event.values[1])
+                        let file = progress.values["name"]
+                        updater(file, current => {
+                            if (current) {
+                                let copy = { ...current }
+                                switch (progress.type) {
+                                    case "CurrentProgress": {
+                                        copy.size = progress.values["current"]
+                                        copy.total = progress.values["total"]
+                                        break
+                                    }
+                                    case "ProgressComplete": {
+                                        copy.size = progress.values["total"]
+                                        copy.total = progress.values["total"]
+                                        copy.done = true
+                                        break
+                                    }
+                                    case "ProgressFailed": {
+                                        copy.size = progress.values["last_size"]
+                                        copy.error = `Error: ${progress.values["error"]}`
+                                        break
+                                    }
+                                }
+                                return copy
+                            } else if (progress.type === "CurrentProgress") {
+                                return {
+                                    name: file,
+                                    size: progress.values["current"],
+                                    total: progress.values["total"],
+                                    cancellation: {
+                                        cancel: () => {
+                                            cancelled = true
+                                        },
+                                    },
+                                }
+                            }
+                            return undefined
+                        })
+                    }
+                    break
+                }
+                case "Pending": {
+                    if (Object.keys(event.values).length > 0) {
+                        let res = parseJSValue(event.values)
+                        if (res.type === "Err") {
+                            log.error(`Error uploading file ${res.values}`)
+                        }
+                    }
+                    break
+                }
+            }
+            if (cancelled) break
+        }
+    } catch (e) {
+        if (!`${e}`.includes(`Error: returned None`)) throw e
+    }
+}
+
+export function convertWarpAttachment(attachment: wasm.File): Attachment {
+    let kind: MessageAttachmentKind = MessageAttachmentKind.File
+    let type = attachment.file_type()
+    let mime = "application/octet-stream"
+    if (type !== "Generic") {
+        mime = type.Mime
+    }
+    if (mime.startsWith("image")) {
+        kind = MessageAttachmentKind.Image
+    } else if (mime.startsWith("video")) {
+        kind = MessageAttachmentKind.Video
+    }
+    let thumbnail = attachment.thumbnail()
+    let location = thumbnail.length > 0 ? imageFromData(thumbnail, type) : ""
+    return {
+        kind: kind,
+        name: attachment.name(),
+        size: attachment.size(),
+        location: location,
+        mime: mime,
     }
 }
 
