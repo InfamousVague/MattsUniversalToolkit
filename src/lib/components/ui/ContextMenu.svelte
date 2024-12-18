@@ -10,7 +10,7 @@
     import { clickoutside } from "@svelte-put/clickoutside"
     import { Appearance } from "$lib/enums"
     import type { ContextItem } from "$lib/types"
-    import { createEventDispatcher, onMount, tick } from "svelte"
+    import { createEventDispatcher, onDestroy, onMount, tick } from "svelte"
     import { log } from "$lib/utils/Logger"
     import type { PluginListenerHandle } from "@capacitor/core"
     import { isAndroidOriOS } from "$lib/utils/Mobile"
@@ -18,12 +18,16 @@
     let visible: boolean = false
     let coords: [number, number] = [0, 0]
     let context: HTMLElement
+    let slotContainer: HTMLElement
     export let items: ContextItem[] = []
     export let hook: string = ""
 
     const dispatch = createEventDispatcher()
 
     function onClose(event: CustomEvent<MouseEvent> | MouseEvent) {
+        if (isLongPress) {
+            return
+        }
         visible = false
         dispatch("close", event)
         close_context = undefined
@@ -34,9 +38,9 @@
         const { width, height } = context.getBoundingClientRect()
 
         const offsetX = evt.pageX
-        const offsetY = evt.pageY - keyboardHeight / 2.5
+        const offsetY = evt.pageY
         const screenWidth = evt.view!.innerWidth
-        const screenHeight = evt.view!.innerHeight
+        const screenHeight = evt.view!.innerHeight - keyboardHeight
 
         const overFlowX = screenWidth < width + offsetX
         const overFlowY = screenHeight < height + offsetY
@@ -54,13 +58,18 @@
         if (close_context !== undefined) {
             close_context()
         }
-        close_context = () => (visible = false)
+        close_context = () => {
+            if (!isLongPress) {
+                visible = false
+            }
+        }
         evt.preventDefault()
-        visible = true
         coords = [evt.clientX, evt.clientY]
+        visible = true
         await tick()
         coords = calculatePos(evt)
     }
+
     let keyboardHeight = 0
     onMount(() => {
         let mobileKeyboardListener01: PluginListenerHandle | undefined
@@ -85,6 +94,46 @@
         }
     })
 
+    let touchTimer: number | undefined
+    let isLongPress: boolean = false
+
+    function handleTouchStart(evt: TouchEvent) {
+        if (evt.touches.length === 1) {
+            isLongPress = false
+            let longPressElement = evt.target as HTMLElement
+            longPressElement.style.pointerEvents = "none"
+            touchTimer = window.setTimeout(() => {
+                const touch = evt.touches[0]
+                const mouseEvent = new MouseEvent("contextmenu", {
+                    bubbles: true,
+                    cancelable: true,
+                    view: window,
+                    clientX: touch.clientX,
+                    clientY: touch.clientY,
+                })
+                isLongPress = true
+                openContext(mouseEvent)
+            }, 500)
+        }
+    }
+
+    function handleTouchEnd(evt: TouchEvent) {
+        clearTimeout(touchTimer)
+        let longPressElement = evt.target as HTMLElement
+        longPressElement.style.pointerEvents = ""
+        if (isLongPress) {
+            evt.preventDefault()
+        }
+        setTimeout(() => {
+            isLongPress = false
+        }, 100)
+    }
+
+    function handleTouchMove(evt: TouchEvent) {
+        clearTimeout(touchTimer)
+        isLongPress = false
+    }
+
     function handleItemClick(e: MouseEvent, item: ContextItem) {
         e.stopPropagation()
         log.info(`Clicked ${item.text}`)
@@ -94,9 +143,23 @@
         })
         onClose(customEvent)
     }
+
+    onMount(() => {
+        slotContainer.addEventListener("touchstart", handleTouchStart)
+        slotContainer.addEventListener("touchend", handleTouchEnd)
+        slotContainer.addEventListener("touchmove", handleTouchMove)
+    })
+
+    onDestroy(() => {
+        slotContainer.removeEventListener("touchstart", handleTouchStart)
+        slotContainer.removeEventListener("touchend", handleTouchEnd)
+        slotContainer.removeEventListener("touchmove", handleTouchMove)
+    })
 </script>
 
-<slot name="content" open={openContext} />
+<div class="long-press-div-container" bind:this={slotContainer}>
+    <slot name="content" open={openContext} />
+</div>
 {#if visible}
     <div id="context-menu" data-cy={hook} bind:this={context} use:clickoutside on:clickoutside={onClose} style={`position: fixed; left: ${coords[0]}px; top: ${coords[1]}px;`}>
         <slot name="items" close={onClose}></slot>
@@ -115,6 +178,15 @@
 {/if}
 
 <style lang="scss">
+    .long-press-div-container {
+        all: unset;
+        display: contents;
+        -webkit-touch-callout: none !important;
+        -webkit-user-select: none !important;
+        user-select: none;
+        touch-action: none;
+    }
+
     #context-menu {
         z-index: 1000;
         position: fixed;
