@@ -162,6 +162,7 @@
         "request_sent": "You sent a request for {amount}"
     },
     "friends": {
+        "copy": "Copy",
         "copy_did": "Copy ID",
         "block": "Block",
         "blocked": "Blocked",
@@ -170,9 +171,10 @@
         "all": "All",
         "active": "Active",
         "add": "Add",
+        "add_friend": "Add Friend",
         "add_someone": "Add Someone",
         "search_friends_placeholder": "Search friends",
-        "find_placeholder": "Enter Friend ID",
+        "find_placeholder": "Enter Friend DID",
         "incoming_requests": "Incoming Requests",
         "outgoing_requests": "Outgoing Requests",
         "noOutgoing": "No outbound requests.",
