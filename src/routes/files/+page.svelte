@@ -25,6 +25,10 @@
     import { Store } from "$lib/state/Store"
     import path from "path"
     import { MultipassStoreInstance } from "$lib/wasm/MultipassStore"
+    import { Share } from "@capacitor/share"
+    import { isAndroidOriOS } from "$lib/utils/Mobile"
+    import { Filesystem, Directory, Encoding } from "@capacitor/filesystem"
+    import { log } from "$lib/utils/Logger"
 
     export let browseFilesForChatMode: boolean = false
 
@@ -456,7 +460,12 @@
             err => {
                 Store.addToastNotification(new ToastMessage("", err, 2))
             },
-            blob => {
+            async combinedArray => {
+                if (isAndroidOriOS()) {
+                    await shareFile(fileName, combinedArray)
+                    return
+                }
+                const blob = new Blob([new Uint8Array(combinedArray)], { type: "application/octet-stream" })
                 const url = URL.createObjectURL(blob)
                 const a = document.createElement("a")
                 a.href = url
@@ -467,6 +476,32 @@
                 URL.revokeObjectURL(url)
             }
         )
+    }
+
+    async function shareFile(fileName: string, combinedArray: Buffer) {
+        try {
+            const base64Data = combinedArray.toString("base64")
+
+            const filePath = await Filesystem.writeFile({
+                path: fileName,
+                data: base64Data!,
+                directory: Directory.Cache,
+            })
+
+            await Share.share({
+                text: fileName,
+                url: filePath.uri,
+            })
+
+            log.info(`File shared: ${fileName} successfully`)
+        } catch (error) {
+            let errorMessage = `${error}`
+            log.error("Error when to share file:", fileName, "Error:", errorMessage)
+            if (errorMessage.includes("Share canceled")) {
+                Store.addToastNotification(new ToastMessage("", $_("files.shareFileCanceled"), 2))
+                return
+            }
+        }
     }
 
     $: chats = UIStore.state.chats

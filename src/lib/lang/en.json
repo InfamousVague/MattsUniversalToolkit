@@ -189,6 +189,7 @@
         "dragging_files": "Dragging {count} files for upload",
         "unknown": "UNKNOWN",
         "download": "Download",
+        "shareFileCanceled": "File sharing canceled",
         "rename": "Rename",
         "share": "Share",
         "share.selectChats": "Select Chats",
