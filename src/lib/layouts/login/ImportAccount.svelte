@@ -158,12 +158,14 @@
             <FileInput
                 bind:this={passphraseUpload}
                 hidden
+                allowed={"text/plain"}
                 on:select={e => {
                     readPassphrase(e.detail)
                 }} />
             <FileInput
                 bind:this={accountUpload}
                 hidden
+                allowed={".upk"}
                 on:select={e => {
                     importAccount(e.detail)
                 }} />
