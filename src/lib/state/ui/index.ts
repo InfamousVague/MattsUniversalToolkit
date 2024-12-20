@@ -171,8 +171,7 @@ class Store {
     }
 
     updateTypingIndicators(chat: Chat) {
-        let update = chat.typing_indicator.size !== 0
-        chat.typing_indicator.update()
+        let update = chat.typing_indicator.update()
         if (update) {
             this.state.chats.update(chats => chats.map(c => (c.id === chat.id ? { ...c, typing_indicator: chat.typing_indicator } : c)))
 
@@ -185,7 +184,6 @@ class Store {
                 }
                 return c
             })
-            chat.typing_indicator.update()
         }
     }
 
