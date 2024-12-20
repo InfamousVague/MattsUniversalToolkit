@@ -11,8 +11,8 @@
     import { ChatPreview, ImageEmbed, ImageFile, Modal, FileFolder, ProgressButton, ContextMenu, ChatFilter, ProfilePicture, ProfilePictureMany, ChatIcon } from "$lib/components"
     import Controls from "$lib/layouts/Controls.svelte"
     import { onMount } from "svelte"
-    import type { FileInfo, User } from "$lib/types"
-    import { writable, readable } from "svelte/store"
+    import type { FileInfo } from "$lib/types"
+    import { writable } from "svelte/store"
     import { UIStore } from "$lib/state/ui"
     import FolderItem from "./FolderItem.svelte"
     import { v4 as uuidv4 } from "uuid"
@@ -25,10 +25,8 @@
     import { Store } from "$lib/state/Store"
     import path from "path"
     import { MultipassStoreInstance } from "$lib/wasm/MultipassStore"
-    import { Share } from "@capacitor/share"
     import { isAndroidOriOS } from "$lib/utils/Mobile"
-    import { Filesystem, Directory, Encoding } from "@capacitor/filesystem"
-    import { log } from "$lib/utils/Logger"
+    import { shareFile } from "$lib/utils/Functions"
 
     export let browseFilesForChatMode: boolean = false
 
@@ -476,32 +474,6 @@
                 URL.revokeObjectURL(url)
             }
         )
-    }
-
-    async function shareFile(fileName: string, combinedArray: Buffer) {
-        try {
-            const base64Data = combinedArray.toString("base64")
-
-            const filePath = await Filesystem.writeFile({
-                path: fileName,
-                data: base64Data!,
-                directory: Directory.Cache,
-            })
-
-            await Share.share({
-                text: fileName,
-                url: filePath.uri,
-            })
-
-            log.info(`File shared: ${fileName} successfully`)
-        } catch (error) {
-            let errorMessage = `${error}`
-            log.error("Error when to share file:", fileName, "Error:", errorMessage)
-            if (errorMessage.includes("Share canceled")) {
-                Store.addToastNotification(new ToastMessage("", $_("files.shareFileCanceled"), 2))
-                return
-            }
-        }
     }
 
     $: chats = UIStore.state.chats

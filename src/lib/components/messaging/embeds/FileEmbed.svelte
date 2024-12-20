@@ -8,6 +8,8 @@
     import prettyBytes from "pretty-bytes"
     import { createEventDispatcher } from "svelte"
     import { _ } from "svelte-i18n"
+    import { Store } from "$lib/state/Store"
+    import { ToastMessage } from "$lib/state/ui/toast"
 
     export let altBackgroundColor: boolean = false
 
