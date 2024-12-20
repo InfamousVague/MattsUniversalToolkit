@@ -54,7 +54,7 @@
 
         <div id="recent-transactions">
             <Label text={$_("payments.recentTransaction")} />
-            <div class="transacitons">
+            <div class="transactions">
                 <TransactionContainer>
                     {#each recent_transactions as transaction}
                         <Transaction transaction={transaction} />
@@ -70,7 +70,7 @@
         <div id="transactions">
             <div id="payments-in">
                 <Label text={$_("payments.coinIn")} />
-                <div class="transacitons">
+                <div class="transactions">
                     <TransactionContainer>
                         {#each transactions_in as transaction}
                             <Transaction transaction={transaction} />
@@ -85,7 +85,7 @@
             </div>
             <div id="payments-out">
                 <Label text={$_("payments.coinOut")} />
-                <div class="transacitons">
+                <div class="transactions">
                     <TransactionContainer>
                         {#each transactions_out as transaction}
                             <Transaction transaction={transaction} />
@@ -123,7 +123,7 @@
             overflow-y: scroll;
             min-width: 0;
 
-            .transacitons {
+            .transactions {
                 min-height: 0;
                 overflow-y: scroll;
             }

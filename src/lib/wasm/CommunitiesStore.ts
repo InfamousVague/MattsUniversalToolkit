@@ -253,11 +253,11 @@ class CommunitiesStore {
         }, `Error downloading community attachment from community ${community_id} for message ${message_id}`)
     }
 
-    async sendCommunityChannelMesssageEvent(community_id: string, channel_id: string, event: wasm.MessageEvent) {
-        return await this.get(r => r.send_community_channel_messsage_event(community_id, channel_id, event), `Error sending event ${event}`)
+    async sendCommunityChannelMessageEvent(community_id: string, channel_id: string, event: wasm.MessageEvent) {
+        return await this.get(r => r.send_community_channel_message_event(community_id, channel_id, event), `Error sending event ${event}`)
     }
-    async cancelCommunityChannelMesssageEvent(community_id: string, channel_id: string, event: wasm.MessageEvent) {
-        return await this.get(r => r.cancel_community_channel_messsage_event(community_id, channel_id, event), `Error sending event ${event}`)
+    async cancelCommunityChannelMessageEvent(community_id: string, channel_id: string, event: wasm.MessageEvent) {
+        return await this.get(r => r.cancel_community_channel_message_event(community_id, channel_id, event), `Error sending event ${event}`)
     }
 
     private async sendTo(raygun: wasm.RayGunBox, community_id: string, channel_id: string, message: string[], settings?: { attachments?: FileAttachment[]; replyTo?: string }): Promise<SendMessageResult> {
