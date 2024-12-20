@@ -9,6 +9,9 @@ const config: CapacitorConfig = {
             launchShowDuration: 5000,
             launchAutoHide: true,
         },
+        Camera: {
+            permissions: ["camera", "photos"],
+        },
     },
 }
 

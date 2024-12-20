@@ -162,6 +162,7 @@
         "request_sent": "You sent a request for {amount}"
     },
     "friends": {
+        "copy": "Copy",
         "copy_did": "Copy ID",
         "block": "Block",
         "blocked": "Blocked",
@@ -170,9 +171,10 @@
         "all": "All",
         "active": "Active",
         "add": "Add",
+        "add_friend": "Add Friend",
         "add_someone": "Add Someone",
         "search_friends_placeholder": "Search friends",
-        "find_placeholder": "Enter Friend ID",
+        "find_placeholder": "Enter Friend DID",
         "incoming_requests": "Incoming Requests",
         "outgoing_requests": "Outgoing Requests",
         "noOutgoing": "No outbound requests.",
@@ -189,6 +191,7 @@
         "dragging_files": "Dragging {count} files for upload",
         "unknown": "UNKNOWN",
         "download": "Download",
+        "shareFileCanceled": "File sharing canceled",
         "rename": "Rename",
         "share": "Share",
         "share.selectChats": "Select Chats",
@@ -284,6 +287,16 @@
                 "new": "Create New Account",
                 "import": "Import Account",
                 "profile": "Create new profile"
+            },
+            "import": {
+                "title": "Import Account",
+                "description": "Now you can import your account! Use the button below to import your account from a backup file.",
+                "passphrase": "Add passphrase",
+                "remote": "Import from remote",
+                "file": "Import from file",
+                "warning": "By continuing your old account will be overwritten!",
+                "fail": "Failed to import account",
+                "fail.null": "Failed to create identity during account import"
             }
         }
     },
@@ -378,6 +391,14 @@
                 "remove": "Your recovery phrase will not be stored anymore and will be removed. Make sure to save the phrase! This change is irreversible!",
                 "remove.yes": "I understand",
                 "remove.no": "Cancel"
+            },
+            "export": {
+                "label": "Export",
+                "description": "Export your account manually to a file.",
+                "remote": "Remote",
+                "file": "File",
+                "fail": "Failed to export account",
+                "success": "Successfully exported account to remote"
             }
         },
         "calling": {

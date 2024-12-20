@@ -51,8 +51,8 @@
             on:click={async _ => {
                 await clearState()
                     .then(() => {
-                        goto(Route.Unlock)
                         setTimeout(() => {
+                            goto(Route.Unlock)
                             location.reload()
                         }, 500)
                     })

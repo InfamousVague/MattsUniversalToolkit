@@ -260,7 +260,9 @@
                         bind:value={requestString}>
                         <Icon icon={Shape.Search} />
                     </Input>
-                    <Button hook="button-add-friend" disabled={!isValidFriendDid} appearance={Appearance.Alt} text={$_("friends.add")} on:click={submitRequest}>
+                </div>
+                <div class="section" data-cy="friends-section-all-buttons">
+                    <Button hook="button-add-friend" disabled={!isValidFriendDid} appearance={Appearance.Alt} text={$_("friends.add")} tooltip={$_("friends.add_friend")} on:click={submitRequest}>
                         <Icon icon={Shape.Plus} />
                     </Button>
                     <ContextMenu
@@ -281,7 +283,7 @@
                                 onClick: async () => await copy_did(false),
                             },
                         ]}>
-                        <Button hook="button-copy-id" slot="content" appearance={Appearance.Alt} icon tooltip={$_("friends.copy_did")} let:open on:contextmenu={open} on:click={async _ => await copy_did(false)}>
+                        <Button hook="button-copy-id" slot="content" appearance={Appearance.Alt} text={$_("friends.copy")} tooltip={$_("friends.copy_did")} let:open on:contextmenu={open} on:click={async _ => await copy_did(false)}>
                             <Icon icon={Shape.Clipboard} />
                         </Button>
                     </ContextMenu>

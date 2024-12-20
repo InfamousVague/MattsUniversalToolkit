@@ -288,7 +288,7 @@ class ConstellationStore {
         return regex.test(path)
     }
 
-    async downloadFile(fileName: string): Promise<Result<WarpError, Blob>> {
+    async downloadFile(fileName: string): Promise<Result<WarpError, Buffer>> {
         const constellation = get(this.constellationWritable)
         if (constellation) {
             try {
@@ -308,8 +308,7 @@ class ConstellationStore {
                     }
                 } finally {
                     const combinedArray = Buffer.concat(chunks)
-                    const blob = new Blob([new Uint8Array(combinedArray)], { type: "application/octet-stream" })
-                    return success(blob)
+                    return success(combinedArray)
                 }
             } catch (error) {
                 return failure(handleErrors(error))
