@@ -276,6 +276,16 @@
                 "new": "Create New Account",
                 "import": "Import Account",
                 "profile": "Create new profile"
+            },
+            "import": {
+                "title": "Import Account",
+                "description": "Import your account from remote or a backup file",
+                "passphrase": "Add passphrase",
+                "remote": "Import from remote",
+                "file": "Import from file",
+                "warning": "By continuing your old account will be overwritten!",
+                "fail": "Failed to import account",
+                "fail.null": "Failed to create identity during account import"
             }
         }
     },
@@ -370,6 +380,14 @@
                 "remove": "Your recovery phrase will not be stored anymore and will be removed. Make sure to save the phrase! This change is irreversible!",
                 "remove.yes": "I understand",
                 "remove.no": "Cancel"
+            },
+            "export": {
+                "label": "Export",
+                "description": "Export your account manually to remote or a file",
+                "remote": "Remote",
+                "file": "File",
+                "fail": "Failed to export account",
+                "success": "Successfully exported account to remote"
             }
         },
         "calling": {
