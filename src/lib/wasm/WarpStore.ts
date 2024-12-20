@@ -38,8 +38,12 @@ class Store {
         }
         await initWarp()
         let warp_instance = await this.createIpfs(addresses)
-        let tesseract = warp_instance.multipass.tesseract()
-        let locked = createLock(warp_instance)
+        this.updateWarpInstance(warp_instance)
+    }
+
+    async updateWarpInstance(instance: wasm.WarpInstance) {
+        let tesseract = instance.multipass.tesseract()
+        let locked = createLock(instance)
         // After passing tesseract to Ipfs the current ref is consumed so we fetch it from Ipfs again
         TesseractStoreInstance.initTesseract(tesseract)
         this.warp.tesseract.set(tesseract)
@@ -55,7 +59,7 @@ class Store {
      * @returns {Promise<wasm.WarpInstance>} A promise that resolves to a WarpInstance.
      * @private
      */
-    private async createIpfs(addresses?: string[]): Promise<wasm.WarpInstance> {
+    async createIpfs(addresses?: string[]): Promise<wasm.WarpInstance> {
         let tesseract: wasm.Tesseract = await TesseractStoreInstance.getTesseract()
         let config: wasm.Config
         if (addresses && addresses.length > 0) {
@@ -63,6 +67,9 @@ class Store {
         } else {
             config = wasm.Config.minimal_basic()
         }
+        // Shuttle address is temporary! For testing!
+        // TODO: Uncomment later or add a flag to enable or disable
+        // config.enable_shuttle_discovery(["/ip4/138.197.62.183/tcp/7008/ws/p2p/12D3KooW9tAgS6kZPmEtfRiBHsYC46dN2hv6hT6gQ8bqxzWw7y5X"])
         config.set_save_phrase(get(AuthStore.state).saveSeedPhrase)
         config.set_thumbnail_size(500, 500)
         config.with_thumbnail_exact_format(true)

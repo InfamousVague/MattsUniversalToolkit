@@ -282,7 +282,9 @@
                         bind:value={requestString}>
                         <Icon icon={Shape.Search} />
                     </Input>
-                    <Button hook="button-add-friend" disabled={!isValidFriendDid} appearance={Appearance.Alt} text={$_("friends.add")} on:click={submitRequest}>
+                </div>
+                <div class="section" data-cy="friends-section-all-buttons">
+                    <Button hook="button-add-friend" disabled={!isValidFriendDid} appearance={Appearance.Alt} text={$_("friends.add")} tooltip={$_("friends.add_friend")} on:click={submitRequest}>
                         <Icon icon={Shape.Plus} />
                     </Button>
                     <ContextMenu

@@ -18,6 +18,8 @@
     import { ToastMessage } from "$lib/state/ui/toast"
     import { TesseractStoreInstance } from "$lib/wasm/TesseractStore"
     export let create: boolean = false
+    export let importing: boolean = false
+
     const dispatch = createEventDispatcher()
 
     let loading = false
@@ -117,6 +119,10 @@
         <Modal hook="modal-select-relay" on:close={_ => (showConfigureRelay = false)} padded>
             <RelaySelector />
         </Modal>
+    {/if}
+
+    {#if importing}
+        <Text appearance={Appearance.Warning}>{$_("pages.auth.import.warning")}</Text>
     {/if}
 
     {#if loading}

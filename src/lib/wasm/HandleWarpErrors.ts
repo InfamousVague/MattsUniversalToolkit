@@ -15,6 +15,7 @@ export enum WarpError {
     CONSTELLATION_NOT_FOUND = "Constellation instance not found",
     RAYGUN_NOT_FOUND = "Raygun instance not found",
     FILE_SIZE_EXCEEDED = "File size exceeded",
+    INVALID_PHRASE = "Invalid word in phrase",
 }
 
 export function handleErrors(error: any): WarpError {
@@ -40,6 +41,8 @@ export function handleErrors(error: any): WarpError {
                 return WarpError.ITEM_ALREADY_EXIST_WITH_SAME_NAME
             case message.includes(WarpError.ITEM_DOES_NOT_EXIST):
                 return WarpError.ITEM_DOES_NOT_EXIST
+            case message.includes(WarpError.INVALID_PHRASE.toLowerCase()):
+                return WarpError.INVALID_PHRASE
             default:
                 return WarpError.GENERAL_ERROR
         }

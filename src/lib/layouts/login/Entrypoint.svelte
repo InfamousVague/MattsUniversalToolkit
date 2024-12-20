@@ -63,11 +63,9 @@
             <Button text={$_("pages.auth.create.new")} hook="button-create-account" on:click={_ => (page = LoginPage.Username)} appearance={Appearance.Primary} fill>
                 <Icon icon={Shape.Plus} />
             </Button>
-            {#if get(SettingsStore.state).devmode}
-                <Button text={$_("pages.auth.create.import")} hook="button-import-account" on:click={_ => (showConfigureRelay = true)} appearance={Appearance.Alt} fill>
-                    <Icon icon={Shape.ArrowUp} />
-                </Button>
-            {/if}
+            <Button text={$_("pages.auth.create.import")} hook="button-import-account" on:click={_ => (page = LoginPage.Import)} appearance={Appearance.Alt} fill>
+                <Icon icon={Shape.ArrowUp} />
+            </Button>
         </Controls>
     </div>
 
