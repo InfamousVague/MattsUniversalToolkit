@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { Appearance, EmojiFont, Font, Identicon, Shape } from "$lib/enums"
+    import { Appearance, Shape } from "$lib/enums"
     import { _ } from "svelte-i18n"
     import { ColorSwatch } from "$lib/components"
     import { SettingSection } from "$lib/layouts"

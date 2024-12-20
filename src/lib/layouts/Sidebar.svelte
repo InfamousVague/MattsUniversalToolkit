@@ -6,7 +6,6 @@
     import { Appearance, Route, Shape } from "$lib/enums"
     import { createEventDispatcher } from "svelte"
     import { goto } from "$app/navigation"
-
     import { _ } from "svelte-i18n"
     import { get } from "svelte/store"
     import { Store } from "$lib/state/Store"
@@ -14,6 +13,9 @@
     import { Slimbar } from "."
     import WidgetBar from "$lib/components/widgets/WidgetBar.svelte"
     import { SettingsStore, type ISettingsState } from "$lib/state"
+    import { isAndroidOriOS } from "$lib/utils/Mobile"
+    import { slide } from "svelte/transition"
+    import { sidebarSlideDuration } from "$lib/globals/animations"
 
     export let activeRoute: Route = Route.Chat
     export let open: boolean = true
@@ -46,7 +48,7 @@
     <Slimbar sidebarOpen={open} on:toggle={handleToggle} activeRoute={activeRoute}></Slimbar>
 
     {#if open}
-        <div class="sidebar">
+        <div class="sidebar" in:slide={{ duration: sidebarSlideDuration, axis: "x" }} out:slide={{ duration: sidebarSlideDuration, axis: "x" }}>
             <div class="sidebar-pre">
                 <Input hook="input-sidebar-search" alt autoFocus={false} placeholder={$_("generic.search_placeholder")} bind:value={search} on:enter={handleEnter} on:input={handleSearch}>
                     <Icon icon={Shape.Search} />
@@ -81,13 +83,21 @@
             <div class="popups">
                 <CallControls activeRoute={activeRoute} />
             </div>
-            <Navigation icons routes={routes} activeRoute={activeRoute} on:navigate={e => goto(e.detail)} />
+            {#if !isAndroidOriOS()}
+                <Navigation icons routes={routes} activeRoute={activeRoute} on:navigate={e => goto(e.detail)} />
+            {/if}
         </div>
     {/if}
 </div>
 
 <style lang="scss">
     .sidebar-layout {
+        top: 0;
+        left: 0;
+        z-index: 5;
+        height: 100%;
+        background-color: var(--background);
+        opacity: 1;
         width: fit-content;
         display: inline-flex;
         flex-direction: row;
@@ -125,18 +135,25 @@
 
     @media (max-width: 800px) {
         .sidebar-layout {
+            position: absolute;
             width: 100vw;
             overflow: hidden;
+            opacity: 1;
+            transition:
+                transform 0.3s ease,
+                opacity 0.3s ease;
 
             .sidebar {
                 min-width: 0;
             }
         }
+
         .sidebar-layout.closed {
-            min-width: 0;
-            width: 0;
+            transform: translateX(-100%);
+            pointer-events: none;
             :global(.slimbar) {
-                display: none;
+                opacity: 0;
+                pointer-events: none;
             }
         }
     }

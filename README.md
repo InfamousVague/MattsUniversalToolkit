@@ -56,7 +56,6 @@ npm run dev
 
 <img width="1034" alt="Captura de ecrã 2024-08-28, às 11 00 58" src="https://github.com/user-attachments/assets/5c18e3f6-80f5-4ee7-9194-13ae248dc52b">
 
-
 2. Select the asset type. If selecting ETH.ERC20, you will need to put in the asset ID as well. The asset ID of LINK on Sepolia test net is `0x779877A7B0D9E8603169DdbD7836e478b4624789` (You can see this ID in MetaMask if you own some LINK: click on it, then near the top click the '3 dots' icon, and select 'Token details'. The ID is listed under `Token contract address`).
 
 3. In UplinkWeb, once you select the asset (and ID if applicable), enter an amount. Then click the `Request` button. A clickable message will appear in the chat. Anyone clicking this message will get a prompt via the Chrome extension to make the transfer. (Expect at least 10 seconds for a transfer to go through on the Ethereum network).
@@ -69,15 +68,33 @@ npm run dev
 
 `npx cap sync`
 
-- then for Android
+-   then for Android
 
 `npx cap open android` or `npx cap run android`
 
+-   for iOS
 
-- for iOS
-  
 `npx cap open ios`
 
+### Live Reload for Mobile Development
+
+1. Update the port to 3000 in the `vite.config.js` file, as Capacitor commands require this port and run server with `npm run dev`
+
+2. Build the mobile app for Android or iOS with live reload enabled by running:
+
+```
+npx cap run android -l --external
+```
+
+or
+
+```
+npx cap run ios -l --external
+```
+
+3. Select your device in the terminal and wait for the app to build.
+
+4. To show logs from Android app, run `adb logcat | grep Capacitor`
 
 ## Contributing
 

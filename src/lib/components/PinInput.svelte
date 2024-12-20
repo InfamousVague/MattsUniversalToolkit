@@ -10,6 +10,7 @@
     export let scramble: boolean = false
     export let stayLoggedIn: boolean = true
     export let showSettings: boolean = false
+    export let showButtonSettings: boolean = true
     export let min: number = 4
     export let max: number = 6
 
@@ -156,28 +157,30 @@
         </div>
     {/key}
     <Spacer less />
-    <div class="flex-column">
-        <Button
-            outline={!showSettings}
-            hook="button-settings"
-            appearance={Appearance.Alt}
-            on:click={_ => {
-                showSettings = !showSettings
-            }}>
-            <Icon icon={showSettings ? Shape.ChevronDown : Shape.ChevronRight} /> Settings
-        </Button>
-        <div class="pin-settings flex-column {showSettings ? 'visible' : 'hidden'}">
-            <div class="flex-row setting">
-                <Switch hook="switch-scramble-keypad" on={scramble} on:toggle={handleToggleScramble} />
-                <Label text={$_("pages.auth.unlock.scramble_pin")} hook="label-scramble-keypad" />
-            </div>
-            <hr class="divider" />
-            <div class="flex-row setting">
-                <Switch hook="switch-stay-unlocked" on={stayLoggedIn} on:toggle={handleStayLoggedIn} />
-                <Label text={$_("pages.auth.unlock.stayUnlocked")} hook="label-stay-unlocked" />
+    {#if showButtonSettings}
+        <div class="flex-column">
+            <Button
+                outline={!showSettings}
+                hook="button-settings"
+                appearance={Appearance.Alt}
+                on:click={_ => {
+                    showSettings = !showSettings
+                }}>
+                <Icon icon={showSettings ? Shape.ChevronDown : Shape.ChevronRight} /> Settings
+            </Button>
+            <div class="pin-settings flex-column {showSettings ? 'visible' : 'hidden'}">
+                <div class="flex-row setting">
+                    <Switch hook="switch-scramble-keypad" on={scramble} on:toggle={handleToggleScramble} />
+                    <Label text={$_("pages.auth.unlock.scramble_pin")} hook="label-scramble-keypad" />
+                </div>
+                <hr class="divider" />
+                <div class="flex-row setting">
+                    <Switch hook="switch-stay-unlocked" on={stayLoggedIn} on:toggle={handleStayLoggedIn} />
+                    <Label text={$_("pages.auth.unlock.stayUnlocked")} hook="label-stay-unlocked" />
+                </div>
             </div>
         </div>
-    </div>
+    {/if}
 </div>
 
 <style lang="scss">

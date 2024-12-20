@@ -1,18 +1,20 @@
 <script lang="ts">
     import { Label, Text } from "$lib/elements"
+    import { Size } from "$lib/enums"
 
     export let name: string = "Setting"
     export let description: string = "Some setting description"
     export let fullWidth: boolean = false
     export let hook: string = ""
     export let wrapContent: boolean = false
+    export let small: boolean = false
 </script>
 
 <div data-cy={hook} class="setting-section {fullWidth ? 'full-width' : ''}">
     <div class="body">
         <div class="description">
-            <Label hook="setting-section-label" text={name} />
-            <Text hook="setting-section-text" doubleLine>{description}</Text>
+            <Label small hook="setting-section-label" text={name} />
+            <Text size={small ? Size.Smaller : Size.Medium} hook="setting-section-text" doubleLine>{description}</Text>
         </div>
         <div class="content {wrapContent ? 'wrap' : ''}">
             <slot></slot>

@@ -1,4 +1,4 @@
-import type { Call, Chat, FileInfo, FriendRequest, User } from "$lib/types"
+import type { Call, Chat, FileInfo, FriendRequest, PaymentTracker, User } from "$lib/types"
 import type { Writable } from "svelte/store"
 import type { ToastMessage } from "./ui/toast"
 import type { VoiceRTCUser } from "$lib/media/Voice"
@@ -18,6 +18,7 @@ export interface IState {
         output: Writable<string>
         cameraEnabled: Writable<boolean>
         video: Writable<string>
+        screenShare: Writable<boolean>
     }
     activeChat: Writable<Chat>
     chatMessagesToSend: Writable<{ [key: string]: string }>
@@ -34,5 +35,6 @@ export interface IState {
     // A cache of all fetched user data
     // We use a Writable<User> to also allow easy subscription to changes if only that user interests us
     userCache: Writable<{ [key: string]: Writable<User> }>
+    paymentTracker: Writable<PaymentTracker[]>
     pageState: Writable<string>
 }

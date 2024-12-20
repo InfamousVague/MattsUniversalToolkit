@@ -24,6 +24,7 @@ export default defineConfig({
     },
     resolve: {
         alias: {
+            $serviceworker: path.resolve(__dirname, "src/serviceworker"),
             $lib: path.resolve(__dirname, "src/lib"),
             "@": path.resolve(__dirname, "src"),
         },
@@ -39,8 +40,10 @@ export default defineConfig({
         nodePolyfills(),
     ],
     optimizeDeps: {
+        include: ["voice-activity-detection"],
         exclude: ["warp-wasm"],
     },
+
     css: {
         preprocessorOptions: {
             scss: {

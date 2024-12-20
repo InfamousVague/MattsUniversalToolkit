@@ -13,11 +13,24 @@
     import type { Chat } from "$lib/types"
     import VolumeMixer from "./VolumeMixer.svelte"
     import { createEventDispatcher, onDestroy, onMount } from "svelte"
-    import { callInProgress, callTimeout, TIME_TO_SHOW_CONNECTING, TIME_TO_SHOW_END_CALL_FEEDBACK, timeCallStarted, usersAcceptedTheCall, usersDeniedTheCall, VoiceRTCInstance } from "$lib/media/Voice"
+    import {
+        callInProgress,
+        callScreenVisible,
+        callTimeout,
+        makeCallSound,
+        showCallPopUp,
+        TIME_TO_SHOW_CONNECTING,
+        TIME_TO_SHOW_END_CALL_FEEDBACK,
+        timeCallStarted,
+        usersAcceptedTheCall,
+        usersDeniedTheCall,
+        VoiceRTCInstance,
+    } from "$lib/media/Voice"
     import { log } from "$lib/utils/Logger"
-    import { playSound, SoundHandler, Sounds } from "../utils/SoundHandler"
+    import { playSound, Sounds } from "../utils/SoundHandler"
     import { MultipassStoreInstance } from "$lib/wasm/MultipassStore"
     import { debounce } from "$lib/utils/Functions"
+    import LiveLabel from "./LiveLabel.svelte"
 
     const MIN_USER_SIZE = 250
     export let expanded: boolean = false
@@ -30,6 +43,7 @@
     let showCallSettings = false
     let muted: boolean = !VoiceRTCInstance.callOptions.audio.enabled
     let cameraEnabled: boolean = get(Store.state.devices.cameraEnabled)
+    let screenShareEnabled: boolean = get(Store.state.devices.screenShare)
     let isFullScreen = false
     $: localVideoCurrentSrc = writable<HTMLVideoElement | undefined>(undefined)
     $: {
@@ -41,12 +55,13 @@
     let showAnimation = true
     let message = $_("settings.calling.connecting")
     let timeout: NodeJS.Timeout | undefined
-    let callSound: SoundHandler | undefined = undefined
 
     $: if ($usersAcceptedTheCall.length > 0) {
-        callSound?.stop()
-        callSound = undefined
+        setTimeout(() => {
+            stopMakeCallSound()
+        }, 300)
     }
+
     $: userCache = Store.getUsersLookup(chat.users)
     $: userCallOptions = VoiceRTCInstance.callOptions
     $: remoteStreams = Store.state.activeCallMeta
@@ -102,8 +117,7 @@
     }
 
     $: if ($usersDeniedTheCall.length === chat.users.length - 1 && chat.users.length > 1) {
-        callSound?.stop()
-        callSound = undefined
+        stopMakeCallSound()
     }
 
     let subscribeOne = Store.state.devices.muted.subscribe(state => {
@@ -125,6 +139,12 @@
 
     let subscribeFour = Store.state.activeCall.subscribe(state => {
         userCallOptions = VoiceRTCInstance.callOptions
+    })
+
+    let subscribeFive = Store.state.devices.screenShare.subscribe(state => {
+        screenShareEnabled = state
+        userCallOptions = VoiceRTCInstance.callOptions
+        userCallOptions.video.screenShareEnabled = screenShareEnabled
     })
 
     function handleClickOutside(event: MouseEvent) {
@@ -182,7 +202,17 @@
         updateUserListSplit()
     }
 
+    function stopMakeCallSound() {
+        $makeCallSound?.stop()
+        $makeCallSound = undefined
+    }
+
     onMount(async () => {
+        callScreenVisible.set(true)
+        showCallPopUp.set(false)
+        if ($makeCallSound) {
+            stopMakeCallSound()
+        }
         window.addEventListener("keydown", handleKeyDown)
         window.addEventListener("keyup", handleKeyUp)
         await MultipassStoreInstance.listUsersForACall(chat.users)
@@ -194,11 +224,10 @@
         /// HACK: To make sure the video elements are loaded before we start the call
         if (VoiceRTCInstance.localVideoCurrentSrc && VoiceRTCInstance.remoteVideoCreator) {
             if (VoiceRTCInstance.toCall && VoiceRTCInstance.toCall.find(did => did !== "") !== undefined && $callInProgress === null) {
-                callSound = await playSound(Sounds.OutgoingCall, { loop: true })
+                $makeCallSound = await playSound(Sounds.OutgoingCall, { loop: true })
                 await VoiceRTCInstance.makeCall()
                 timeout = setTimeout(() => {
-                    callSound?.stop()
-                    callSound = undefined
+                    stopMakeCallSound()
                     showAnimation = false
                     message = $_("settings.calling.noResponse")
                     noResponseVisible = true
@@ -206,10 +235,11 @@
                 }, TIME_TO_SHOW_CONNECTING)
             }
         }
-        if ($timeCallStarted) {
+        let timeCallStarted = $timeCallStarted
+        if (timeCallStarted !== null) {
             let timeCallStartedInterval = setInterval(() => {
                 let now = new Date()
-                let timeDifference = now.getTime() - $timeCallStarted.getTime()
+                let timeDifference = now.getTime() - timeCallStarted.getTime()
                 if (timeDifference > TIME_TO_SHOW_CONNECTING) {
                     showAnimation = false
                     noResponseVisible = true
@@ -225,12 +255,14 @@
         }
         if (get(Store.state.activeCall) === null) {
             Store.setActiveCall(chat)
+            Store.state.devices.screenShare.set(false)
         }
         window.addEventListener("resize", updateUserListSplit)
         updateUserListSplit()
     })
 
     onDestroy(() => {
+        callScreenVisible.set(false)
         window.removeEventListener("keydown", handleKeyDown)
         window.removeEventListener("keyup", handleKeyUp)
         callTimeout.set(false)
@@ -240,14 +272,23 @@
         subscribeTwo()
         subscribeThree()
         subscribeFour()
+        subscribeFive()
         if (timeout) {
             clearTimeout(timeout)
         }
         if (hideNoResponseUsersTimeout) {
             clearTimeout(hideNoResponseUsersTimeout)
         }
-        callSound?.stop()
-        callSound = undefined
+        stopMakeCallSound()
+        if (get(Store.state.activeCall) === null && get(Store.state.devices.screenShare) === true) {
+            Store.state.devices.screenShare.set(false)
+        }
+
+        if ($callInProgress !== null) {
+            showCallPopUp.set(true)
+        } else {
+            showCallPopUp.set(false)
+        }
     })
 
     function updateUserListSplit() {
@@ -337,8 +378,18 @@
                     {@const user = $highlightUser}
                     <div class="highlight-user">
                         {#if user === get(Store.state.user).key}
-                            <div class="video-container {isFullScreen ? 'fullscreen' : ''}" style={!userCallOptions.video.enabled ? "display: none" : ""} role="none" on:click={_ => setHighlightUser(user)}>
-                                <video data-cy="local-user-video" id="local-user-video" bind:this={$localVideoCurrentSrc} style="display: {userCallOptions.video.enabled ? 'block' : 'none'}" muted autoplay>
+                            <div
+                                class="video-container {isFullScreen ? 'fullscreen' : ''}"
+                                style={!userCallOptions.video.enabled && !userCallOptions.video.screenShareEnabled ? "display: none" : ""}
+                                role="none"
+                                on:click={_ => setHighlightUser(user)}>
+                                <video
+                                    data-cy="local-user-video"
+                                    id="local-user-video"
+                                    bind:this={$localVideoCurrentSrc}
+                                    style="display: {userCallOptions.video.enabled || userCallOptions.video.screenShareEnabled ? 'block' : 'none'}"
+                                    muted
+                                    autoplay>
                                     <track kind="captions" src="" />
                                 </video>
                                 <div class="user-name">{ownUserName}</div>
@@ -348,7 +399,7 @@
                                     </div>
                                 {/if}
                             </div>
-                            {#if !userCallOptions.video.enabled}
+                            {#if !userCallOptions.video.enabled && !userCallOptions.video.screenShareEnabled}
                                 <Participant
                                     participant={$userCache[user]}
                                     hasVideo={$userCache[user].media.is_streaming_video}
@@ -360,10 +411,16 @@
                         {:else if $remoteStreams[user]}
                             <div
                                 class="video-container {$userCache[get(Store.state.user).key].media.is_playing_audio ? 'talking' : ''} {isFullScreen ? 'fullscreen' : ''}"
-                                style={!$remoteStreams[user].user.videoEnabled ? "display: none" : ""}
+                                style={!$remoteStreams[user].user.videoEnabled && !$remoteStreams[user].user.screenShareEnabled ? "display: none" : ""}
                                 role="none"
                                 on:click={_ => setHighlightUser(user)}>
-                                <video data-cy="remote-user-video" id="remote-user-video-{user}" class={$remoteStreams[user].user.videoEnabled ? "" : "disabled"} autoplay muted={false} use:attachStream={user}>
+                                <video
+                                    data-cy="remote-user-video"
+                                    id="remote-user-video-{user}"
+                                    class={$remoteStreams[user].user.videoEnabled || $remoteStreams[user].user.screenShareEnabled ? "" : "disabled"}
+                                    autoplay
+                                    muted={false}
+                                    use:attachStream={user}>
                                     <track kind="captions" src="" />
                                 </video>
                                 <div class="user-name">{$userCache[user].name}</div>
@@ -374,7 +431,7 @@
                                 {/if}
                             </div>
 
-                            {#if !$remoteStreams[user].stream || !$remoteStreams[user].user.videoEnabled}
+                            {#if !$remoteStreams[user].stream || (!$remoteStreams[user].user.videoEnabled && !$remoteStreams[user].user.screenShareEnabled)}
                                 <Participant
                                     participant={$userCache[user]}
                                     hasVideo={$userCache[user].media.is_streaming_video}
@@ -390,8 +447,18 @@
                     <div class="participants-list {$highlightUser || Math.floor(i / 2) !== $page ? 'hidden' : ''}">
                         {#each users as user}
                             {#if user === get(Store.state.user).key}
-                                <div class="video-container {isFullScreen ? 'fullscreen' : ''}" style={!userCallOptions.video.enabled ? "display: none" : ""} role="none" on:click={_ => setHighlightUser(user)}>
-                                    <video data-cy="local-user-video" id="local-user-video" bind:this={$localVideoCurrentSrc} style="display: {userCallOptions.video.enabled ? 'block' : 'none'}" muted autoplay>
+                                <div
+                                    class="video-container {$userCache[user].media.is_playing_audio ? 'talking' : ''} {isFullScreen ? 'fullscreen' : ''}"
+                                    style={!userCallOptions.video.enabled && !userCallOptions.video.screenShareEnabled ? "display: none" : ""}
+                                    role="none"
+                                    on:click={_ => setHighlightUser(user)}>
+                                    <video
+                                        data-cy="local-user-video"
+                                        id="local-user-video"
+                                        bind:this={$localVideoCurrentSrc}
+                                        style="display: {userCallOptions.video.enabled || userCallOptions.video.screenShareEnabled ? 'block' : 'none'}"
+                                        muted
+                                        autoplay>
                                         <track kind="captions" src="" />
                                     </video>
                                     <div class="user-name">{ownUserName}</div>
@@ -401,7 +468,7 @@
                                         </div>
                                     {/if}
                                 </div>
-                                {#if !userCallOptions.video.enabled}
+                                {#if !userCallOptions.video.enabled && !userCallOptions.video.screenShareEnabled}
                                     <Participant
                                         participant={$userCache[user]}
                                         hasVideo={$userCache[user].media.is_streaming_video}
@@ -431,14 +498,23 @@
                                 {/if}
                             {:else if $userCache[user] && $userCache[user].key !== get(Store.state.user).key && $remoteStreams[user]}
                                 <div
-                                    class="video-container {$userCache[get(Store.state.user).key].media.is_playing_audio ? 'talking' : ''} {isFullScreen ? 'fullscreen' : ''}"
-                                    style={!$remoteStreams[user].user.videoEnabled ? "display: none" : ""}
+                                    class="video-container {$userCache[user].media.is_playing_audio ? 'talking' : ''} {isFullScreen ? 'fullscreen' : ''}"
+                                    style={!$remoteStreams[user].user.videoEnabled && !$remoteStreams[user].user.screenShareEnabled ? "display: none" : ""}
                                     role="none"
                                     on:click={_ => setHighlightUser(user)}>
-                                    <video data-cy="remote-user-video" id="remote-user-video-{user}" class={$remoteStreams[user].user.videoEnabled ? "" : "disabled"} autoplay muted={false} use:attachStream={user}>
+                                    <video
+                                        data-cy="remote-user-video"
+                                        id="remote-user-video-{user}"
+                                        class={$remoteStreams[user].user.videoEnabled || $remoteStreams[user].user.screenShareEnabled ? "" : "disabled"}
+                                        autoplay
+                                        muted={false}
+                                        use:attachStream={user}>
                                         <track kind="captions" src="" />
                                     </video>
-                                    <div class="user-name">{$userCache[user].name}</div>
+                                    <div class="user-name">
+                                        {$userCache[user].name}
+                                    </div>
+                                    <LiveLabel screenShareEnabled={$remoteStreams[user].user.screenShareEnabled} />
                                     {#if !$remoteStreams[user].user.audioEnabled}
                                         <div class="mute-status">
                                             <Icon icon={Shape.MicrophoneSlash}></Icon>
@@ -446,7 +522,7 @@
                                     {/if}
                                 </div>
 
-                                {#if !$remoteStreams[user].stream || !$remoteStreams[user].user.videoEnabled}
+                                {#if !$remoteStreams[user].stream || (!$remoteStreams[user].user.videoEnabled && !$remoteStreams[user].user.screenShareEnabled)}
                                     <Participant
                                         participant={$userCache[user]}
                                         hasVideo={$userCache[user].media.is_streaming_video}
@@ -538,11 +614,19 @@
                 soundSource={undefined}
                 on:click={_ => {
                     Store.updateDeafened(!deafened)
-                    // VoiceRTCInstance.turnOnOffDeafened()
                 }}>
                 <Icon icon={deafened ? Shape.HeadphoneSlash : Shape.Headphones} />
             </Button>
-            <Button hook="button-call-stream" appearance={Appearance.Alt} icon tooltip={$_("call.stream")}>
+            <Button
+                hook="button-call-stream"
+                appearance={screenShareEnabled ? Appearance.Success : Appearance.Alt}
+                icon
+                tooltip={$_("call.stream")}
+                on:click={async _ => {
+                    // This component handles the call screen UI. In this specific case, the user has the option to cancel screen sharing.
+                    // The UI should not be updated until the user decides whether to share their screen or not.
+                    await VoiceRTCInstance.toggleScreenShare(!screenShareEnabled)
+                }}>
                 <Icon icon={Shape.Stream} />
             </Button>
             <Button

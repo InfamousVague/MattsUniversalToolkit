@@ -7,25 +7,26 @@
     import { get, writable } from "svelte/store"
     import { SettingsStore } from "$lib/state"
     import { RaygunStoreInstance, type FileAttachment } from "$lib/wasm/RaygunStore"
-    import { createEventDispatcher, onMount } from "svelte"
+    import { createEventDispatcher, onDestroy, onMount } from "svelte"
     import { ConversationStore } from "$lib/state/conversation"
-    import type { Chat, FileInfo, GiphyGif, User } from "$lib/types"
+    import type { Chat, FileInfo, GiphyGif } from "$lib/types"
     import { Message, PopupButton } from "$lib/components"
     import { type Message as MessageType } from "$lib/types"
     import { ProfilePicture } from "$lib/components"
     import CombinedSelector from "$lib/components/messaging/CombinedSelector.svelte"
-    import { checkMobile } from "$lib/utils/Mobile"
+    import { checkMobile, isAndroidOriOS, isiOSMobile } from "$lib/utils/Mobile"
     import { UIStore } from "$lib/state/ui"
     import { emojiList, emojiRegexMap } from "$lib/components/messaging/emoji/EmojiList"
     import { tempCDN } from "$lib/utils/CommonVariables"
     import { MessageEvent } from "warp-wasm"
     import StoreResolver from "$lib/components/utils/StoreResolver.svelte"
     import MessageText from "$lib/components/messaging/message/MessageText.svelte"
+    import { Keyboard } from "@capacitor/keyboard"
+    import type { PluginListenerHandle } from "@capacitor/core"
 
     export let replyTo: MessageType | undefined = undefined
     export let emojiClickHook: (emoji: string) => boolean
     export let activeChat: Chat
-    export const typing: User[] = []
 
     const dispatch = createEventDispatcher()
 
@@ -55,6 +56,7 @@
     }
 
     async function sendMessage(text: string, isStickerOrGif: boolean = false) {
+        hackVariableToRefocusChatBar.set(Math.random().toString())
         message.set("")
         let filesSelected = get(Store.state.chatAttachmentsToSend)[activeChat.id]?.localFiles
         let filesSelectedFromStorage: FileInfo[] = get(Store.state.chatAttachmentsToSend)[activeChat.id]?.storageFiles
@@ -96,7 +98,6 @@
             UIStore.mutateChat(chat.id, c => {
                 c.last_view_date = new Date()
             })
-            ConversationStore.addPendingMessages(chat.id, res.message, txt)
         })
         if (!isStickerOrGif) {
             chatMessages.update(messages => {
@@ -158,12 +159,55 @@
         return result
     }
 
-    onMount(() => {
+    let mobileKeyboardListener01: PluginListenerHandle | undefined
+    let mobileKeyboardListener02: PluginListenerHandle | undefined
+    $: isMobileKeyboardOpened = false
+
+    onMount(async () => {
         hackVariableToRefocusChatBar.set(Math.random().toString())
+
+        if (isAndroidOriOS()) {
+            let chat = get(Store.state.activeChat)
+            const chatbar = document.getElementById(`chatbar-container-${chat.id}`)
+            chatbar?.addEventListener("click", _ => {
+                if (isMobileKeyboardOpened && !$emojiSelectorOpen) {
+                    hackVariableToRefocusChatBar.set(Math.random().toString())
+                }
+            })
+
+            mobileKeyboardListener01 = await Keyboard.addListener("keyboardWillShow", info => {
+                if (isiOSMobile()) {
+                    isMobileKeyboardOpened = true
+                    let chat = get(Store.state.activeChat)
+                    const chatbar = document.getElementById(`chatbar-container-${chat.id}`)
+                    if (chatbar) {
+                        chatbar.style.marginBottom = `${info.keyboardHeight - 30}px`
+                    }
+                }
+            })
+
+            mobileKeyboardListener02 = await Keyboard.addListener("keyboardWillHide", () => {
+                if (isiOSMobile()) {
+                    isMobileKeyboardOpened = false
+                    let chat = get(Store.state.activeChat)
+                    const chatbar = document.getElementById(`chatbar-container-${chat.id}`)
+                    if (chatbar) {
+                        chatbar.style.marginBottom = `0px`
+                    }
+                }
+            })
+        }
+    })
+
+    onDestroy(() => {
+        if (isAndroidOriOS()) {
+            mobileKeyboardListener01?.remove()
+            mobileKeyboardListener02?.remove()
+        }
     })
 </script>
 
-<div class="chatbar" data-cy="chatbar" id={activeChat.id}>
+<div class="chatbar" data-cy="chatbar" id={`chatbar-container-${activeChat.id}`}>
     <Controls>
         <slot name="pre-controls"></slot>
     </Controls>

@@ -21,6 +21,8 @@
     import CreateGroup from "$lib/components/group/CreateGroup.svelte"
     import { onDestroy } from "svelte"
 
+    import { Clipboard } from "@capacitor/clipboard"
+
     let loading: boolean = false
     $: sidebarOpen = UIStore.state.sidebarOpen
     $: friends = Store.getUsers(Store.state.friends)
@@ -69,7 +71,9 @@
         if (!isValidFriendDid) {
             return
         }
-        let requestSent = await MultipassStoreInstance.sendFriendRequest(requestString)
+        let requestStringWithDidKey = `did:key:${requestString}`
+
+        let requestSent = await MultipassStoreInstance.sendFriendRequest(requestStringWithDidKey)
         requestSent.fold(
             (e: WarpError) => {
                 requestString = ""
@@ -149,12 +153,19 @@
     let activeChat: Chat = get(Store.state.activeChat)
     Store.state.activeChat.subscribe(c => (activeChat = c))
 
+    const writeToClipboard = async (text: string) => {
+        await Clipboard.write({
+            string: text,
+        })
+    }
+
     async function copy_did(short: boolean) {
         let user = get(Store.state.user)
         if (short) {
-            await navigator.clipboard.writeText(`${user.name}#${user.id.short}`)
+            await writeToClipboard(`${user.name}#${user.id.short}`)
         } else {
-            await navigator.clipboard.writeText(`${user.key}`)
+            const updatedKey = user.key.replace("did:key:", "")
+            await writeToClipboard(updatedKey)
         }
     }
 </script>
@@ -249,7 +260,9 @@
                         bind:value={requestString}>
                         <Icon icon={Shape.Search} />
                     </Input>
-                    <Button hook="button-add-friend" disabled={!isValidFriendDid} appearance={Appearance.Alt} text={$_("friends.add")} on:click={submitRequest}>
+                </div>
+                <div class="section" data-cy="friends-section-all-buttons">
+                    <Button hook="button-add-friend" disabled={!isValidFriendDid} appearance={Appearance.Alt} text={$_("friends.add")} tooltip={$_("friends.add_friend")} on:click={submitRequest}>
                         <Icon icon={Shape.Plus} />
                     </Button>
                     <ContextMenu
@@ -270,7 +283,7 @@
                                 onClick: async () => await copy_did(false),
                             },
                         ]}>
-                        <Button hook="button-copy-id" slot="content" appearance={Appearance.Alt} icon tooltip={$_("friends.copy_did")} let:open on:contextmenu={open} on:click={async _ => await copy_did(false)}>
+                        <Button hook="button-copy-id" slot="content" appearance={Appearance.Alt} text={$_("friends.copy")} tooltip={$_("friends.copy_did")} let:open on:contextmenu={open} on:click={async _ => await copy_did(false)}>
                             <Icon icon={Shape.Clipboard} />
                         </Button>
                     </ContextMenu>

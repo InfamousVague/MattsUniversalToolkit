@@ -18,6 +18,7 @@ import type { Cancellable } from "$lib/utils/CancellablePromise"
 import { tempCDN } from "$lib/utils/CommonVariables"
 import { get, type Writable } from "svelte/store"
 import { _ } from "svelte-i18n"
+import type { GroupPermission } from "$lib/wasm/RaygunStore"
 
 export interface Serialize {
     serialize(): any
@@ -150,9 +151,7 @@ export type ChatSettings = {
     displayOwnerBadge: boolean
     readReceipts: boolean
     permissions: {
-        allowAnyoneToAddUsers: boolean
-        allowAnyoneToModifyPhoto: boolean
-        allowAnyoneToModifyName: boolean
+        [did: string]: GroupPermission[]
     }
 }
 
@@ -177,6 +176,8 @@ export type Chat = {
     last_message_id: string
     last_message_at: Date
     last_message_preview: string
+    icon?: string
+    banner?: string
 }
 
 const typingDuration = 5
@@ -293,11 +294,7 @@ export let defaultChat: Chat = {
     settings: {
         displayOwnerBadge: true,
         readReceipts: true,
-        permissions: {
-            allowAnyoneToAddUsers: false,
-            allowAnyoneToModifyPhoto: false,
-            allowAnyoneToModifyName: false,
-        },
+        permissions: {},
     },
     users: [],
     typing_indicator: new TypingIndicator(),
@@ -444,6 +441,12 @@ export type Transaction = {
     amount: number
     currency: Currency
     note: string | null
+}
+
+export type PaymentTracker = {
+    messageId: string
+    senderId: string
+    rejectedPayment: boolean
 }
 
 export type Keybind = {

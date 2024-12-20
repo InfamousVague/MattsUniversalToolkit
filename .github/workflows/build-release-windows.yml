@@ -1,29 +1,33 @@
 name: Build Windows Release
 
 on:
-  push:
-    tags:
-      - "*"
+    push:
+        tags:
+            - "*"
 
 jobs:
     build-windows-release:
         permissions: write-all
         runs-on: windows-latest
+        env:
+            RELEASE_VERSION: ${{ github.ref_name }} # Set the release version from the tag
+
         steps:
             - uses: actions/checkout@v4.2.2
 
-            - name: setup node
+            - name: Setup Node
               uses: actions/setup-node@v4.1.0
               with:
                   node-version: lts/*
 
-            - name: install Rust stable
+            - name: Install Rust Stable
               uses: dtolnay/rust-toolchain@stable
 
-            - name: install frontend dependencies
+            - name: Install Frontend Dependencies
               run: npm install
 
-            - uses: tauri-apps/tauri-action@v0.5.15
+            - name: Build Tauri App
+              uses: tauri-apps/tauri-action@v0.5.15
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -32,7 +36,7 @@ jobs:
                   echo "${{ secrets.SM_CLIENT_CERT_FILE_B64 }}" | base64 --decode > certificate.p12
               shell: bash
 
-            - name: Set variables for Windows Signing
+            - name: Set Variables for Windows Signing
               id: variables
               run: |
                   dir
@@ -48,7 +52,7 @@ jobs:
                   echo "C:\Program Files\DigiCert\DigiCert Keylocker Tools" >> $GITHUB_PATH
               shell: bash
 
-            - name: Setup Keylocker KSP on windows
+            - name: Setup Keylocker KSP on Windows
               run: |
                   curl -X GET  https://one.digicert.com/signingmanager/api-ui/v1/releases/Keylockertools-windows-x64.msi/download -H "x-api-key:%SM_API_KEY%" -o Keylockertools-windows-x64.msi 
                   msiexec /i Keylockertools-windows-x64.msi /quiet /qn
@@ -66,18 +70,25 @@ jobs:
               run: |
                   signtool.exe sign /sha1 ${{ secrets.SM_CODE_SIGNING_CERT_SHA1_HASH }} /tr http://timestamp.digicert.com /td SHA256 /fd SHA256 "./src-tauri/target/release/bundle/msi/*.msi"
 
-            - name: Delete cert file
+            - name: Delete Cert File
               run: Remove-Item -Force certificate.p12
 
-            - name: Upload signed Windows Installer
+            - name: Rename MSI File
+              run: |
+                  # Use PowerShell syntax to find and rename the .msi file
+                  $MSI_FILE = Get-ChildItem "src-tauri/target/release/bundle/msi" -Filter "*.msi" | Select-Object -First 1
+                  $NEW_MSI_FILE = "src-tauri/target/release/bundle/msi/Uplink_${{ env.RELEASE_VERSION }}.msi"
+                  Move-Item -Path $MSI_FILE.FullName -Destination $NEW_MSI_FILE
+
+            - name: Upload Signed Windows Installer
               uses: actions/upload-artifact@v4.4.3
               with:
                   name: build-windows
-                  path: src-tauri/target/release/bundle/msi/*.msi
+                  path: src-tauri/target/release/bundle/msi/Uplink_${{ env.RELEASE_VERSION }}.msi
                   retention-days: 5
 
-            - name: Github Release Windows
+            - name: GitHub Release Windows
               uses: softprops/action-gh-release@v2
               with:
                   files: |
-                      src-tauri/target/release/bundle/msi/*.msi
+                      src-tauri/target/release/bundle/msi/Uplink_${{ env.RELEASE_VERSION }}.msi

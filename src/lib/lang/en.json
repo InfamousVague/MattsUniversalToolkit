@@ -110,13 +110,22 @@
                 "description": "Description",
                 "description.placeholder": "Group description goes here",
                 "add": "Add Members",
-                "add.description": "Allow anyone to add members to the group",
+                "add.description": "Allows user to add members to the group",
+                "remove": "Remove Members",
+                "remove.description": "Allows user to add remove from the group",
                 "edit": "Edit Members",
                 "details": "Change Details",
-                "details.description": "Allow anyone to change the name and MOTD of the group",
+                "details.description": "Allows user to change the name and MOTD of the group",
                 "photo": "Change Photo",
-                "photo.description": "Allow anyone to change the group photo"
-            }
+                "photo.description": "Allows user to change the group photo"
+            },
+            "removeCreator": "You can not remove the group creator",
+            "removeTooSmall": "A group can not exist with one person",
+            "selectedUser": "Selected User",
+            "kick": "Kick User",
+            "kick.description": "Remove user from the group. (Can be added back later)",
+            "permissions": "Permissions",
+            "invite": "Invite"
         },
         "call": "Audio Call",
         "videocall": "Video Call",
@@ -149,9 +158,12 @@
         "none": "No messages sent yet.",
         "attachment": "New attachment",
         "coin_requested": "{username} has requested {amount}",
+        "coin_declined": "{username} has declined payment",
+        "coin_canceled": "You canceled coin request",
         "request_sent": "You sent a request for {amount}"
     },
     "friends": {
+        "copy": "Copy",
         "copy_did": "Copy ID",
         "block": "Block",
         "blocked": "Blocked",
@@ -160,9 +172,10 @@
         "all": "All",
         "active": "Active",
         "add": "Add",
+        "add_friend": "Add Friend",
         "add_someone": "Add Someone",
         "search_friends_placeholder": "Search friends",
-        "find_placeholder": "Find Username#xxxxxx ...",
+        "find_placeholder": "Enter Friend DID",
         "incoming_requests": "Incoming Requests",
         "outgoing_requests": "Outgoing Requests",
         "noOutgoing": "No outbound requests.",
@@ -179,6 +192,7 @@
         "dragging_files": "Dragging {count} files for upload",
         "unknown": "UNKNOWN",
         "download": "Download",
+        "shareFileCanceled": "File sharing canceled",
         "rename": "Rename",
         "share": "Share",
         "share.selectChats": "Select Chats",
@@ -197,7 +211,7 @@
         "send": "Send",
         "receive": "Receive",
         "receiving_to": "Receiving to",
-        "send_coin": "Send Coin",
+        "sendCoin": "Send Coin",
         "amount": "Amount",
         "enter_address": "Enter Wallet Address",
         "display_currency": "Display {currency} on profile",
@@ -205,8 +219,16 @@
         "to": "To",
         "note": "Note",
         "date": "Date",
+        "decline": "Decline",
         "create": "Create Payment Request",
+        "declinePayment": "Decline Payment",
+        "sentRequest": "Request has been sent",
+        "cancel_request": "Cancel Request",
+        "canceledRequest": "Canceled Request",
         "network": "Network",
+        "paymentDeclined": "Payment Canceled",
+        "youCanceledRequest": "You Canceled Payment Request",
+        "declinedPayment": "{user} Canceled Payment",
         "assetType": "Asset type",
         "assetName": "Asset name",
         "assetId": "Asset Id",
@@ -240,6 +262,7 @@
                 "title": "Backup your seed!",
                 "save_warning": "Please ensure you write down this message with all words recorded in the order they appear. It can be helpful to write down the numbers along with the words.",
                 "download": "Download Backup",
+                "share": "Share Backup Seed Phrase",
                 "next_step": "Next Step"
             },
             "new_account": {
@@ -256,6 +279,16 @@
                 "new": "Create New Account",
                 "import": "Import Account",
                 "profile": "Create new profile"
+            },
+            "import": {
+                "title": "Import Account",
+                "description": "Now you can import your account! Use the button below to import your account from a backup file.",
+                "passphrase": "Add passphrase",
+                "remote": "Import from remote",
+                "file": "Import from file",
+                "warning": "By continuing your old account will be overwritten!",
+                "fail": "Failed to import account",
+                "fail.null": "Failed to create identity during account import"
             }
         }
     },
@@ -309,6 +342,16 @@
                 "label": "Log Out",
                 "description": "Log out of the current account and return to the unlock page."
             },
+            "support": {
+                "label": "Support",
+                "description": "Contact us for support.",
+                "button": "Email us"
+            },
+            "delete_title": "Delete Account",
+            "delete_subtitle": "Click here to delete your account",
+            "delete_account_action_description": "This action will delete your account permanently",
+            "delete_account_confirm_pin": "Enter your pin to confirm",
+            "delete_account_wrong_pin": "Incorrect PIN. Please try again to delete your account.",
             "change_profile_photo": "Change profile photo",
             "reveal_phrase": {
                 "label": "Reveal recovery phrase",
@@ -340,6 +383,14 @@
                 "remove": "Your recovery phrase will not be stored anymore and will be removed. Make sure to save the phrase! This change is irreversible!",
                 "remove.yes": "I understand",
                 "remove.no": "Cancel"
+            },
+            "export": {
+                "label": "Export",
+                "description": "Export your account manually to a file.",
+                "remote": "Remote",
+                "file": "File",
+                "fail": "Failed to export account",
+                "success": "Successfully exported account to remote"
             }
         },
         "calling": {
@@ -355,11 +406,13 @@
             "hasCancelled": "Has cancelled the call.",
             "disconnecting": "Disconnecting...",
             "userInviteToAGroupCall": "{user} has started a group call in {group}",
+            "waitingOthersToJoin": "Waiting for others to join...",
             "noAnswer": "No answer, leaving the call...",
             "everybodyDeniedTheCall": "Everybody Denied the call. Disconnecting...",
             "acceptedCall": "Joined, loading...",
             "connecting": "Connecting...",
             "noResponse": "No response",
+            "live": "LIVE",
             "join": "Join"
         },
         "notifications": {

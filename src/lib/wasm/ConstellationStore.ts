@@ -1,4 +1,4 @@
-import { derived, get, writable, type Writable } from "svelte/store"
+import { get, writable, type Writable } from "svelte/store"
 import * as wasm from "warp-wasm"
 import { WarpStore } from "./WarpStore"
 import { WarpError, handleErrors } from "./HandleWarpErrors"
@@ -288,7 +288,7 @@ class ConstellationStore {
         return regex.test(path)
     }
 
-    async downloadFile(fileName: string): Promise<Result<WarpError, Blob>> {
+    async downloadFile(fileName: string): Promise<Result<WarpError, Buffer>> {
         const constellation = get(this.constellationWritable)
         if (constellation) {
             try {
@@ -308,8 +308,7 @@ class ConstellationStore {
                     }
                 } finally {
                     const combinedArray = Buffer.concat(chunks)
-                    const blob = new Blob([new Uint8Array(combinedArray)], { type: "application/octet-stream" })
-                    return success(blob)
+                    return success(combinedArray)
                 }
             } catch (error) {
                 return failure(handleErrors(error))
@@ -319,9 +318,17 @@ class ConstellationStore {
     }
 }
 
-export function imageFromData(data: any[], prefix: string, kind: string) {
-    let hrefData = btoa(new Uint8Array(data).reduce((data, byte) => data + String.fromCharCode(byte), ""))
-    return `data:${prefix}/${kind};base64, ${hrefData}`
+export function imageFromData(data: Uint8Array, file_type: wasm.FileType) {
+    let mime = "application/octet-stream"
+    if (file_type !== "Generic") {
+        mime = file_type.Mime
+    }
+    return imageFromMime(data, mime)
+}
+
+export function imageFromMime(data: Uint8Array, mime: string) {
+    let hrefData = btoa(data.reduce((data, byte) => data + String.fromCharCode(byte), ""))
+    return `data:${mime};base64, ${hrefData}`
 }
 
 export const ConstellationStoreInstance = new ConstellationStore(WarpStore.warp.constellation)

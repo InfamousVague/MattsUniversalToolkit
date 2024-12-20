@@ -8,7 +8,7 @@
     import Text from "$lib/elements/Text.svelte"
     import Label from "$lib/elements/Label.svelte"
     import prettyBytes from "pretty-bytes"
-    import { ChatPreview, ImageEmbed, ImageFile, Modal, FileFolder, ProgressButton, ContextMenu, ChatFilter, ProfilePicture, ProfilePictureMany } from "$lib/components"
+    import { ChatPreview, ImageEmbed, ImageFile, Modal, FileFolder, ProgressButton, ContextMenu, ChatFilter, ProfilePicture, ProfilePictureMany, ChatIcon } from "$lib/components"
     import Controls from "$lib/layouts/Controls.svelte"
     import { onMount } from "svelte"
     import type { FileInfo, User } from "$lib/types"
@@ -25,6 +25,10 @@
     import { Store } from "$lib/state/Store"
     import path from "path"
     import { MultipassStoreInstance } from "$lib/wasm/MultipassStore"
+    import { Share } from "@capacitor/share"
+    import { isAndroidOriOS } from "$lib/utils/Mobile"
+    import { Filesystem, Directory, Encoding } from "@capacitor/filesystem"
+    import { log } from "$lib/utils/Logger"
 
     export let browseFilesForChatMode: boolean = false
 
@@ -376,8 +380,7 @@
         search_component.select_first()
     }
 
-    const onFileSelected = async (e: Event) => {
-        const target = e.target as HTMLInputElement
+    const onFileSelected = async (target: HTMLInputElement) => {
         if (target && target.files) {
             for (let i = 0; i < target.files.length; i++) {
                 const file = target.files[i]
@@ -457,7 +460,12 @@
             err => {
                 Store.addToastNotification(new ToastMessage("", err, 2))
             },
-            blob => {
+            async combinedArray => {
+                if (isAndroidOriOS()) {
+                    await shareFile(fileName, combinedArray)
+                    return
+                }
+                const blob = new Blob([new Uint8Array(combinedArray)], { type: "application/octet-stream" })
                 const url = URL.createObjectURL(blob)
                 const a = document.createElement("a")
                 a.href = url
@@ -468,6 +476,32 @@
                 URL.revokeObjectURL(url)
             }
         )
+    }
+
+    async function shareFile(fileName: string, combinedArray: Buffer) {
+        try {
+            const base64Data = combinedArray.toString("base64")
+
+            const filePath = await Filesystem.writeFile({
+                path: fileName,
+                data: base64Data!,
+                directory: Directory.Cache,
+            })
+
+            await Share.share({
+                text: fileName,
+                url: filePath.uri,
+            })
+
+            log.info(`File shared: ${fileName} successfully`)
+        } catch (error) {
+            let errorMessage = `${error}`
+            log.error("Error when to share file:", fileName, "Error:", errorMessage)
+            if (errorMessage.includes("Share canceled")) {
+                Store.addToastNotification(new ToastMessage("", $_("files.shareFileCanceled"), 2))
+                return
+            }
+        }
     }
 
     $: chats = UIStore.state.chats
@@ -627,12 +661,24 @@
                         hook="button-upload-file"
                         icon
                         tooltip={$_("files.upload")}
-                        on:click={async () => {
-                            filesToUpload?.click()
+                        on:click={() => {
+                            const input = document.createElement("input")
+                            input.type = "file"
+                            input.multiple = true
+                            input.style.display = "none"
+
+                            input.addEventListener("change", _ => {
+                                const files = input.files
+                                onFileSelected(input)
+                            })
+
+                            document.body.appendChild(input)
+                            input.click()
+                            document.body.removeChild(input)
                         }}>
                         <Icon icon={Shape.Plus} />
                     </Button>
-                    <input data-cy="input=upload-files" style="display:none" multiple type="file" on:change={e => onFileSelected(e)} bind:this={filesToUpload} />
+
                     <ProgressButton appearance={Appearance.Alt} icon={Shape.ArrowsUpDown} />
                 {/if}
             </svelte:fragment>
@@ -710,21 +756,13 @@
                             </ContextMenu>
                         {:else if item.type === "folder"}
                             {#if item.chat}
-                                {#if item.chat.kind === ChatType.DirectMessage}
+                                {#if item.chat.kind === ChatType.DirectMessage || item.chat.icon}
                                     <div class="profile-picture-folder">
-                                        <ProfilePicture
-                                            hook="chat-topbar-profile-picture"
-                                            typing={item.chat.typing_indicator.size > 0}
-                                            id={$users[item.chat.users[1]]?.key}
-                                            image={$users[item.chat.users[1]]?.profile.photo.image}
-                                            frame={$users[item.chat.users[1]]?.profile.photo.frame}
-                                            size={Size.Smaller}
-                                            noIndicator={true}
-                                            loading={loading} />
+                                        <ChatIcon chat={item.chat} profileHook={"profile-picture-folder"} loading={loading} noIndicator size={Size.Smaller} forceSize />
                                     </div>
                                 {:else}
                                     <div class="profile-picture-many-folder">
-                                        <ProfilePictureMany users={Object.values($users)} size={Size.Smaller} forceSize={true} />
+                                        <ChatIcon chat={item.chat} profileHook={"profile-picture-folder"} loading={loading} noIndicator size={Size.Smaller} forceSize />
                                     </div>
                                 {/if}
                             {/if}

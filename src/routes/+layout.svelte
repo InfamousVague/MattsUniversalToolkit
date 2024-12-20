@@ -6,7 +6,7 @@
     import GamepadListener from "$lib/components/ui/GamepadListener.svelte"
     import KeyboardListener from "$lib/components/ui/KeyboardListener.svelte"
     import { playSound, Sounds } from "$lib/components/utils/SoundHandler"
-    import { EmojiFont, KeybindAction, KeybindState } from "$lib/enums"
+    import { EmojiFont, getRoute, KeybindAction, KeybindState, Route } from "$lib/enums"
     import { VoiceRTCInstance } from "$lib/media/Voice"
     import { SettingsStore } from "$lib/state"
     import { checkIfUserIsLogged } from "$lib/state/auth"
@@ -28,6 +28,17 @@
     import { swipe } from "$lib/components/ui/Swipe"
     import Wallet from "$lib/components/wallet/Wallet.svelte"
     import { WalletStore } from "$lib/state/wallet"
+    import { ScreenOrientation } from "@capacitor/screen-orientation"
+    import BottomNavBarMobile from "$lib/layouts/BottomNavBarMobile.svelte"
+    import { goto } from "$app/navigation"
+    import { routes } from "$lib/defaults/routes"
+    import { fetchDeviceInfo, isAndroid, isAndroidOriOS, isiOSMobile } from "$lib/utils/Mobile"
+    import { Keyboard, KeyboardResize } from "@capacitor/keyboard"
+    import { changeSafeAreaColorsOnAndroid } from "$lib/plugins/safeAreaColorAndroid"
+    import { changeSafeAreaColorsOniOS } from "$lib/plugins/safeAreaColoriOS"
+    import VideoPreview from "$lib/components/calling/VideoPreview.svelte"
+
+    log.debug("Initializing app, layout routes page.")
 
     TimeAgo.addDefaultLocale(en)
     let keybinds: Keybind[]
@@ -221,7 +232,21 @@
     UIStore.state.theme.subscribe(f => {
         theme = f
         style = buildStyle()
+        changeSafeAreaColors()
     })
+
+    function changeSafeAreaColors() {
+        setTimeout(() => {
+            const rootStyles = getComputedStyle(document.documentElement)
+            let mainBgColor = rootStyles.getPropertyValue("--background").trim()
+            if (isAndroid()) {
+                changeSafeAreaColorsOnAndroid(mainBgColor)
+            }
+            if (isiOSMobile()) {
+                changeSafeAreaColorsOniOS(mainBgColor)
+            }
+        }, 1000)
+    }
 
     SettingsStore.state.subscribe(settings => {
         keybinds = settings.keybinds
@@ -229,8 +254,6 @@
     })
     Store.state.devices.muted.subscribe(state => (muted = state))
     Store.state.devices.deafened.subscribe(state => (deafened = state))
-
-    console.log("Arriving here on +layout")
 
     window.addEventListener(
         "click",
@@ -268,22 +291,48 @@
     $: showWallet = WalletStore.state.open
     $: walletPosition = WalletStore.state.position
 
+    const lockOrientation = async () => {
+        try {
+            await ScreenOrientation.lock({ orientation: "portrait" })
+            log.info("Screen orientation locked to portrait.")
+        } catch (error) {
+            log.error("Failed to lock screen orientation:", error)
+        }
+    }
+
     onMount(async () => {
+        await fetchDeviceInfo()
+        if (isAndroidOriOS()) {
+            lockOrientation()
+        }
+        if (isiOSMobile()) {
+            await Keyboard.setResizeMode({ mode: KeyboardResize.Native })
+        }
+
         await checkIfUserIsLogged($page.route.id)
         await initializeLocale()
         buildStyle()
+        changeSafeAreaColors()
     })
+
+    $: activeRoute = getRoute($page.route.id!)
 </script>
 
 {#if isLocaleSet}
     <div
         id="app"
         use:swipe
-        on:swipeleft={_ => {
+        on:swipeleft={() => {
             UIStore.closeSidebar()
+            if (isAndroidOriOS()) {
+                Keyboard.hide()
+            }
         }}
-        on:swiperight={_ => {
+        on:swiperight={() => {
             UIStore.openSidebar()
+            if (isAndroidOriOS()) {
+                Keyboard.hide()
+            }
         }}>
         {@html `<style>${style}</style>`}
         <link rel="stylesheet" href={`/assets/themes/${theme}.css`} />
@@ -293,7 +342,7 @@
         <MouseListener on:clicked={() => {}} />
         <Toasts />
         <IncomingCall />
-        <!-- <VideoPreview /> This needs a rework as atm it only supports one to one calling. Maybe add ability to select source? -->
+        <VideoPreview />
         <GamepadListener />
         {#if $showWallet}
             <Wallet position={{ top: $walletPosition[0], left: $walletPosition[1] }} />
@@ -301,6 +350,14 @@
         <Market on:close={() => UIStore.toggleMarket()} />
         <InstallBanner />
         <slot></slot>
+        <BottomNavBarMobile
+            icons
+            routes={routes}
+            activeRoute={activeRoute}
+            on:navigate={e => {
+                activeRoute = e.detail
+                goto(e.detail)
+            }} />
     </div>
 {:else}
     <CircularProgressIndicator />

@@ -17,7 +17,8 @@ jobs:
         timeout-minutes: 60
         runs-on: ubuntu-latest
         container:
-            image: mcr.microsoft.com/playwright:v1.48.0-jammy
+            image: mcr.microsoft.com/playwright:v1.49.1-noble
+            options: --user 1001
         strategy:
             fail-fast: false
             matrix:
@@ -37,8 +38,11 @@ jobs:
                   repository: Satellite-im/automated-tests-web
                   path: automated-tests
 
+            - name: Configure Git safe directory
+              run: git config --global --add safe.directory '/__w/UplinkWeb/UplinkWeb'
+
             - name: Setup Node.js for Uplink Web 🔨
-              uses: actions/setup-node@v4.0.4
+              uses: actions/setup-node@v4.1.0
               with:
                   node-version: 20
 
@@ -53,7 +57,7 @@ jobs:
               working-directory: automated-tests
               run: npx playwright test -c playwright.ci.config.ts --project=${{ matrix.project }}
 
-            - uses: actions/upload-artifact@v4.4.0
+            - uses: actions/upload-artifact@v4.4.3
               if: always()
               with:
                   name: playwright-report-${{ matrix.project }}
@@ -62,7 +66,7 @@ jobs:
 
             - name: Upload Allure results as artifact
               if: always()
-              uses: actions/upload-artifact@v4.4.0
+              uses: actions/upload-artifact@v4.4.3
               with:
                   name: allure-results-${{ matrix.project }}
                   path: automated-tests/allure-results
@@ -82,16 +86,17 @@ jobs:
         needs: playwright-run
         runs-on: ubuntu-latest
         container:
-            image: mcr.microsoft.com/playwright:v1.48.0-jammy
+            image: mcr.microsoft.com/playwright:v1.49.1-noble
+            options: --user 1001
         steps:
             - name: Download Blob Report from Desktop
-              uses: actions/download-artifact@v4
+              uses: actions/download-artifact@v4.1.8
               with:
                   name: playwright-report-desktop-chrome
                   path: blob-report
 
             - name: Download Blob Report from Mobile
-              uses: actions/download-artifact@v4
+              uses: actions/download-artifact@v4.1.8
               with:
                   name: playwright-report-mobile-chrome
                   path: blob-report
@@ -101,14 +106,14 @@ jobs:
 
             - name: Upload Merged Report
               if: always()
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@v4.4.3
               with:
                   name: playwright-merged-report
                   path: playwright-report
                   retention-days: 5
 
             - name: Delete temporary artifacts
-              uses: geekyeggo/delete-artifact@v5
+              uses: geekyeggo/delete-artifact@v5.1.0
               with:
                   name: |
                       playwright-report-desktop-chrome
@@ -135,7 +140,7 @@ jobs:
                   path: gh-pages
 
             - name: Download Merged Report
-              uses: actions/download-artifact@v4
+              uses: actions/download-artifact@v4.1.8
               with:
                   name: playwright-merged-report
                   path: playwright-report
@@ -159,6 +164,7 @@ jobs:
               run: echo "playwright_report_url=https://satellite-im.github.io/test-reports/${{ steps.timestampidone.outputs.timestamp }}/" >> "$GITHUB_OUTPUT"
 
     publish-allure-report:
+        if: always()
         needs: publish-playwright-report
         runs-on: ubuntu-latest
         permissions:

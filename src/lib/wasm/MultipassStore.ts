@@ -172,11 +172,13 @@ class MultipassStore {
         return failure(WarpError.MULTIPASS_NOT_FOUND)
     }
 
-    async fetchAllFriendsAndRequests() {
+    async fetchAllFriendsAndRequests(listFriends: boolean = true) {
         await this.listIncomingFriendRequests()
         await this.listOutgoingFriendRequests()
         await this.listBlockedFriends()
-        await this.listFriends()
+        if (listFriends) {
+            await this.listFriends()
+        }
     }
 
     /**
@@ -188,7 +190,7 @@ class MultipassStore {
 
         if (multipass) {
             try {
-                let outgoingFriendRequests: Array<any> = await multipass.list_outgoing_request()
+                let outgoingFriendRequests = await multipass.list_outgoing_request()
                 let outgoingFriendRequestsUsers: Array<FriendRequest> = []
                 for (let i = 0; i < outgoingFriendRequests.length; i++) {
                     let friendUser = await this.identity_from_did(outgoingFriendRequests[i].identity)
@@ -237,12 +239,12 @@ class MultipassStore {
                     ) {
                         return failure(handleErrors("Invalid identity"))
                     }
-                    let identity: any[] = await multipass.get_identity(wasm.Identifier.Username, friend) // This is empty if it was never resolved
+                    let identity: wasm.Identity[] = await multipass.get_identity({ Username: friend }) // This is empty if it was never resolved
                     // It should only find 1 matching identity
                     if (identity.length != 1) {
                         return failure(handleErrors("Invalid identity"))
                     }
-                    did = identity[0].did_key
+                    did = identity[0].did_key()
                 }
                 return success(await multipass.send_request(did))
             } catch (error) {
@@ -319,7 +321,7 @@ class MultipassStore {
 
         if (multipass) {
             try {
-                let incomingFriendRequests: Array<any> = await multipass.list_incoming_request()
+                let incomingFriendRequests = await multipass.list_incoming_request()
                 let incomingFriendRequestsUsers: Array<FriendRequest> = []
                 for (let i = 0; i < incomingFriendRequests.length; i++) {
                     let friendUser = await this.identity_from_did(incomingFriendRequests[i].identity)
@@ -356,7 +358,7 @@ class MultipassStore {
 
         if (multipass) {
             try {
-                let blockedUsersAny: Array<any> = await multipass.block_list()
+                let blockedUsersAny = await multipass.block_list()
                 let blockedUsers: Array<string> = []
                 for (let i = 0; i < blockedUsersAny.length; i++) {
                     let friendUser = await this.identity_from_did(blockedUsersAny[i])
@@ -384,10 +386,10 @@ class MultipassStore {
 
         if (multipass) {
             try {
-                let friendsAny: Array<any> = await multipass.list_friends()
+                let friends = await multipass.list_friends()
                 let friendsUsers: Array<string> = []
-                for (let i = 0; i < friendsAny.length; i++) {
-                    let friendUser = await this.identity_from_did(friendsAny[i])
+                for (let i = 0; i < friends.length; i++) {
+                    let friendUser = await this.identity_from_did(friends[i])
                     if (friendUser) {
                         friendsUsers.push(friendUser.key)
                         Store.updateUser(friendUser)
@@ -512,7 +514,7 @@ class MultipassStore {
         const multipass = get(this.multipassWritable)
 
         if (multipass) {
-            await multipass.update_identity(wasm.IdentityUpdate.Username, new_username)
+            await multipass.update_identity({ Username: new_username })
             await this._updateIdentity()
         }
     }
@@ -525,7 +527,7 @@ class MultipassStore {
         const multipass = get(this.multipassWritable)
 
         if (multipass) {
-            await multipass.update_identity(wasm.IdentityUpdate.StatusMessage, newStatusMessage)
+            await multipass.update_identity({ StatusMessage: newStatusMessage })
             await this._updateIdentity()
         }
     }
@@ -539,7 +541,7 @@ class MultipassStore {
         const multipass = get(this.multipassWritable)
 
         if (multipass) {
-            await multipass.update_identity(wasm.IdentityUpdate.AddMetadataKey, [key, value])
+            await multipass.update_identity({ AddMetadataKey: { key, value } })
             await this._updateIdentity()
         }
     }
@@ -552,7 +554,7 @@ class MultipassStore {
         const multipass = get(this.multipassWritable)
 
         if (multipass) {
-            await multipass.update_identity(wasm.IdentityUpdate.RemoveMetadataKey, key)
+            await multipass.update_identity({ RemoveMetadataKey: key })
             await this._updateIdentity()
         }
     }
@@ -566,8 +568,7 @@ class MultipassStore {
 
         if (multipass) {
             const buffer = Buffer.from(newPictureBase64, "base64")
-            let pictureAsBytes = new Uint8Array(buffer)
-            await multipass.update_identity(wasm.IdentityUpdate.Picture, pictureAsBytes)
+            await multipass.update_identity({ Picture: Array.from(buffer) })
             await this._updateIdentity()
         }
     }
@@ -581,8 +582,7 @@ class MultipassStore {
 
         if (multipass) {
             const buffer = Buffer.from(newPictureBase64, "base64")
-            let pictureAsBytes = new Uint8Array(buffer)
-            await multipass.update_identity(wasm.IdentityUpdate.Banner, pictureAsBytes)
+            await multipass.update_identity({ Banner: Array.from(buffer) })
             await this._updateIdentity()
         }
     }
@@ -620,20 +620,44 @@ class MultipassStore {
         }
     }
 
+    async importAccount(passphrase: string, settings?: { to?: Uint8Array; multipassBox?: wasm.MultiPassBox }): Promise<Result<WarpError, wasm.Identity | undefined>> {
+        let multipass = settings?.multipassBox ? settings.multipassBox : get(this.multipassWritable)
+        if (multipass) {
+            let result = multipass
+                .import_identity(passphrase, settings?.to)
+                .then(value => {
+                    return success<WarpError, wasm.Identity | undefined>(value)
+                })
+                .catch(reason => {
+                    return failure<WarpError, wasm.Identity | undefined>(handleErrors(reason))
+                })
+            return await result
+        }
+        return failure(WarpError.MULTIPASS_NOT_FOUND)
+    }
+
+    async exportAccount(memory?: boolean): Promise<Result<WarpError, Uint8Array | undefined>> {
+        let multipass = get(this.multipassWritable)
+        if (multipass) {
+            return success(await multipass.export_identity(memory))
+        }
+        return failure(WarpError.MULTIPASS_NOT_FOUND)
+    }
+
     async identity_from_did(id: string, maxRetries = 3): Promise<User | undefined> {
         let multipass = get(this.multipassWritable)
         let lastErr
         if (multipass) {
             for (let tries = 0; tries < maxRetries; tries++) {
                 try {
-                    let identity = (await multipass.get_identity(wasm.Identifier.DID, id))[0]
+                    let identity = (await multipass.get_identity({ DID: id }))[0]
                     let profilePicture = await this.getUserProfilePicture(id)
                     let bannerPicture = await this.getUserBannerPicture(id)
                     let status = await this.getUserStatus(id)
                     return {
                         ...defaultUser,
-                        key: identity === undefined ? id : identity.did_key,
-                        name: identity === undefined ? id : identity.username,
+                        key: identity === undefined ? id : identity.did_key(),
+                        name: identity === undefined ? id : identity.username(),
                         profile: {
                             ...defaultProfileData,
                             photo: {
@@ -648,9 +672,9 @@ class MultipassStore {
                                 overlay: "",
                             },
                             status: status,
-                            status_message: identity === undefined ? "" : (identity.status_message ?? ""),
+                            status_message: identity === undefined ? "" : (identity.status_message() ?? ""),
                         },
-                        integrations: identity === undefined ? new Map<string, string>() : identity.metadata,
+                        integrations: identity === undefined ? new Map<string, string>() : identity.metadata(),
                         media: {
                             is_playing_audio: false,
                             is_streaming_video: false,

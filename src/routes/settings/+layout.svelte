@@ -9,7 +9,7 @@
     import { SettingsStore } from "$lib/state"
     import { UIStore } from "$lib/state/ui"
     import type { NavRoute } from "$lib/types"
-    import { checkMobile } from "$lib/utils/Mobile"
+    import { checkMobile, isAndroidOriOS } from "$lib/utils/Mobile"
     import { onMount } from "svelte"
     import { _ } from "svelte-i18n"
     import { get, writable, type Writable } from "svelte/store"
@@ -79,7 +79,7 @@
 
     let loading = false
     let sidebarOpen: boolean = get(UIStore.state.sidebarOpen)
-    let activeRoute = SettingsRoute.Profile
+    let activeRoute: SettingsRoute = SettingsRoute.Developer
 
     function toggleSidebar() {
         UIStore.toggleSidebar()
@@ -136,8 +136,8 @@
 
     UIStore.state.sidebarOpen.subscribe(s => (sidebarOpen = s))
     $: setRoutes = get(settingsRoutes)
-    SettingsStore.state.subscribe(value => {
-        let isMobile: boolean = checkMobile()
+    SettingsStore.state.subscribe(async value => {
+        let isMobile: boolean = await isAndroidOriOS()
         if (value.devmode) {
             if (!get(settingsRoutes).find(route => route.to === SettingsRoute.Developer)) {
                 settingsRoutes.update(routes => [
@@ -187,6 +187,10 @@
             routes={setRoutes}
             vertical
             on:navigate={e => {
+                let sideBarIsOpened = get(UIStore.state.sidebarOpen)
+                if (sideBarIsOpened && checkMobile()) {
+                    UIStore.toggleSidebar()
+                }
                 goto(e.detail)
                 activeRoute = e.detail
             }}
