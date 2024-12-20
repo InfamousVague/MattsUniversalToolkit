@@ -666,7 +666,7 @@
             {/if}
             <div class="section">
                 <SettingSection hook="export-account" name={$_("settings.profile.export.label")} description={$_("settings.profile.export.description")}>
-                    <Button
+                 <!---   <Button
                         hook="export-account-remote"
                         appearance={Appearance.Alt}
                         text={$_("settings.profile.export.remote")}
@@ -674,7 +674,7 @@
                             await exportAccount()
                         }}>
                         <Icon icon={Shape.Globe} />
-                    </Button>
+                    </Button> --->
                     <Button
                         hook="export-account-file"
                         appearance={Appearance.Alt}
