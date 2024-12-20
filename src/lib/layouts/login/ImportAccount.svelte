@@ -145,7 +145,7 @@
                 text={$_("pages.auth.import.file")}>
                 <Icon icon={Shape.Document} />
             </Button>
-            <Button
+         <!---  <Button
                 hook="import-account"
                 loading={loading}
                 disabled={passphrase.find(s => s.length === 0) !== undefined}
@@ -154,7 +154,7 @@
                 }}
                 text={$_("pages.auth.import.remote")}>
                 <Icon icon={Shape.Globe} />
-            </Button>
+            </Button> -->
             <FileInput
                 bind:this={passphraseUpload}
                 hidden

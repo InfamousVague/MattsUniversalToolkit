@@ -279,7 +279,7 @@
             },
             "import": {
                 "title": "Import Account",
-                "description": "Import your account from remote or a backup file",
+                "description": "Now you can import your account! Use the button below to import your account from a backup file.",
                 "passphrase": "Add passphrase",
                 "remote": "Import from remote",
                 "file": "Import from file",
@@ -383,7 +383,7 @@
             },
             "export": {
                 "label": "Export",
-                "description": "Export your account manually to remote or a file",
+                "description": "Export your account manually to a file.",
                 "remote": "Remote",
                 "file": "File",
                 "fail": "Failed to export account",
