@@ -297,9 +297,8 @@
         }
     }
 
-    let lastBackPress = 0 // To handle double-tap exit logic
-
     onMount(() => {
+        let exitAppInNextPress = false
         if (isAndroid()) {
             App.addListener("backButton", async _ => {
                 const sidebarOpenValue = get(UIStore.state.sidebarOpen)
@@ -308,16 +307,16 @@
                     return
                 }
 
+                if (history.length <= 2 && !exitAppInNextPress) {
+                    exitAppInNextPress = true
+                    alert("Press back again to exit.")
+                } else if (history.length <= 2 && exitAppInNextPress) {
+                    await App.exitApp()
+                }
+
                 if (history.length > 2) {
+                    exitAppInNextPress = false
                     history.back()
-                } else {
-                    const now = Date.now()
-                    if (now - lastBackPress < 2000) {
-                        await App.exitApp()
-                    } else {
-                        lastBackPress = now
-                        alert("Press back again to exit")
-                    }
                 }
             })
 
