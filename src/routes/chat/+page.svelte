@@ -154,10 +154,19 @@
             console.error("Error parsing JSON:", error, $activeChat.last_message_preview)
             return "Invalid message format"
         }
-        if (sendingUserDetails.key !== $own_user.key) {
-            return `${sendingUserDetails.name} sent you ${parsedMessage.details.amount}`
+        console.log(parsedMessage)
+        if (parsedMessage.details) {
+            if (sendingUserDetails.key !== $own_user.key) {
+                return `${sendingUserDetails.name} sent you ${parsedMessage.details.amount}`
+            } else {
+                return `You sent ${parsedMessage.details.amount} to ${sendingUserDetails.name}`
+            }
         } else {
-            return `You sent ${parsedMessage.details.amount} to ${sendingUserDetails.name}`
+            if (sendingUserDetails.key !== $own_user.key) {
+                return `${sendingUserDetails.name} sent you ${parsedMessage.amount}`
+            } else {
+                return `You sent ${parsedMessage.amount} to ${sendingUserDetails.name}`
+            }
         }
     })()
 
@@ -457,7 +466,7 @@
             }
         }, 500)
     })
-
+    $: sanitizePaymentSent
     function checkForActiveRequest(message: MessageType, messageLine: string) {
         const rejectidMatch = messageLine.match(/^\/reject\s([a-f0-9-]{36})(?:\s|$)/)
         const sendidMatch = messageLine.match(/^\/send\s.*"messageID":"([a-f0-9-]{36})"/)
