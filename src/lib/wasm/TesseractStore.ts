@@ -15,6 +15,10 @@ class TesseractStore {
         this.tesseractWritable = writable(null)
     }
 
+    clearTesseract() {
+        this.tesseractWritable.set(null)
+    }
+
     /**
      * Retrieves the Tesseract instance.
      * @returns {wasm.Tesseract} The current Tesseract instance.

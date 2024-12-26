@@ -3,6 +3,7 @@
     import { Route } from "$lib/enums"
 
     import { Entrypoint, NewAccount, LoginPage, RecoveryCopy, Unlock } from "$lib/layouts/login"
+    import ImportAccount from "$lib/layouts/login/ImportAccount.svelte"
     import { AuthStore } from "$lib/state/auth"
     import { Store } from "$lib/state/Store"
     import { ToastMessage } from "$lib/state/ui/toast"
@@ -40,7 +41,7 @@
             await WarpStore.initWarpInstances(addressed)
         }
         let ownIdentity = await MultipassStoreInstance.getOwnIdentity()
-        ownIdentity.fold(
+        await ownIdentity.fold(
             async (_: any) => {
                 if (username === "") return
                 AuthStore.setStoredPin(pin)
@@ -84,11 +85,14 @@
     <Entrypoint bind:page={currentPage} />
 {:else if currentPage == LoginPage.Username}
     <NewAccount bind:page={currentPage} bind:username={username} bind:statusMessage={statusMessage} bind:profilePicture={profilePicture} />
+{:else if currentPage == LoginPage.Import}
+    <ImportAccount bind:page={currentPage} onImport={finalizeLogin} />
 {:else if currentPage == LoginPage.Pin}
     <Unlock
         create={!exist()}
         on:pin={async e => {
             await auth(e.detail.pin)
+            console.log("done")
             e.detail.done()
         }} />
 {:else if currentPage == LoginPage.RecoveryCopy}
