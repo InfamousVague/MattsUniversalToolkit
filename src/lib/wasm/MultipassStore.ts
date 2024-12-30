@@ -54,20 +54,20 @@ class MultipassStore {
             log.info("Listening to multipass events!")
             for await (const value of listener) {
                 let event = value as wasm.MultiPassEventKind
-                log.info(`Handling multipass events: ${wasm.MultiPassEventKindEnum[event.kind]} with did ${event.did}`)
+                log.info("Handling multipass events: ", event)
                 switch (event.kind) {
-                    case wasm.MultiPassEventKindEnum.FriendRequestSent:
-                    case wasm.MultiPassEventKindEnum.OutgoingFriendRequestClosed:
-                    case wasm.MultiPassEventKindEnum.OutgoingFriendRequestRejected: {
+                    case "friend_request_sent":
+                    case "outgoing_friend_request_closed":
+                    case "outgoing_friend_request_rejected": {
                         await this.listOutgoingFriendRequests()
                         break
                     }
-                    case wasm.MultiPassEventKindEnum.FriendRequestReceived: {
+                    case "friend_request_received": {
                         if (get(SettingsStore.state).notifications.friends) {
-                            let incoming = await this.identity_from_did(event.did)
+                            let incoming = await this.identity_from_did(event.values.from)
                             let count = 0
                             while (incoming === undefined && count < MAX_RETRY_COUNT) {
-                                incoming = await this.identity_from_did(event.did)
+                                incoming = await this.identity_from_did(event.values.from)
                                 count++
                                 await new Promise(resolve => setTimeout(resolve, RETRY_DELAY))
                             }
@@ -93,39 +93,39 @@ class MultipassStore {
                         await this.listIncomingFriendRequests()
                         break
                     }
-                    case wasm.MultiPassEventKindEnum.IncomingFriendRequestClosed:
-                    case wasm.MultiPassEventKindEnum.IncomingFriendRequestRejected: {
+                    case "incoming_friend_request_closed":
+                    case "incoming_friend_request_rejected": {
                         await this.listIncomingFriendRequests()
                         break
                     }
-                    case wasm.MultiPassEventKindEnum.FriendAdded: {
+                    case "friend_added": {
                         await this.listOutgoingFriendRequests()
                         await this.listIncomingFriendRequests()
                         await this.listFriends()
                         break
                     }
-                    case wasm.MultiPassEventKindEnum.FriendRemoved: {
+                    case "friend_removed": {
                         await this.listFriends()
                         break
                     }
-                    case wasm.MultiPassEventKindEnum.Blocked:
-                    case wasm.MultiPassEventKindEnum.BlockedBy:
-                    case wasm.MultiPassEventKindEnum.Unblocked:
-                    case wasm.MultiPassEventKindEnum.UnblockedBy: {
+                    case "blocked":
+                    case "blocked_by":
+                    case "unblocked":
+                    case "unblocked_by": {
                         await this.listBlockedFriends()
                         break
                     }
-                    case wasm.MultiPassEventKindEnum.IdentityOnline:
-                    case wasm.MultiPassEventKindEnum.IdentityOffline:
-                    case wasm.MultiPassEventKindEnum.IdentityUpdate: {
-                        let user = await this.identity_from_did(event.did)
+                    case "identity_online":
+                    case "identity_offline":
+                    case "identity_update": {
+                        let user = await this.identity_from_did(event.values.did)
                         if (user) {
                             Store.updateUser(user)
                         }
                         break
                     }
                     default: {
-                        log.error(`Unhandled message event: ${wasm.MultiPassEventKindEnum[event.kind]}`)
+                        log.error(`Unhandled message event: ${(event as any).kind}`)
                         break
                     }
                 }
@@ -554,7 +554,7 @@ class MultipassStore {
         const multipass = get(this.multipassWritable)
 
         if (multipass) {
-            await multipass.update_identity({ RemoveMetadataKey: key })
+            await multipass.update_identity({ RemoveMetadataKey: { key } })
             await this._updateIdentity()
         }
     }
@@ -722,7 +722,7 @@ class MultipassStore {
         if (multipass) {
             try {
                 let identityProfilePicture = await multipass.identity_picture(did)
-                profilePicture = identityProfilePicture && identityProfilePicture.data ? (identityProfilePicture.data().length > 2 ? this.to_base64(identityProfilePicture.data()) : "") : ""
+                profilePicture = identityProfilePicture && identityProfilePicture.data ? (identityProfilePicture.data.length > 2 ? this.to_base64(identityProfilePicture.data) : "") : ""
             } catch (error) {
                 // log.error(`Couldn't fetch profile picture for ${did}: ${error}`)
             }
@@ -736,7 +736,7 @@ class MultipassStore {
         if (multipass) {
             try {
                 let identityBannerPicture = await multipass.identity_banner(did)
-                bannerPicture = identityBannerPicture && identityBannerPicture.data ? (identityBannerPicture.data().length > 2 ? this.to_base64(identityBannerPicture.data()) : "") : ""
+                bannerPicture = identityBannerPicture && identityBannerPicture.data ? (identityBannerPicture.data.length > 2 ? this.to_base64(identityBannerPicture.data) : "") : ""
             } catch (error) {
                 // log.error(`Couldn't fetch banner picture for ${did}: ${error}`)
             }

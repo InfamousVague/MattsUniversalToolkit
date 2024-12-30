@@ -418,13 +418,11 @@ class RaygunStore {
         }
         log.info("Listening raygun events!")
         for await (const value of listener) {
-            let event = parseJSValue(value)
-            log.info(`Handling conversation event: ${JSON.stringify(event)}`)
-            log.info(`Event Type ${event.type}`)
-
-            switch (event.type) {
+            let event = value as wasm.RayGunEventKind
+            log.info("Handling conversation event: ", event)
+            switch (event.kind) {
                 case "conversation_created": {
-                    let conversationId: string = event.values["conversation_id"]
+                    let conversationId: string = event.values.conversation_id
                     let conv = await raygun.get_conversation(conversationId)
                     let chat = await this.convertWarpConversation(conv, raygun)
                     let listeners = get(this.messageListeners)
@@ -436,7 +434,7 @@ class RaygunStore {
                     break
                 }
                 case "conversation_deleted": {
-                    let conversationId: string = event.values["conversation_id"]
+                    let conversationId: string = event.values.conversation_id
                     // Stop message listeners
                     let listeners = get(this.messageListeners)
                     if (conversationId in listeners) {
@@ -463,7 +461,7 @@ class RaygunStore {
                 }
                 case "community_created": {
                     //TODO UI stuff
-                    let communityId: string = event.values["community_id"]
+                    let communityId: string = event.values.community_id
                     let listeners = get(this.messageListeners)
                     let handler = await this.createMessageEventHandler(raygun, communityId, true)
                     listeners[communityId] = handler
@@ -472,7 +470,7 @@ class RaygunStore {
                     break
                 }
                 case "community_deleted": {
-                    let communityId: string = event.values["community_id"]
+                    let communityId: string = event.values.community_id
                     let listeners = get(this.messageListeners)
                     if (communityId in listeners) {
                         listeners[communityId].cancel()
@@ -483,6 +481,10 @@ class RaygunStore {
                     break
                 }
                 case "community_invited": {
+                    break
+                }
+                default: {
+                    log.error(`Unhandled raygun event: ${(event as any).kind}`)
                     break
                 }
             }
@@ -528,8 +530,8 @@ class RaygunStore {
                 },
             }
             streamLoop: for await (const value of listener) {
-                let event = parseJSValue(value)
-                log.info(`Handling message event: ${JSON.stringify(event)}`)
+                let event = value as wasm.MessageEventKind
+                console.log("Handling message event: ", value)
                 if (community) {
                     //TODO UI Hookup etc not implemented
                     continue
@@ -538,10 +540,10 @@ class RaygunStore {
                     log.debug(`Breaking stream loop not necessary anymore from: ${identifier}`)
                     break streamLoop
                 }
-                switch (event.type) {
+                switch (event.kind) {
                     case "message_sent": {
-                        let conversation_id: string = event.values["conversation_id"]
-                        let message_id: string = event.values["message_id"]
+                        let conversation_id: string = event.values.conversation_id
+                        let message_id: string = event.values.message_id
                         // Needs a delay because raygun does not contain the sent message yet
                         await new Promise(f => setTimeout(f, 10))
                         let message = await this.convertWarpMessage(conversation_id, await raygun.get_message(conversation_id, message_id))
@@ -553,8 +555,8 @@ class RaygunStore {
                         break
                     }
                     case "message_received": {
-                        let conversation_id: string = event.values["conversation_id"]
-                        let message_id: string = event.values["message_id"]
+                        let conversation_id: string = event.values.conversation_id
+                        let message_id: string = event.values.message_id
                         let message = await this.convertWarpMessage(conversation_id, await raygun.get_message(conversation_id, message_id))
                         if (message) {
                             let ping = mentions_user(message, get(Store.state.user).key)
@@ -591,8 +593,8 @@ class RaygunStore {
                         break
                     }
                     case "message_edited": {
-                        let conversation_id: string = event.values["conversation_id"]
-                        let message_id: string = event.values["message_id"]
+                        let conversation_id: string = event.values.conversation_id
+                        let message_id: string = event.values.message_id
                         let message = await this.convertWarpMessage(conversation_id, await raygun.get_message(conversation_id, message_id))
                         if (message) {
                             ConversationStore.editMessage(conversation_id, message_id, message.text.join("\n"), message)
@@ -600,42 +602,42 @@ class RaygunStore {
                         break
                     }
                     case "message_deleted": {
-                        let conversation_id: string = event.values["conversation_id"]
-                        let message_id: string = event.values["message_id"]
+                        let conversation_id: string = event.values.conversation_id
+                        let message_id: string = event.values.message_id
                         ConversationStore.removeMessage(conversation_id, message_id)
                         break
                     }
                     case "message_pinned": {
-                        let conversation_id: string = event.values["conversation_id"]
-                        ConversationStore.pinMessage(conversation_id, event.values["message_id"], true)
+                        let conversation_id: string = event.values.conversation_id
+                        ConversationStore.pinMessage(conversation_id, event.values.message_id, true)
                         break
                     }
                     case "message_unpinned": {
-                        let conversation_id: string = event.values["conversation_id"]
-                        ConversationStore.pinMessage(conversation_id, event.values["message_id"], false)
+                        let conversation_id: string = event.values.conversation_id
+                        ConversationStore.pinMessage(conversation_id, event.values.message_id, false)
                         break
                     }
                     case "message_reaction_added": {
-                        let conversation_id: string = event.values["conversation_id"]
-                        ConversationStore.editReaction(conversation_id, event.values["message_id"], event.values["reaction"], true, event.values["did_key"])
+                        let conversation_id: string = event.values.conversation_id
+                        ConversationStore.editReaction(conversation_id, event.values.message_id, event.values.reaction, true, event.values.did_key)
                         break
                     }
                     case "message_reaction_removed": {
-                        let conversation_id: string = event.values["conversation_id"]
-                        ConversationStore.editReaction(conversation_id, event.values["message_id"], event.values["reaction"], false, event.values["did_key"])
+                        let conversation_id: string = event.values.conversation_id
+                        ConversationStore.editReaction(conversation_id, event.values.message_id, event.values.reaction, false, event.values.did_key)
                         break
                     }
                     case "conversation_name_updated": {
-                        let conversation_id: string = event.values["conversation_id"]
-                        let name = event.values["name"]
+                        let conversation_id: string = event.values.conversation_id
+                        let name = event.values.name
                         UIStore.mutateChat(conversation_id, c => {
                             c.name = name
                         })
                         break
                     }
                     case "recipient_added": {
-                        let conversation_id: string = event.values["conversation_id"]
-                        let recipient = await MultipassStoreInstance.identity_from_did(event.values["recipient"])
+                        let conversation_id: string = event.values.conversation_id
+                        let recipient = await MultipassStoreInstance.identity_from_did(event.values.recipient)
                         if (recipient) {
                             UIStore.mutateChat(conversation_id, c => {
                                 let users = new Set(c.users)
@@ -647,17 +649,17 @@ class RaygunStore {
                         break
                     }
                     case "recipient_removed": {
-                        let conversation_id: string = event.values["conversation_id"]
-                        let recipient = event.values["recipient"]
+                        let conversation_id: string = event.values.conversation_id
+                        let recipient = event.values.recipient
                         UIStore.mutateChat(conversation_id, c => {
                             c.users = c.users.filter(u => u !== recipient)
                         })
                         break
                     }
                     case "event_received": {
-                        let conversation_id: string = event.values["conversation_id"]
-                        let did_key = event.values["did_key"]
-                        if (event.values["event"] === "typing") {
+                        let conversation_id: string = event.values.conversation_id
+                        let did_key = event.values.did_key
+                        if (event.values.event === wasm.MessageEvent.Typing) {
                             UIStore.mutateChat(conversation_id, c => {
                                 c.typing_indicator.add(did_key)
                             })
@@ -669,7 +671,7 @@ class RaygunStore {
                         break
                     }
                     case "conversation_permissions_updated": {
-                        let conversation_id: string = event.values["conversation_id"]
+                        let conversation_id: string = event.values.conversation_id
                         let permissions: {
                             [did: string]: wasm.GroupPermission[]
                         } = {}
@@ -679,8 +681,8 @@ class RaygunStore {
                         })
                         // For remote this is empty??? bug?
                         // For now just fetch the permissions from raygun again
-                        // let added = event.values["added"] as [string, GroupPermission][]
-                        // let removed = event.values["removed"] as [string, GroupPermission][]
+                        // let added = event.values.added as [string, GroupPermission][]
+                        // let removed = event.values.removed as [string, GroupPermission][]
                         UIStore.mutateChat(conversation_id, c => {
                             if (c.kind === ChatType.Group) {
                                 c.settings.permissions = permissions
@@ -689,15 +691,15 @@ class RaygunStore {
                         break
                     }
                     case "conversation_description_changed": {
-                        let conversation_id: string = event.values["conversation_id"]
-                        let description: string = event.values["description"]
+                        let conversation_id: string = event.values.conversation_id
+                        let description: string = event.values.description ?? ""
                         UIStore.mutateChat(conversation_id, c => {
                             c.motd = description
                         })
                         break
                     }
                     case "conversation_updated_icon": {
-                        let conversation_id: string = event.values["conversation_id"]
+                        let conversation_id: string = event.values.conversation_id
                         let icon = await raygun.conversation_icon(conversation_id)
                         console.log("type ", icon.image_type(), " data ", btoa(icon.data().reduce((data, byte) => data + String.fromCharCode(byte), "")))
                         UIStore.mutateChat(conversation_id, c => {
@@ -706,7 +708,7 @@ class RaygunStore {
                         break
                     }
                     case "conversation_updated_banner": {
-                        let conversation_id: string = event.values["conversation_id"]
+                        let conversation_id: string = event.values.conversation_id
                         let icon = await raygun.conversation_banner(conversation_id)
                         UIStore.mutateChat(conversation_id, c => {
                             c.banner = imageFromData(icon.data(), icon.image_type())
@@ -714,7 +716,7 @@ class RaygunStore {
                         break
                     }
                     default: {
-                        log.error(`Unhandled message event: ${JSON.stringify(event)}`)
+                        log.error(`Unhandled message event: ${(event as any).kind}`)
                         break
                     }
                 }
@@ -859,42 +861,42 @@ export async function createFileAttachHandler(upload: wasm.AttachmentResult, upd
     let cancelled = false
     try {
         for await (const value of listener) {
-            let event = parseJSValue(value)
+            let event = value as wasm.AttachmentKind
             log.info(`Handling file progress event: ${JSON.stringify(event)}`)
-            switch (event.type) {
+            switch (event.kind) {
                 case "AttachedProgress": {
-                    let locationKind = parseJSValue(event.values[0])
+                    let locationKind = event.values[0]
                     // Only streams need progress update
-                    if (locationKind.type === "Stream") {
-                        let progress = parseJSValue(event.values[1])
-                        let file = progress.values["name"]
+                    if (locationKind.kind === "Stream") {
+                        let progress = event.values[1]
+                        let file = progress.values.name
                         updater(file, current => {
                             if (current) {
-                                let copy = { ...current }
-                                switch (progress.type) {
-                                    case "CurrentProgress": {
-                                        copy.size = progress.values["current"]
-                                        copy.total = progress.values["total"]
+                                let copy: FileProgress = { ...current }
+                                switch (progress.kind) {
+                                    case "current_progress": {
+                                        copy.size = progress.values.current
+                                        copy.total = progress.values.total ?? progress.values.current
                                         break
                                     }
-                                    case "ProgressComplete": {
-                                        copy.size = progress.values["total"]
-                                        copy.total = progress.values["total"]
+                                    case "progress_complete": {
+                                        copy.size = progress.values.total ?? 0
+                                        copy.total = progress.values.total ?? 0
                                         copy.done = true
                                         break
                                     }
-                                    case "ProgressFailed": {
-                                        copy.size = progress.values["last_size"]
-                                        copy.error = `Error: ${progress.values["error"]}`
+                                    case "progress_failed": {
+                                        copy.size = progress.values.last_size ?? 0
+                                        copy.error = `Error: ${progress.values.error}`
                                         break
                                     }
                                 }
                                 return copy
-                            } else if (progress.type === "CurrentProgress") {
+                            } else if (progress.kind === "current_progress") {
                                 return {
                                     name: file,
-                                    size: progress.values["current"],
-                                    total: progress.values["total"],
+                                    size: progress.values.current,
+                                    total: progress.values.total ?? progress.values.current,
                                     cancellation: {
                                         cancel: () => {
                                             cancelled = true
@@ -908,11 +910,8 @@ export async function createFileAttachHandler(upload: wasm.AttachmentResult, upd
                     break
                 }
                 case "Pending": {
-                    if (Object.keys(event.values).length > 0) {
-                        let res = parseJSValue(event.values)
-                        if (res.type === "Err") {
-                            log.error(`Error uploading file ${res.values}`)
-                        }
+                    if (event.values) {
+                        log.error(`Error uploading file ${event.values}`)
                     }
                     break
                 }
