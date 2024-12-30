@@ -237,6 +237,7 @@
 
         .input {
             background-color: transparent;
+            touch-action: manipulation;
             border: none;
             flex: 1;
             width: 100%;
