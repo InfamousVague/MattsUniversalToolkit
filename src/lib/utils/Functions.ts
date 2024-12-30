@@ -1,5 +1,13 @@
 import { Color, Format } from "$lib/enums"
+import { Store } from "$lib/state/Store"
+import { ToastMessage } from "$lib/state/ui/toast"
+import { Filesystem, Encoding } from "@capacitor/filesystem"
+import { Directory as LocalDirectory } from "@capacitor/filesystem"
+import { Share } from "@capacitor/share"
 import TimeAgo from "javascript-time-ago"
+import { log } from "./Logger"
+import { _ } from "svelte-i18n"
+import { get } from "svelte/store"
 
 export const debounce = (fn: Function, ms = 300) => {
     let timeoutId: ReturnType<typeof setTimeout>
@@ -65,4 +73,41 @@ export function formatStyledText(text: string): string {
     }
 
     return formattedText
+}
+
+export async function shareFile(fileName: string, combinedArray: Buffer) {
+    try {
+        const base64Data = combinedArray.toString("base64")
+
+        const filePath = await Filesystem.writeFile({
+            path: fileName,
+            data: base64Data!,
+            directory: LocalDirectory.Cache,
+        })
+
+        await Share.share({
+            text: fileName,
+            url: filePath.uri,
+        })
+
+        log.info(`File shared: ${fileName} successfully`)
+    } catch (error) {
+        let errorMessage = `${error}`
+        log.error("Error when to share file:", fileName, "Error:", errorMessage)
+        if (errorMessage.includes("Share canceled")) {
+            Store.addToastNotification(new ToastMessage("", get(_)("files.shareFileCanceled"), 2))
+            return
+        }
+    }
+}
+
+export async function downloadFileFromWeb(data: any[], size: number, name: string) {
+    let options: { size?: number; type?: string } = { size }
+    let blob = new File([new Uint8Array(data)], name, { type: options?.type })
+    const elem = window.document.createElement("a")
+    elem.href = window.URL.createObjectURL(blob)
+    elem.download = name
+    document.body.appendChild(elem)
+    elem.click()
+    document.body.removeChild(elem)
 }
