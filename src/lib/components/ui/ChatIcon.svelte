@@ -28,5 +28,5 @@
         noIndicator={noIndicator}
         loading={loading} />
 {:else}
-    <ProfilePictureMany users={Object.values($users)} size={size} forceSize={forceSize} on:click />
+    <ProfilePictureMany users={Object.values($users)} typing={chat.typing_indicator.size > 0} size={size} forceSize={forceSize} on:click />
 {/if}
