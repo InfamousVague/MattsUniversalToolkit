@@ -52,9 +52,9 @@ export const INTEGRATIONS = {
 }
 
 export const DOWNLOAD_LINKS = {
-    Android: "https://github.com/Satellite-im/UplinkWeb/releases/download/v2.0.6/Uplink_v2.0.6.apk",
+    Android: "https://play.google.com/store/apps/details?id=com.uplink.app",
     iOS: "https://apps.apple.com/us/app/satellite-im-uplink/id6737702825",
-    Windows: "https://github.com/Satellite-im/UplinkWeb/releases/download/v2.0.6/Uplink_v2.0.6.msi",
-    Mac: "https://github.com/Satellite-im/UplinkWeb/releases/download/v2.0.6/Uplink_v2.0.6.dmg",
-    Linux: "https://github.com/Satellite-im/UplinkWeb/releases/download/v2.0.6/Uplink_v2.0.6.deb",
+    Windows: "https://github.com/Satellite-im/UplinkWeb/releases/download/v2.0.8/Uplink_v2.0.8.msi",
+    Mac: "https://github.com/Satellite-im/UplinkWeb/releases/download/v2.0.8/Uplink_v2.0.8.dmg",
+    Linux: "https://github.com/Satellite-im/UplinkWeb/releases/download/v2.0.8/Uplink_v2.0.8.deb",
 }
