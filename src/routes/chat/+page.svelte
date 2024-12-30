@@ -49,8 +49,12 @@
     let contentAsideOpen = false
     let showBrowseFilesModal = false
     $: clipboardWrite = writable(Permission.UNDEFINED)
+    let sidebarOpen = get(UIStore.state.sidebarOpen)
 
-    $: sidebarOpen = UIStore.state.sidebarOpen
+    UIStore.state.sidebarOpen.subscribe(open => {
+        sidebarOpen = open
+    })
+
     $: activeChat = Store.state.activeChat
     $: isFavorite = derived(Store.state.favorites, favs => favs.some(f => f.id === $activeChat.id))
     $: conversation = ConversationStore.getConversation($activeChat)
@@ -571,7 +575,7 @@
     {/if}
 
     <!-- Sidebar -->
-    <Sidebar loading={loading} on:toggle={toggleSidebar} open={$sidebarOpen} activeRoute={Route.Chat} bind:search={search_filter} on:search={() => search_component.filter_chat()} on:enter={() => search_component.select_first()}>
+    <Sidebar loading={loading} on:toggle={toggleSidebar} open={sidebarOpen} activeRoute={Route.Chat} bind:search={search_filter} on:search={() => search_component.filter_chat()} on:enter={() => search_component.select_first()}>
         <ChatFilter bind:this={search_component} bind:filter={search_filter}></ChatFilter>
         <!--
             <Button hook="button-marketplace" appearance={showMarket ? Appearance.Primary : Appearance.Alt} text={$_("market.market")} on:click={_ => (showMarket = true)}>
@@ -947,7 +951,7 @@
                 })
             }} />
 
-        {#if $activeChat.users.length > 0 && (!isAndroidOriOS() || (isAndroidOriOS() && get(UIStore.state.sidebarOpen) === false))}
+        {#if $activeChat.users.length > 0 && (!isAndroidOriOS() || (isAndroidOriOS() && !sidebarOpen))}
             <Chatbar
                 replyTo={replyTo}
                 activeChat={$activeChat}
