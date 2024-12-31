@@ -28,6 +28,7 @@
     import Market from "$lib/components/market/Market.svelte"
     import { swipe } from "$lib/components/ui/Swipe"
     import { ScreenOrientation } from "@capacitor/screen-orientation"
+    import { App } from "@capacitor/app"
     import BottomNavBarMobile from "$lib/layouts/BottomNavBarMobile.svelte"
     import { goto } from "$app/navigation"
     import { routes } from "$lib/defaults/routes"
@@ -35,6 +36,7 @@
     import { Keyboard, KeyboardResize } from "@capacitor/keyboard"
     import { changeSafeAreaColorsOnAndroid } from "$lib/plugins/safeAreaColorAndroid"
     import { changeSafeAreaColorsOniOS } from "$lib/plugins/safeAreaColoriOS"
+    import { ToastMessage } from "$lib/state/ui/toast"
 
     log.debug("Initializing app, layout routes page.")
 
@@ -294,6 +296,35 @@
             log.error("Failed to lock screen orientation:", error)
         }
     }
+
+    onMount(() => {
+        let exitAppInNextPress = false
+        if (isAndroid()) {
+            App.addListener("backButton", async _ => {
+                const sidebarOpenValue = get(UIStore.state.sidebarOpen)
+                if (!sidebarOpenValue) {
+                    UIStore.openSidebar()
+                    return
+                }
+
+                if (history.length <= 2 && !exitAppInNextPress) {
+                    exitAppInNextPress = true
+                    alert("Press back again to exit.")
+                } else if (history.length <= 2 && exitAppInNextPress) {
+                    await App.exitApp()
+                }
+
+                if (history.length > 2) {
+                    exitAppInNextPress = false
+                    history.back()
+                }
+            })
+
+            return () => {
+                App.removeAllListeners()
+            }
+        }
+    })
 
     onMount(async () => {
         await fetchDeviceInfo()
