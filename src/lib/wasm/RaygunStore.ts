@@ -19,7 +19,8 @@ import { SettingsStore } from "$lib/state"
 import { ToastMessage } from "$lib/state/ui/toast"
 import { page } from "$app/stores"
 import { goto } from "$app/navigation"
-import { Readable } from "stream"
+import { isAndroidOriOS } from "$lib/utils/Mobile"
+import { downloadFileFromWeb, shareFile } from "$lib/utils/Functions"
 
 const MAX_PINNED_MESSAGES = 100
 export type FetchMessagesConfig =
@@ -363,7 +364,12 @@ class RaygunStore {
     async downloadAttachment(conversation_id: string, message_id: string, file: string, size?: number) {
         return await this.get(async r => {
             let result = await r.download_stream(conversation_id, message_id, file)
-            return createFileDownloadHandler(file, result, size)
+            let data = await createFileDownloadHandler(file, result, size)
+            if (isAndroidOriOS()) {
+                await shareFile(file, Buffer.from(data))
+            } else {
+                await downloadFileFromWeb(data, size || 0, file)
+            }
         }, `Error downloading attachment from ${conversation_id} for message ${message_id}`)
     }
 
@@ -820,7 +826,7 @@ class RaygunStore {
     }
 }
 
-export async function createFileDownloadHandlerRaw(name: string, it: wasm.AsyncIterator, options?: { size?: number; type?: string }): Promise<Blob> {
+export async function createFileDownloadHandlerRaw(name: string, it: wasm.AsyncIterator, options?: { size?: number; type?: string }): Promise<any[]> {
     let listener = {
         [Symbol.asyncIterator]() {
             return it
@@ -832,17 +838,12 @@ export async function createFileDownloadHandlerRaw(name: string, it: wasm.AsyncI
             data = [...data, ...value]
         }
     } catch (_) {}
-    return new File([new Uint8Array(data)], name, { type: options?.type })
+    return data
 }
 
-export async function createFileDownloadHandler(name: string, it: wasm.AsyncIterator, size?: number) {
-    let blob = await createFileDownloadHandlerRaw(name, it, { size })
-    const elem = window.document.createElement("a")
-    elem.href = window.URL.createObjectURL(blob)
-    elem.download = name
-    document.body.appendChild(elem)
-    elem.click()
-    document.body.removeChild(elem)
+export async function createFileDownloadHandler(name: string, it: wasm.AsyncIterator, size?: number): Promise<any[]> {
+    let data = await createFileDownloadHandlerRaw(name, it, { size })
+    return data
 }
 
 /**
