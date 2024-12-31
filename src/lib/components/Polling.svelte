@@ -9,7 +9,6 @@
     export let rate: number = 5000
 
     let currentInterval = 100
-    let activeChat = get(Store.state.activeChat)
     async function poll() {
         // add processes here.
         updateTypingIndicators()
@@ -24,7 +23,7 @@
     }
 
     async function updateTypingIndicators() {
-        UIStore.updateTypingIndicators(activeChat)
+        UIStore.updateTypingIndicators()
     }
 
     onMount(() => {
