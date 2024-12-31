@@ -6,16 +6,8 @@
     import { _ } from "svelte-i18n"
     import { get } from "svelte/store"
 
-    export let audioInput: string | undefined
-    export let videoInput: string | undefined
-
     let video: HTMLVideoElement
     let stream: MediaStream
-
-    Store.state.devices.video.subscribe(d => {
-        videoInput = d
-        switchCamera(videoInput)
-    })
 
     async function switchCamera(selectedVideoDeviceId: string) {
         try {
@@ -35,13 +27,10 @@
     }
 
     async function startVideoTest() {
-        videoInput = get(Store.state.devices.video)
-        const constraints = {
-            audio: {
-                deviceId: audioInput ? { exact: audioInput } : undefined,
-            },
+        let videoInput = get(Store.state.devices.video)
+        const constraints: MediaStreamConstraints = {
             video: {
-                deviceId: videoInput ? { exact: videoInput } : undefined,
+                deviceId: videoInput && videoInput !== "default" ? { exact: videoInput } : undefined,
             },
         }
 
@@ -60,7 +49,7 @@
             video.srcObject = stream
             video.play()
         } catch (err) {
-            console.error("Accessing the microphone failed:", err)
+            console.error("Accessing the camera failed:", err)
         }
     }
 
