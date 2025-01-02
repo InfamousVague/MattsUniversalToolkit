@@ -9,6 +9,7 @@
     export let users: User[]
     export let size: Size = Size.Medium
     export let forceSize: boolean = false
+    export let typing = false
 
     const dispatch = createEventDispatcher()
 
@@ -38,6 +39,9 @@
             <ProfilePicture hook="profile-picture-many-single-pic" id={user.key} size={getSize(i)} image={user.profile.photo.image} status={user.profile.status} noIndicator />
         {/if}
     {/each}
+    {#if typing}
+        <div class="typing-indicator"></div>
+    {/if}
     <div class="count">
         <Icon icon={Shape.Users} size={Size.Smaller} alt />
         <Text hook="profile-picture-many-length" size={Size.Smaller} appearance={Appearance.Alt}>
@@ -86,6 +90,39 @@
                 top: 0.5rem;
                 right: 0;
                 z-index: 1;
+            }
+        }
+
+        .typing-indicator {
+            position: absolute;
+            z-index: 1;
+            top: 0;
+            left: 0;
+            width: 100%;
+            min-width: 100%;
+            height: 100%;
+            min-height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            border-top: var(--border-width-more) solid var(--alt-color);
+            border-right: var(--border-width-more) solid var(--alt-color);
+            border-bottom: var(--border-width-more) solid var(--alt-color);
+            border-left: var(--border-width-more) solid var(--color);
+            transform: translateZ(0);
+            animation: circle-loader-spin 1s infinite;
+
+            @keyframes circle-loader-spin {
+                0% {
+                    transform: rotate(-70deg);
+                }
+                50% {
+                    transform: rotate(170deg);
+                }
+                100% {
+                    transform: rotate(-70deg);
+                }
             }
         }
     }
