@@ -185,7 +185,7 @@
             }} />
     </SettingSection>
     <div class="flex-row">
-        <VideoTest audioInput={selectedInput} videoInput={undefined} />
+        <VideoTest />
     </div>
 
     <SettingSection hook="section-echo-cancellation" name={$_("settings.audio.echoCancellation")} description={$_("settings.audio.echoCancellationDescription")}>
