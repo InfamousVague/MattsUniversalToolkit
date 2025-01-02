@@ -26,7 +26,7 @@
     import path from "path"
     import { MultipassStoreInstance } from "$lib/wasm/MultipassStore"
     import { isAndroidOriOS } from "$lib/utils/Mobile"
-    import { shareFile } from "$lib/utils/Functions"
+    import { downloadBlobFromWeb, shareFile } from "$lib/utils/Functions"
 
     export let browseFilesForChatMode: boolean = false
 
@@ -458,20 +458,12 @@
             err => {
                 Store.addToastNotification(new ToastMessage("", err, 2))
             },
-            async combinedArray => {
+            async res => {
                 if (isAndroidOriOS()) {
-                    await shareFile(fileName, combinedArray)
+                    await shareFile(fileName, Buffer.from(await res.arrayBuffer()))
                     return
                 }
-                const blob = new Blob([new Uint8Array(combinedArray)], { type: "application/octet-stream" })
-                const url = URL.createObjectURL(blob)
-                const a = document.createElement("a")
-                a.href = url
-                a.download = path.basename(fileName)
-                document.body.appendChild(a)
-                a.click()
-                document.body.removeChild(a)
-                URL.revokeObjectURL(url)
+                downloadBlobFromWeb(await res.blob(), path.basename(fileName))
             }
         )
     }

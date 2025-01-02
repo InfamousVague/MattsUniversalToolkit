@@ -20,7 +20,7 @@ import { ToastMessage } from "$lib/state/ui/toast"
 import { page } from "$app/stores"
 import { goto } from "$app/navigation"
 import { isAndroidOriOS } from "$lib/utils/Mobile"
-import { downloadFileFromWeb, shareFile } from "$lib/utils/Functions"
+import { downloadBlobFromWeb, shareFile } from "$lib/utils/Functions"
 
 const MAX_PINNED_MESSAGES = 100
 export type FetchMessagesConfig =
@@ -361,22 +361,23 @@ class RaygunStore {
         return await this.get(r => r.edit(conversation_id, message_id, message), "Error editing message")
     }
 
-    async downloadAttachment(conversation_id: string, message_id: string, file: string, size?: number) {
+    async downloadAttachment(conversation_id: string, message_id: string, file: string) {
         return await this.get(async r => {
             let result = await r.download_stream(conversation_id, message_id, file)
-            let data = await createFileDownloadHandler(file, result, size)
+            let res = new Response(result)
             if (isAndroidOriOS()) {
-                await shareFile(file, Buffer.from(data))
+                await shareFile(file, Buffer.from(await res.arrayBuffer()))
             } else {
-                await downloadFileFromWeb(data, size || 0, file)
+                let blob = await res.blob()
+                await downloadBlobFromWeb(blob, file)
             }
         }, `Error downloading attachment from ${conversation_id} for message ${message_id}`)
     }
 
-    async getAttachmentRaw(conversation_id: string, message_id: string, file: string, options?: { size?: number; type?: string }) {
+    async getAttachmentRaw(conversation_id: string, message_id: string, file: string) {
         return await this.get(async r => {
             let result = await r.download_stream(conversation_id, message_id, file)
-            return createFileDownloadHandlerRaw(file, result, options)
+            return new Response(result)
         }, `Error downloading attachment from ${conversation_id} for message ${message_id}`)
     }
 
