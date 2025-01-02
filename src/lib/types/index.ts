@@ -233,6 +233,7 @@ export class TypingIndicator {
      * @returns True if something changed
      */
     update(): boolean {
+        if (this.size === 0) return false
         let time = new Date()
         time.setSeconds(time.getSeconds() - 5)
         let it = Object.entries(this.typingIndicator)
@@ -242,7 +243,7 @@ export class TypingIndicator {
             obj[id] = date
             return obj
         }, {})
-        this._size = updated.length > 0 ? 1 : 0
+        this._size = updated.length
         return old_len != this._size
     }
 
