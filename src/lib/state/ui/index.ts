@@ -170,23 +170,17 @@ class Store {
         }, 0)
     }
 
-    updateTypingIndicators(chat: Chat) {
-        let update = chat.typing_indicator.size !== 0
-        chat.typing_indicator.update()
-        if (update) {
-            this.state.chats.update(chats => chats.map(c => (c.id === chat.id ? { ...c, typing_indicator: chat.typing_indicator } : c)))
-
-            MainStore.state.activeChat.update(c => {
-                if (c.id === chat.id) {
-                    return {
-                        ...c,
-                        typing_indicator: chat.typing_indicator,
-                    }
-                }
-                return c
-            })
-            chat.typing_indicator.update()
+    updateTypingIndicators() {
+        let chats = get(this.state.chats)
+        let updated = false
+        for (let chat of chats) {
+            if (chat.typing_indicator.update()) updated = true
         }
+        if (updated) {
+            this.state.chats.set(chats)
+        }
+        let active = get(MainStore.state.activeChat)
+        if (active.typing_indicator.update()) MainStore.state.activeChat.set(active)
     }
 
     useEmoji(emoji: string) {
