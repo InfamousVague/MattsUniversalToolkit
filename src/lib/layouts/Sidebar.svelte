@@ -103,7 +103,7 @@
         flex-direction: row;
         border-right: var(--border-width) solid var(--border-color);
         max-height: 100vh;
-        overflow-y: hidden;
+        // overflow-y: hidden;
 
         .sidebar {
             display: inline-flex;
