@@ -19,7 +19,7 @@
     export let top: number | string = "var(--padding)"
 
     async function download_attachment(message: string, attachment: Attachment) {
-        await RaygunStoreInstance.downloadAttachment(chatID, message, attachment.name, attachment.size)
+        await RaygunStoreInstance.downloadAttachment(chatID, message, attachment.name)
     }
 
     async function unpin(message: string) {

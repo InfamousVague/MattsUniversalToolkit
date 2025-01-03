@@ -104,6 +104,10 @@ export async function shareFile(fileName: string, combinedArray: Buffer) {
 export async function downloadFileFromWeb(data: any[], size: number, name: string) {
     let options: { size?: number; type?: string } = { size }
     let blob = new File([new Uint8Array(data)], name, { type: options?.type })
+    downloadBlobFromWeb(blob, name)
+}
+
+export async function downloadBlobFromWeb(blob: Blob, name: string) {
     const elem = window.document.createElement("a")
     elem.href = window.URL.createObjectURL(blob)
     elem.download = name

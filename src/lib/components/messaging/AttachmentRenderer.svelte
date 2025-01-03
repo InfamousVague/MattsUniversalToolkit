@@ -13,7 +13,7 @@
     export let contextBuilder: (attachments: Attachment) => ContextItem[]
 
     async function download_attachment(message: string, attachment: Attachment) {
-        await RaygunStoreInstance.downloadAttachment(chatID, message, attachment.name, attachment.size)
+        await RaygunStoreInstance.downloadAttachment(chatID, message, attachment.name)
     }
     const dispatch = createEventDispatcher()
     const dispatcher = (event: string, detail: string) => {

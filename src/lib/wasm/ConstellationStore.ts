@@ -288,28 +288,12 @@ class ConstellationStore {
         return regex.test(path)
     }
 
-    async downloadFile(fileName: string): Promise<Result<WarpError, Buffer>> {
+    async downloadFile(fileName: string): Promise<Result<WarpError, Response>> {
         const constellation = get(this.constellationWritable)
         if (constellation) {
             try {
-                let get_stream_async_iterator = await constellation.get_stream(fileName)
-                let get_stream = {
-                    [Symbol.asyncIterator]() {
-                        return get_stream_async_iterator
-                    },
-                }
-
-                const chunks = []
-                try {
-                    for await (const value of get_stream) {
-                        if (value.Ok != null) {
-                            chunks.push(Buffer.from(value.Ok))
-                        }
-                    }
-                } finally {
-                    const combinedArray = Buffer.concat(chunks)
-                    return success(combinedArray)
-                }
+                let get_stream = await constellation.get_stream(fileName)
+                return success(new Response(get_stream))
             } catch (error) {
                 return failure(handleErrors(error))
             }
